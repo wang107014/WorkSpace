@@ -7,3 +7,5 @@
 6. 提交当前工作空间的修改内容，命令：git commit -m“修改”，
 7. 将项目更新到github或服务器，命令：git push
 8. 如果下次还要更新项目，直接git pull即可
+9. 查看历史日志：命令：git log   (id 为commit后面的id)
+10. 返回特定版本 命令：git reset id。id为返回的特定版本号
