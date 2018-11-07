@@ -271,7 +271,12 @@
 	SELECT ARCIM_Text1,* FROM ARC_ItmMast WHERE ARCIM_Desc='凝血四项'
 
 
+##通过登记号找到急诊病人的当前的分级
 
+	SELECT * FROM PA_PatMas WHERE PAPMI_No='020000000411'
 
+	SELECT PAADM_Priority_DR, * FROM PA_Adm WHERE PAADM_PAPMI_DR='1' AND PAADM_Type='E'
 
+	//急诊分级表
+	SELECT * FROM CT_Acuity WHERE CTACU_RowId=3
 
