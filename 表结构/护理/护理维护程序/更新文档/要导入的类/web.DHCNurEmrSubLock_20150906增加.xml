@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="24" zv="Cache for Windows (x86-64) 2010.2.8 (Build 1104U)" ts="2015-09-06 19:06:44">
+<Class name="web.DHCNurEmrSubLock">
+<Super>%Persistent</Super>
+<TimeChanged>63801,68717.479442</TimeChanged>
+<TimeCreated>63801,68501.23982</TimeCreated>
+
+<UDLText name="T">
+<Content><![CDATA[
+//判断是否加锁
+
+]]></Content>
+</UDLText>
+
+<Method name="isLockEmrSub">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>code</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	//s ^objcyf888=code
+	q:code="" ""
+	s code=$zcvt(code,"U")
+	s ret=""
+	i $d(^NurEmr.NurEmrSubLock(code))  d
+	.s ret=^NurEmr.NurEmrSubLock(code)
+	q ret
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//给模板加锁
+
+]]></Content>
+</UDLText>
+
+<Method name="LockEmrSub">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>code,ip,hander</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s code=$zcvt(code,"U")
+	q:code="" 0
+	//i '$d(^NurEmr.NurEmrSubLock(code))  d
+	s ^NurEmr.NurEmrSubLock(code)=ip_"^"_hander
+	q 0
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//给模板解锁
+
+]]></Content>
+</UDLText>
+
+<Method name="unLockEmrSub">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>code</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s code=$zcvt(code,"U")
+	q:code="" 0
+	i $d(^NurEmr.NurEmrSubLock(code))  d
+	.k ^NurEmr.NurEmrSubLock(code)
+	q 0
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^web.DHCNurEmrSubLockD</DataLocation>
+<DefaultData>DHCNurEmrSubLockDefaultData</DefaultData>
+<IdLocation>^web.DHCNurEmrSubLockD</IdLocation>
+<IndexLocation>^web.DHCNurEmrSubLockI</IndexLocation>
+<StreamLocation>^web.DHCNurEmrSubLockS</StreamLocation>
+<Data name="DHCNurEmrSubLockDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

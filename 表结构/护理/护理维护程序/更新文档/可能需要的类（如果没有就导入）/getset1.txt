@@ -1,0 +1,21 @@
+Nur.DHCNurseRecSet
+ClassMethod getSet1(RecTyp) As %String
+{
+   //s a=##class(Nur.DHCNurseRecSet).getSet("DHCNUR6")
+    s RecTyp=$ZConvert(RecTyp,"U")
+	s id=$O(^Nur.DHCNurseRecSetI("Typ"," "_RecTyp,""))
+	if id="" q ""
+	//if id="" q "Item12&Item13^Item14&Item15^Item6&Item7^Item9&Item10^^^^Item12&Item13^Item14&Item15^^^^^^"
+	s a=##class(Nur.DHCNurseRecSet).%OpenId(id)
+    d a.ListProperties()
+	s p=""  f  s p=$O(^tdata("Nur.DHCNurseRecSet",p)) q:p=""  d
+	.s tmp(p)=$ZOBJPROPERTY(a,p)
+	s ret=""
+	s k=""
+	f {
+	s k=$O(tmp(k))
+	q:k=""
+	s ret=ret_k_"|"_tmp(k)_"^"
+	}
+	q ret
+}

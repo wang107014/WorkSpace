@@ -1,0 +1,42 @@
+﻿<Root>
+  <MetaData ComFlag="N" Link="" RelName="DHCNURXHPGD_SSBRJJD">
+    <S101 Title="SaveMoudle" Link="web.DHCMGMoudleSave.SaveMoudle" hidden="Y" Edit="N" Pos="" RelName="SaveMoudle" Query="False" MIndex="False" />
+    <S102 Title="getEpisodeIdRowId" Link="NurEmr.DHCMgEmrData.getEpisodeIdRowId" hidden="Y" Edit="N" Pos="" RelName="getEpisodeIdRowId" Query="False" MIndex="False" />
+    <S103 Title="GetPerson" Link="web.DHCMGNurComm.GetSSPerson" hidden="Y" Edit="N" Pos="" RelName="GetPerson" Query="False" MIndex="False" />
+    <S104 Title="Save" Link="Nur.DHCMoudData.Save" hidden="Y" Edit="N" Pos="" RelName="Save" Query="False" MIndex="False" />
+    <S105 Title="GetId" Link="Nur.DHCMoudData.GetId" hidden="Y" Edit="N" Pos="" RelName="GetId" Query="False" MIndex="False" />
+    <S106 Title="getVal" Link="Nur.DHCMoudData.getVal" hidden="Y" Edit="N" Pos="" RelName="getVal" Query="False" MIndex="False" />
+    <S107 Title="PatInfo" Link="web.DHCMGNurComm.PatInfo" hidden="Y" Edit="N" Pos="" RelName="PatInfo" Query="False" MIndex="False" />
+      <S108 Title="科室" Link="" hidden="N" Edit="N" Pos="" RelName="Item1" Query="False" MIndex="False" />
+      <S109 Title="床号" Link="" hidden="N" Edit="N" Pos="" RelName="Item2" Query="False" MIndex="False" />
+      <S110 Title="姓名" Link="" hidden="N" Edit="N" Pos="" RelName="Item3" Query="False" MIndex="False" />
+      <S111 Title="性别" Link="" hidden="N" Edit="N" Pos="" RelName="Item4" Query="False" MIndex="False" />
+      <S112 Title="年龄" Link="" hidden="N" Edit="N" Pos="" RelName="Item5" Query="False" MIndex="False" />
+      <S113 Title="住院号" Link="" hidden="N" Edit="N" Pos="" RelName="Item6" Query="False" MIndex="False" />
+      <S114 Title="诊断" Link="" hidden="N" Edit="N" Pos="" RelName="Item7" Query="False" MIndex="False" />
+      <S115 Title="住院日期" Link="" hidden="N" Edit="N" Pos="" RelName="Item8" Query="False" MIndex="False" />
+      <S116 Title="日期" Link="" hidden="N" Edit="N" Pos="" RelName="Item10" Query="False" MIndex="False" />
+      <S117 Title="住院（转入）第几日" Link="" hidden="N" Edit="N" Pos="" RelName="Item9" Query="False" MIndex="False" />
+      <S161 Title="空白11" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item11" Query="False" MIndex="False" />
+      <S162 Title="空白12" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item12" Query="False" MIndex="False" />
+      <S163 Title="空白13" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item13" Query="False" MIndex="False" />
+      <S164 Title="空白14" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item14" Query="False" MIndex="False" />
+      <S165 Title="空白15" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item15" Query="False" MIndex="False" />
+      <M166 Title="空白16" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item16" Query="False" MIndex="False" />      
+      <O167 Title="空白17" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item17" Query="False" MIndex="False" />           
+      <S168 Title="空白18" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item18" Query="False" MIndex="False" />        
+      <O169 Title="空白19" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item19" Query="False" MIndex="False" />        
+      <M170 Title="空白20" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item20" Query="False" MIndex="False" />
+      <S171 Title="空白21" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item21" Query="False" MIndex="False" />
+      <S172 Title="空白22" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item22" Query="False" MIndex="False" />
+      <S173 Title="空白23" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item23" Query="False" MIndex="False" />
+      <S174 Title="空白24" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item24" Query="False" MIndex="False" />
+      <M175 Title="空白25" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item25" Query="False" MIndex="False" />
+      <O176 Title="空白26" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item26" Query="False" MIndex="False" />      
+      <O177 Title="空白27" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item27" Query="False" MIndex="False" />           
+      <O178 Title="空白28" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item28" Query="False" MIndex="False" />        
+      <O179 Title="空白29" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item29" Query="False" MIndex="False" />        
+      <M180 Title="空白30" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item30" Query="False" MIndex="False" />
+  </MetaData>
+  <InstanceData IDNO="110" Width="808" Height="725" Continue="False" />
+</Root>

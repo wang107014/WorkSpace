@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="24" zv="Cache for UNIX (IBM AIX for System P5-64) 2010.2.7 (Build 1004U)" ts="2014-04-30 10:38:56">
+<Class name="Nur.QueryBrokerEmr">
+<ProcedureBlock>0</ProcedureBlock>
+<Super>%RegisteredObject</Super>
+<TimeChanged>63307,38124.940724</TimeChanged>
+<TimeCreated>63307,38071.627449</TimeCreated>
+
+<Method name="ExcuteWebService">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,classQuery:%String,parameters:%ArrayOfDataTypes</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+	s parameters=##class(Nur.JSON).Decode(parameters)
+	s result=##class(%Dictionary.MethodDefinition).%ExistsId(className_"||"_classQuery)
+	i result=1 s ret=..MethodExcuteWebService(className,classQuery,parameters) q ret
+	s result=##class(%Dictionary.QueryDefinition).%ExistsId(className_"||"_classQuery)
+	i result=1 s ret=..QueryExcuteWebService(className,classQuery,parameters) q ret
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="QueryExcuteWebService">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,classQuery:%String,parameters:%ArrayOfDataTypes</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+	//d ##class(Nur.QueryBroker).QueryExcute("web.DHCNurCom","FindMasterItem")
+	s rs=##class(%Library.ResultSet).%New(className_":"_classQuery)
+	s x="d rs.Execute("
+	f i=1:1:parameters.Count()
+	{
+		s parameterVal=parameters.GetAt("parameter"_i)
+		s x=x_""""_parameterVal_""""
+		i (i'=parameters.Count()) s x=x_","
+	}
+	s x=x_")"
+	x x
+	s ret=..GetQueryDataJsonWebService(rs)
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="GetQueryDataJsonWebService">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rs:%Library.ResultSet</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+	s ret=##class(%GlobalCharacterStream).%New()
+	
+	d ret.Write("[")
+	s num=0
+	while rs.Next()'=0
+	{
+			i num'=0 d ret.Write(",")
+			s columnNum=rs.GetColumnCount()
+			s json=##class(%ArrayOfDataTypes).%New()
+			f i=1:1:columnNum
+			{
+				s columnName=rs.GetColumnHeader(i)
+				s columnValue=rs.GetDataByName(columnName)
+				d json.SetAt(columnValue,columnName)
+			}
+			d ret.Write(##class(Nur.JSON).Encode(json))
+			s num=num+1
+	}
+
+	d ret.Write("]")
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="MethodExcuteWebService">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,methodName:%String,parameters:%ArrayOfDataTypes</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+	//d ##class(Nur.QueryBroker).MethodExcute("web.DHCNurCom","FindMasterItem")
+	s x="s ret=##class("_className_")."_methodName_"("
+	f i=1:1:parameters.Count()
+	{
+		s parameterVal=parameters.GetAt("parameter"_i)
+		s parameterVal=##class(Nur.JSON).Replace(parameterVal,"""","""""")
+		s x=x_""""_parameterVal_""""
+		i (i'=parameters.Count()) s x=x_","
+	}
+	s x=x_")"
+	x x
+	b ;33
+	i $IsObject(ret) q ret
+	e  d
+	.s retStream=##class(%GlobalCharacterStream).%New()
+	.d retStream.Write(ret)
+	q retStream
+]]></Implementation>
+</Method>
+
+<Method name="Excute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,classQuery:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s ret=""
+	s result=##class(%Dictionary.MethodDefinition).%ExistsId(className_"||"_classQuery)
+	i result=1 s ret=..MethodExcute(className,classQuery) q ret
+	s result=##class(%Dictionary.QueryDefinition).%ExistsId(className_"||"_classQuery)
+	i result=1 s ret=..QueryExcute(className,classQuery) q ret
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="QueryExcute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,classQuery:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	//d ##class(Nur.QueryBroker).QueryExcute("web.DHCNurCom","FindMasterItem")
+	s rs=##class(%Library.ResultSet).%New(className_":"_classQuery)
+	s x="d rs.Execute("
+	s parametersNum=rs.GetParamCount()
+	f i=1:1:parametersNum
+	{
+		i $d(%request.Data("parameter"_i,1)) d
+		.s parameterVal=$g(%request.Data("parameter"_i,1))
+		.s x=x_""""_parameterVal_""""
+		s nextParameterExist=$d(%request.Data("parameter"_(i+1),1))
+		i (i'=parametersNum)&(nextParameterExist) s x=x_","
+	}
+	s x=x_")"
+	x x
+	d ..GetQueryDataJson(rs)
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="MethodExcute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,methodName:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	//d ##class(Nur.QueryBroker).MethodExcute("web.DHCNurCom","FindMasterItem")
+	s x="s ret=##class("_className_")."_methodName_"("
+	s parametersNum=..GetParamCount(className,methodName)
+	f i=1:1:parametersNum
+	{
+		i $d(%request.Data("parameter"_i,1)) d
+		.s parameterVal=$g(%request.Data("parameter"_i,1))
+		.s parameterVal=##class(Nur.JSON).Replace(parameterVal,"""","""""")
+		.s x=x_""""_parameterVal_""""
+		s nextParameterExist=$d(%request.Data("parameter"_(i+1),1))
+		i (i'=parametersNum)&(nextParameterExist) s x=x_","
+	}
+	s x=x_")"
+	x x
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="GenerateMetaData">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,classQuery:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s rs=##class(%Library.ResultSet).%New(className_":"_classQuery)
+	s columnNum=rs.GetColumnCount()
+	s ret="{root:'rows',totalProperty:'results',fields:["
+	f i=1:1:columnNum
+	{
+		s columnName=rs.GetColumnHeader(i)
+		s ret=ret_"{'name':'"_columnName_"','mapping':'"_columnName_"'}"
+		i i'=columnNum s ret=ret_","
+		
+	}
+	s ret=ret_"]}"
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="GenerateColumnModel">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,classQuery:%String,idName:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s rs=##class(%Library.ResultSet).%New(className_":"_classQuery)
+	s columnNum=rs.GetColumnCount()
+	s ret="["
+	f i=1:1:columnNum
+	{
+		s columnName=rs.GetColumnHeader(i)
+		i idName=columnName s ret=ret_"{id:'"_columnName_"','header':'"_columnName_"','dataIndex':'"_columnName_"',width:160,sortable:true}"
+		e  s ret=ret_"{'header':'"_columnName_"','dataIndex':'"_columnName_"',width:160,sortable:true}"
+		i i'=columnNum s ret=ret_","
+		
+	}
+	s ret=ret_"]"
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="GetQueryDataJson">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rs:%Library.ResultSet</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	w "["
+	s num=0
+	while rs.Next()'=0
+	{
+			i num'=0 w ","
+			s columnNum=rs.GetColumnCount()
+			s json=##class(%ArrayOfDataTypes).%New()
+			f i=1:1:columnNum
+			{
+				s columnName=rs.GetColumnHeader(i)
+				s columnValue=rs.GetDataByName(columnName)
+				d json.SetAt(columnValue,columnName)
+			}
+			w ##class(Nur.JSON).Encode(json)
+			s num=num+1
+	}
+
+	w "]"
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="GetParamName">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,classMethod:%String,n:%Integer</FormalSpec>
+<Implementation><![CDATA[
+	n (className,classMethod,n)
+	s methodParameter=^oddCOM(className,"m",classMethod,60)
+	s parameterNum=$ll(methodParameter)
+	s parameter=$li(methodParameter,n)
+	s parameterName=$li(parameter,1)
+	q parameterName
+]]></Implementation>
+</Method>
+
+<Method name="GetParamCount">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>className:%String,classMethod:%String</FormalSpec>
+<Implementation><![CDATA[
+	n (className,classMethod)
+	s methodParameter=$g(^oddCOM(className,"m",classMethod,60))
+	s parameterNum=$ll(methodParameter)
+	q parameterNum
+]]></Implementation>
+</Method>
+
+<Method name="GetQueryDataX">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>QueryName,parrm,del</FormalSpec>
+<ReturnType>%XML.DataSet</ReturnType>
+<Implementation><![CDATA[
+      s $zt="err"
+
+     //s ^TMP("queryName")=QueryName_"^"_parrm
+      Set result=##class(%XML.DataSet).%New(QueryName)
+      s x="d result.SetArgs("
+	  s l=$L(parrm,del)
+	  b
+	  s pp=""
+  	  f i=1:1:l
+		  {
+		    s itm=$P(parrm,del,i)
+		    s itm1=$P(parrm,del,i+1)
+		    if itm="" continue
+		    s itmval=""
+		    if $P(itm,":")=""  s itmval=itm
+		    e  s itmval=$P(itm,":",2)
+		    s x=x_""""_itmval_""""
+		    if itm1'=""
+		    {
+			    i (i'=l) s x=x_","
+		    }
+		  }
+	 
+	
+	s x=x_")"
+	b ////
+	x x
+     
+ 
+  Quit result
+err
+	s ^qtmp(1)=$ze
+]]></Implementation>
+</Method>
+
+<Method name="GetData">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>mth:%String,parrm:%String,del:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+ 
+   s $zt="err2"
+
+   s mth="s ret=##class("_$P(mth,":")_")."_$P(mth,":",2)
+   s l=$L(parrm,del)
+   s x=mth_"("
+  	  f i=1:1:l
+		  {
+		    s itm=$P(parrm,del,i)
+		    s itm1=$P(parrm,del,i+1)
+		    if itm="" continue
+		    s itmval=""
+		    if $P(itm,":")=""  s itmval=itm
+		    e  s itmval=$P(itm,":",2)
+		    s x=x_""""_itmval_""""
+		    if itm1'=""
+		    {
+			    i (i'=l) s x=x_","
+		    }
+		  }
+	s x=x_")"
+	x x
+	q ret
+err2
+	s ^qtmp(1)=$ze
+]]></Implementation>
+</Method>
+
+<Method name="GetEmrData">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>mth:%String,parrm:%String,del:%String</FormalSpec>
+<ReturnType>DWR.DHCTranStream</ReturnType>
+<Implementation><![CDATA[
+ 
+   s $zt="err3"
+
+   s mth="s ret=##class("_$P(mth,":")_")."_$P(mth,":",2)
+   s l=$L(parrm,del)
+
+   s x=mth_"("
+
+  	  f i=1:1:l
+		  {
+		    s itm=$P(parrm,del,i)
+		    s itm1=$P(parrm,del,i+1)
+		    if itm="" continue
+		    s itmval=""
+		    if $P(itm,":")=""  s itmval=itm
+		    e  s itmval=$P(itm,":",2)
+		    s x=x_""""_itmval_""""
+		    if itm1'=""
+		    {
+			    i (i'=l) s x=x_","
+		    }
+		  }
+	 
+	s x=x_")"
+	s ^qtmp(2)=x
+
+	x x
+	s transtr=##class(DWR.DHCTranStream).%New()
+	s transtr.CommString=ret
+	q transtr
+
+err3
+	s ^qtmp(1)=$ze
+]]></Implementation>
+</Method>
+</Class>
+</Export>

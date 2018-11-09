@@ -1,0 +1,10 @@
+﻿<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<Template>
+  <B102 type="System.Windows.Forms.Label" text="B102" left="20" top="601" ofx="0" ofy="48" width="81" height="20" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+  <S102 type="System.Windows.Forms.TextBox" text="S102" left="399" top="47" ofx="0" ofy="48" width="70" height="21" tabindex="0" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+  <T104 type="SourceGrid.Grid" text="T104" left="13" top="321" ofx="0" ofy="48" width="661" height="226" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World">20^20^21^25^25^25^25^20^20^$96^86^105^113^$!!19:46:55!!^!!19:46:55!!^!!19:46:55!!^!!19:46:55!!^!!19:46:55!!^!!19:46:55!!^!!19:46:55!!^!!19:46:55!!^!!19:46:55!!^</T104>
+  <B101 type="System.Windows.Forms.Label" text="B101" left="47" top="55" ofx="0" ofy="48" width="89" height="14" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+  <B104 type="System.Windows.Forms.Label" text="数据" left="12" top="301" ofx="0" ofy="48" width="38" height="17" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+  <O101 type="System.Windows.Forms.ComboBox" text="" left="173" top="51" ofx="0" ofy="48" width="118" height="20" tabindex="0" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+  <_Group6 type="System.Windows.Forms.GroupBox" text="" left="7" top="9" ofx="0" ofy="48" width="665" height="290" tabindex="3" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+</Template>

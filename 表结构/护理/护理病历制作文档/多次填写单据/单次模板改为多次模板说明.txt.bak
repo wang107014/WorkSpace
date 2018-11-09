@@ -1,0 +1,177 @@
+1、多次填写单据需要2个界面模板，实际填写界面和列表界面，打印界面只做实际填写用的，列表不要打印界面
+-------------------------------------------------------------------------------------------------
+2、挂单子只挂列表界面，不挂实际填写界面
+-------------------------------------------
+3、列表Js修改(必须)：
+
+（1）function newEvent()里面修改（点击新建按钮弹出填写界面）：
+将EmrCode=DHCNURBAYCHL 都改为实际填写界面关联字段，如界面模板名为DHCNURTEST，就改为 EmrCode=DHCNURTEST
+if (logonht==1)
+	{
+		
+var lnk= "dhcnuremrcomm.csp?"+"&EmrCode=DHCNURBAYCHL&EpisodeID="+EpisodeID  ;
+	}
+	
+	
+if (logonht==0)
+	{
+		
+var lnk= "dhcnuremrcomm.csp?"+"&EmrCode=DHCNURBAYCHL&EpisodeID="+EpisodeID  ;
+	}
+	
+------------------------------------------------------------------------------------------------------------
+（2）function modccevent()里面修改（双击列表中某行，弹出已填写好的界面）：
+将EmrCode=DHCNURBAYCHL 都改为实际填写界面关联字段，如界面模板名为DHCNURTEST，就改为 EmrCode=DHCNURTEST
+var lnk= "dhcnuremrcomm.csp?"+"&EmrCode=DHCNURBAYCHL&EpisodeID="+EpisodeID+"&NurRecId="+par ;
+------------------------------------------------------------------------------------------------------------
+（3）function find()里面修改（查找界面记录）：
+DHCNURBAYCHL修改为当前填写的界面模板：
+var parr = "DHCNURBAYCHL^"+adm+"^"+loc+"^"+StDate.value+"^"+Enddate.value;
+---------------------------------------------------------------------------------------------------------------
+4、界面模板JS修改（不一致则修改，一致可不改）：
+（1）setvalue()
+
+加：
+if (NurRecId!="")
+   {
+   	id=NurRecId;
+   	}else{
+   		id="";
+   		}
+
+/------------------以下是修改后的方法-----/
+function setvalue()
+{
+	
+   var ha = new Hashtable();
+   var getid=document.getElementById('GetId');
+   var id=cspRunServerMethod(getid.value,EmrCode,EpisodeID);
+   if (NurRecId!="")
+   {
+   	id=NurRecId;
+   	}else{
+   		id="";
+   		}
+   	
+   if (id != "") {
+   	 var getVal=document.getElementById('getVal');
+	 var ret=cspRunServerMethod(getVal.value,id);
+     var tm=ret.split('^');
+	
+	 sethashvalue(ha,tm);
+			}
+			else {
+				getPatInfo();
+				return;
+				}
+			
+	 var gform=Ext.getCmp("gform");
+     gform.items.each(eachItem, this);  
+	
+	for (var i=0 ; i<ht.keys().length;i++)//for...in statement get all of Array's index
+	{
+		var key = ht.keys()[i];
+		
+		if (key.indexOf("_") == -1) 
+		{
+			
+			var flag=ifflag(key );   //界面显示
+			if (flag==true)
+			{
+				if (ha.contains(key)) setVal2(key ,ha.items(key));
+				
+				continue;
+			} 
+  		
+
+			var itm = Ext.getCmp(key);
+			if (ha.contains(key)) 
+			itm.setValue(getval(ha.items(key)));
+			
+	    }else{
+			var aa=key.split('_');
+			if(ha.contains(aa[0]))
+			{
+			  setcheckvalue(key,ha.items(aa[0]));     ///多选只打印选择项目用这个
+                          ///setcheckvalue1(key,ha.items(aa[0]));  ///多选全部打印用这个
+			} 
+		}
+    }
+ 
+}
+
+-------------------------------------------------------------------------------------------------------------
+
+（2）修改Save()
+
+加：
+if (NurRecId!="")
+   {
+   	id=NurRecId;
+   	}else{
+   		id="";
+   		}
+
+/------------------以下是修改后的方法-----/
+
+function Save()
+{
+   ret="";
+  checkret="";
+  comboret="";
+  var getid=document.getElementById("GetId");
+  var id=cspRunServerMethod(getid.value,EmrCode,EpisodeID);
+  var SaveRec=document.getElementById("Save");
+  var gform=Ext.getCmp("gform");
+  gform.items.each(eachItem1, this);  
+  if (NurRecId!="")
+   {
+   id=NurRecId;
+   }
+else
+{
+   id="";
+   	}
+
+  if (id!="")
+{
+ var Id=cspRunServerMethod(SaveRec.value,"^EmrUser|"+session['LOGON.USERID']+"^EmrCode|"+EmrCode+"^"+ret+"^DetLocDr|"+session['LOGON.CTLOCID']+"^EpisodeId|"+EpisodeID+"&"+checkret+"&"+comboret,id);
+ }
+else
+{
+var Id=cspRunServerMethod(SaveRec.value,"^EmrUser|"+session['LOGON.USERID']+"^EmrCode|"+EmrCode+"^"+ret+"^DetLocDr|"+session['LOGON.CTLOCID']+"^EpisodeId|"+EpisodeID+"&"+checkret+"&"+comboret,"");
+ 
+}
+if (Id!=="")
+{
+  Ext.Msg.show({    
+	       title:'确认一下',    
+	       msg: '保存成功! 您要关闭该页面吗？',    
+	       buttons:{"ok":"是     ","cancel":"  否"},
+	       fn:  function(btn, text){    
+	            if (btn == 'ok'){   
+	
+	            window.close();  //关闭子窗口  
+	            window.opener.find();
+	            
+	            }
+                     else
+	            {   setvalue()  	}
+	            
+	        },    
+	       animEl: 'newbutton'   
+	       });
+  NurRecId=Id;
+}
+else 
+{
+        alert("保存失败");
+	return
+	}
+}
+-----------------------------------------------------------------------------------------------------------------
+（3）修改butPrintFn()
+
+PrintComm.MthArr="web.DHCNurMouldDataComm:GetPrnValComm&parr:"+parr;
+将这句改为：
+PrintComm.MthArr="Nur.DHCMoudData:getVal&parr:"+NurRecId+"!";

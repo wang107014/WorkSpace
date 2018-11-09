@@ -1,0 +1,34 @@
+﻿<Root>
+  <MetaData ComFlag="N" Link="" RelName="DHCNURBG_FLACCList">
+    <S125 Title="GetQueryCombox" Link="web.DHCMGNurComm.GetQueryCombox" hidden="Y" Edit="N" Pos="" RelName="GetQueryCombox" Query="False" MIndex="False" />
+    <S126 Title="GetQueryData" Link="web.DHCThreeNew.GetQueryData" hidden="Y" Edit="N" Pos="" RelName="GetQueryData" Query="False" MIndex="False" />
+    <S127 Title="SetStatus" Link="Nur.DHCMoudData.SetStatus" hidden="Y" Edit="N" Pos="" RelName="SetStatus" Query="False" MIndex="False" />
+    <S128 Title="GetLayoutItem" Link="web.DHCMgssgrPlaySub.GetLayoutItem" hidden="Y" Edit="N" Pos="" RelName="GetLayoutItem" Query="False" MIndex="False" />
+    <S130 Title="GetHead" Link="web.DHCNurseRecordPrint.GetHead" hidden="Y" Edit="N" Pos="" RelName="GetHead" Query="False" MIndex="False" />
+    <S132 Title="delete1" Link="Nur.DHCMoudData.delete" hidden="Y" Edit="N" Pos="" RelName="delete1" Query="False" MIndex="False" />
+    <T101 Title="防范患者压疮记录表" Link="" hidden="N" Edit="N" Pos="" RelName="mygrid" Query="False" MIndex="False">
+      <S105 Title="科室" Link="" hidden="N" Edit="N" Pos="" RelName="Item4" Query="False" MIndex="False" />
+      <S104 Title="姓名" Link="" hidden="N" Edit="N" Pos="" RelName="Item1" Query="False" MIndex="False" />
+      <S106 Title="性别" Link="" hidden="N" Edit="N" Pos="" RelName="Item2" Query="False" MIndex="False" />
+      <S102 Title="年龄" Link="" hidden="N" Edit="N" Pos="" RelName="Item3" Query="False" MIndex="False" />
+      <S120 Title="入院日期" Link="" hidden="N" Edit="N" Pos="" RelName="Item8" Query="False" MIndex="False" />
+      <S142 Title="出院日期" Link="" hidden="N" Edit="N" Pos="" RelName="Item8" Query="False" MIndex="False" />
+      <S143 Title="评估日期1" Link="" hidden="N" Edit="N" Pos="" RelName="Item12" Query="False" MIndex="False" />
+      <S136 Title="签名" Link="" hidden="N" Edit="N" Pos="" RelName="Item31" Query="False" MIndex="False" />
+      <S137 Title="评估日期2" Link="" hidden="N" Edit="N" Pos="" RelName="Item13" Query="False" MIndex="False" />
+      <S144 Title="签名" Link="" hidden="N" Edit="N" Pos="" RelName="Item32" Query="False" MIndex="False" />
+      <S145 Title="评估日期3" Link="" hidden="N" Edit="N" Pos="" RelName="Item14" Query="False" MIndex="False" />
+      <S146 Title="签名" Link="" hidden="N" Edit="N" Pos="" RelName="Item33" Query="False" MIndex="False" />
+      <S151 Title="评估日期4" Link="" hidden="N" Edit="N" Pos="" RelName="Item70" Query="False" MIndex="False" />
+      <S152 Title="签名" Link="" hidden="N" Edit="N" Pos="" RelName="Item86" Query="False" MIndex="False" />
+      <S153 Title="评估日期5" Link="" hidden="N" Edit="N" Pos="" RelName="Item71" Query="False" MIndex="False" />
+      <S154 Title="签名" Link="" hidden="N" Edit="N" Pos="" RelName="Item87" Query="False" MIndex="False" />
+      <S148 Title="转入科室" Link="" hidden="N" Edit="N" Pos="" RelName="Item8" Query="False" MIndex="False" />
+      <S149 Title="转入日期" Link="" hidden="N" Edit="N" Pos="" RelName="Item9" Query="False" MIndex="False" />
+      <S150 Title="par" Link="" hidden="N" Edit="N" Pos="" RelName="par" Query="False" MIndex="False" />
+    </T101>
+  </MetaData>
+  <InstanceData IDNO="154" Width="808" Height="693" Continue="False">
+    <T101 type="SourceGrid.Grid" text="" left="1" top="2" ofx="0" ofy="0" width="806" height="237" tabindex="0" bgcolor="Moccasin" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World">30^20^20^20^20^20^20^20^20^20^$50^50^50^50^50^50^50^50^50^50^50^50^50^50^50^50^50^50^2^$!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!^</T101>
+  </InstanceData>
+</Root>

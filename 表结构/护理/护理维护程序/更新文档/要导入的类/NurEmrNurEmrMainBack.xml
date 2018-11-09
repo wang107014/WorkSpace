@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="24" zv="Cache for UNIX (IBM AIX for System P5-64) 2010.2.7 (Build 1004U)" ts="2014-05-22 09:57:37">
+<Class name="NurEmr.NurEmrMainBack">
+<Super>%Persistent</Super>
+<TimeChanged>63321,37795.471809</TimeChanged>
+<TimeCreated>63268,55674.502431</TimeCreated>
+
+<Property name="EmrCode">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="EmrData">
+<Type>%GlobalCharacterStream</Type>
+<Parameter name="LOCATION" value="^NurEmr.NurEmrMainBackS"/>
+</Property>
+
+<Property name="RecDate">
+<Type>%Library.Date</Type>
+<InitialExpression>+$p($h,",",1)</InitialExpression>
+<Required>1</Required>
+<Parameter name="FORMAT" value="1"/>
+</Property>
+
+<Property name="RecTime">
+<Type>%Library.Time</Type>
+<InitialExpression>+$p($h,",",2)</InitialExpression>
+<Required>1</Required>
+</Property>
+
+<Index name="EmrCodeDT">
+<Properties>EmrCode,RecDate,RecTime</Properties>
+</Index>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^NurEmr.NurEmrMainBackD</DataLocation>
+<DefaultData>NurEmrMainBackDefaultData</DefaultData>
+<IdLocation>^NurEmr.NurEmrMainBackD</IdLocation>
+<IndexLocation>^NurEmr.NurEmrMainBackI</IndexLocation>
+<StreamLocation>^NurEmr.NurEmrMainBackS</StreamLocation>
+<Data name="NurEmrMainBackDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>EmrCode</Value>
+</Value>
+<Value name="3">
+<Value>EmrData</Value>
+</Value>
+<Value name="4">
+<Value>RecDate</Value>
+</Value>
+<Value name="5">
+<Value>RecTime</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

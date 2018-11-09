@@ -1,0 +1,918 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="24" zv="Cache for Windows (x86-32) 2010.2.8 (Build 1104U)" ts="2014-11-03 13:22:19">
+<Class name="NurEmr.NurEmrSubItmLinkArc">
+<Super>%Persistent</Super>
+<TimeChanged>63494,38488.555643</TimeChanged>
+<TimeCreated>63481,56501.966581</TimeCreated>
+
+<Property name="EmrItmCode">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="EmrItmDesc">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="Linkdr">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="Linkdesc">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<UDLText name="T">
+<Content><![CDATA[
+//ORDER:医嘱  ；DIA:诊断
+
+]]></Content>
+</UDLText>
+
+<Property name="Type">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<UDLText name="T">
+<Content><![CDATA[
+//NL 新开长嘱 SL :新停长嘱 T :临时医嘱 
+
+]]></Content>
+</UDLText>
+
+<Property name="ORDERType">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Index name="EmrItmCode">
+<Properties>Type,ORDERType,EmrItmCode,Linkdr</Properties>
+</Index>
+
+<Index name="TypeCodeLink">
+<Properties>Type,Linkdr,ORDERType</Properties>
+</Index>
+
+<Method name="delete">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>id</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	q:id="" ""
+	d ##class(NurEmr.NurEmrSubItmLinkArc).%DeleteId(id)
+	q 0
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//根据code判断知识库是否存在
+
+]]></Content>
+</UDLText>
+
+<Method name="getZSKId">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>code:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	
+  q:code=""
+  s code=" "_$ZConvert(code,"U") 
+  s id=""
+  s id=$o(^NurEmr.NurEmrSubItmI("EmrCode",code,""))
+  q id
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//根据表id修改EmrSubCode字段 知识库拖动目录
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+//since:2.0.1.8  20141020
+
+]]></Content>
+</UDLText>
+
+<Method name="NewWinKCode">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>oldwin,wincode</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+ //从新归档
+      s oldwin=$ZConvert(oldwin,"U")
+      s id=$O(^NurEmr.NurEmrSubI("EmrCode"," "_oldwin,""))
+	  if id'=""
+	  {
+		  s a=##class(NurEmr.NurEmrSub).%OpenId(id)
+		  s a.EmrSubCode=wincode
+		  d a.%Save()
+	  }
+	  q id
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//关联诊断
+
+]]></Content>
+</UDLText>
+
+<Method name="Save">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>itmcode,desc,linkid,linkdesc</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+    i linkid["_" s dr=$p(linkid,"_")_"||"_$p(linkid,"_",2)
+    e  s dr=linkid
+	s code=$ZConvert(itmcode,"U")
+	s id=""  s id=$O(^NurEmr.NurEmrSubItmLinkArcI("EmrItmCode"," DIA"," "," "_code," "_dr,id))
+	q:id'="" ""
+	if id=""
+	{
+	  set a=##class(NurEmr.NurEmrSubItmLinkArc).%New()
+	  s a.EmrItmCode=itmcode
+	  s a.EmrItmDesc=desc
+	  s a.Linkdr=dr
+	  s a.Linkdesc=linkdesc
+	  s a.Type="DIA"
+	  s a.ORDERType=""
+	}
+	d a.%Save()
+	q ""
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//关联医嘱保存
+
+]]></Content>
+</UDLText>
+
+<Method name="SaveOrd">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>itmcode,desc,linkid,linkdesc,type</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+    i linkid["_" s dr=$p(linkid,"_")_"||"_$p(linkid,"_",2)
+    e  s dr=linkid
+	s code=$ZConvert(itmcode,"U")
+	s id=""  s id=$O(^NurEmr.NurEmrSubItmLinkArcI("EmrItmCode"," ORDER"," "_type," "_code," "_dr,id))
+	q:id'="" ""
+	if id=""
+	{
+	  set a=##class(NurEmr.NurEmrSubItmLinkArc).%New()
+	  s a.EmrItmCode=itmcode
+	  s a.EmrItmDesc=desc
+	  s a.Linkdr=dr
+	  s a.Linkdesc=linkdesc
+	  s a.Type="ORDER"
+	  s a.ORDERType=type
+	}
+	d a.%Save()
+	q ""
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//  ##class(%ResultSet).RunQuery("NurEmr.NurEmrSubItmLinkArc","GetARCItmMastByText","葡萄糖^")
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+//根据名称查询医嘱项
+
+]]></Content>
+</UDLText>
+
+<Method name="GetARCItmMastByTextExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,parr:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+ 	Set repid=$I(^CacheTemp)
+ 	s ind=1
+ 	s ^obj1022=parr
+    s arccode="",arcdesc="",arcid=""
+    s ds="" f  s ds=$o(^ARCIM(0,"Desc",ds)) q:ds=""  d
+    .s par=""  f  s par=$o(^ARCIM(0,"Desc",ds,par)) q:par=""  d
+    ..s vt=""  f  s vt=$o(^ARCIM(0,"Desc",ds,par,vt)) q:vt=""  d
+    ...q:ds'[parr
+    ...s arccode=$p(^ARCIM(par,vt,1),"^")
+    ...s arcdesc=$p(^ARCIM(par,vt,1),"^",2)
+    ...s arcid=par_"_"_vt
+    ...s aa="ARCode|"_arccode_"^ARCDesc|"_arcdesc_"^ARCID|"_arcid
+	...d outtyp2
+    Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+outtyp2
+	set Data=$lb(aa)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+	quit
+]]></Implementation>
+</Method>
+
+<Method name="GetARCItmMastByTextFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>GetARCItmMastByTextExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="GetARCItmMastByText">
+<Type>%Query</Type>
+<FormalSpec>parr:%String</FormalSpec>
+<Parameter name="ROWSPEC" value="aa"/>
+</Query>
+
+<Method name="GetARCItmMastByTextClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>GetARCItmMastByTextExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+    Quit $$$OK
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//  ##class(%ResultSet).RunQuery("NurEmr.NurEmrSubItmLinkArc","GetICDDiagByText","霍乱")
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+//根据名称查询icd诊断
+
+]]></Content>
+</UDLText>
+
+<Method name="GetICDDiagByTextExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,parr:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+ 	Set repid=$I(^CacheTemp)
+ 	s ind=1
+ 	s ^obj1022=parr
+    s arccode="",arcdesc="",arcid=""
+    s ds="" f  s ds=$o(^MRC("ID",ds)) q:ds=""  d
+    .s desc=$p(^MRC("ID",ds),"^",2)
+    .q:desc'[parr
+    .s icdcode=$p(^MRC("ID",ds),"^",1)
+    .s icd9cmcode=$p(^MRC("ID",ds),"^",4)
+    .s aa="ICDCode|"_icdcode_"^ICDesc|"_desc_"^ICD9Code|"_icd9cmcode_"^ID|"_ds
+	.d outtyp2
+    Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+outtyp2
+	set Data=$lb(aa)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+	quit
+]]></Implementation>
+</Method>
+
+<Method name="GetICDDiagByTextFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>GetICDDiagByTextExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="GetICDDiagByText">
+<Type>%Query</Type>
+<FormalSpec>parr:%String</FormalSpec>
+<Parameter name="ROWSPEC" value="aa"/>
+</Query>
+
+<Method name="GetICDDiagByTextClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>GetICDDiagByTextExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+    Quit $$$OK
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//  ##class(%ResultSet).RunQuery("NurEmr.NurEmrSubItmLinkArc","GetCodeLinkARCItm",^obj1022)
+
+]]></Content>
+</UDLText>
+
+<Method name="GetCodeLinkARCItmExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,parr:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+ 	Set repid=$I(^CacheTemp)
+ 	s ind=1
+ 	s ^obj1022=parr
+ 	s type=$p(parr,"^",2)
+ 	s code=$p(parr,"^",1)
+ 	s code=$ZConvert(code,"U")
+    s arccode="",arcdesc="",arcid=""
+    b ;
+    s tid="" f  s tid=$O(^NurEmr.NurEmrSubItmLinkArcI("EmrItmCode"," "_type,tid))  q:tid=""  d
+    .s dr="" f  s dr=$O(^NurEmr.NurEmrSubItmLinkArcI("EmrItmCode"," "_type,tid," "_code,dr))  q:dr=""  d
+    ..s par="" f  s par=$O(^NurEmr.NurEmrSubItmLinkArcI("EmrItmCode"," "_type,tid," "_code,dr,par))  q:par=""  d
+    ...s a=##class(NurEmr.NurEmrSubItmLinkArc).%OpenId(par)
+    ...s codename=a.EmrItmDesc
+    ...s itmcode=a.EmrItmCode
+    ...s linkname=a.Linkdesc
+    ...s ordertype=a.ORDERType
+    ...s ordername=""
+    ...i ordertype="NL" s ordername="新开长嘱"
+    ...i ordertype="SL" s ordername="新停长嘱"
+    ...i ordertype="T"  s ordername="临时医嘱"
+    ...i type="ORDER" s linkdr=$p(a.Linkdr,"|",1)_"_"_$p(a.Linkdr,"|",3)
+    ...e  s linkdr=a.Linkdr
+    ...s aa="Desc|"_codename_"^Code|"_itmcode_"^LinkDesc|"_linkname_"^LinkCode|"_linkdr_"^id|"_par_"^Ordertype|"_ordername
+    ...b ;3
+	...d outtyp3
+    Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+outtyp3
+	set Data=$lb(aa)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+]]></Implementation>
+</Method>
+
+<Method name="GetCodeLinkARCItmFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>GetCodeLinkARCItmExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="GetCodeLinkARCItm">
+<Type>%Query</Type>
+<FormalSpec>parr:%String</FormalSpec>
+<Parameter name="ROWSPEC" value="aa"/>
+</Query>
+
+<Method name="GetCodeLinkARCItmClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>GetCodeLinkARCItmExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+    Quit $$$OK
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//  ##class(%ResultSet).RunQuery("NurEmr.NurEmrSubItmLinkArc","GetLinkItmByOrdOrDiag","ORDER^1319_1^LN")
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+//根据医嘱项id或诊断icd码查询关联的知识库模板
+
+]]></Content>
+</UDLText>
+
+<Method name="GetLinkItmByOrdOrDiagExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,parr:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+ 	Set repid=$I(^CacheTemp)
+ 	s ind=1
+ 	s ^obj1022=parr
+ 	s type=$p(parr,"^",1) //ORDER OR DIA
+ 	s link=$p(parr,"^",2) //医嘱项id 或 诊断icd码
+ 	s ordtype=$p(parr,"^",3) //医嘱类型 NL:新开长嘱 SL:新停长嘱 T:临时医嘱
+ 	i link["_" s link=$p(link,"_",1)_"||"_$p(link,"_",2)
+ 	//s code=$ZConvert(code,"U")
+    s arccode="",arcdesc="",arcid=""
+    b ;
+    s dr="" f  s dr=$O(^NurEmr.NurEmrSubItmLinkArcI("TypeCodeLink"," "_type," "_link,dr))  q:dr=""  d
+    .q:(ordtype'="")&(dr'[ordtype)
+    .s par="" f  s par=$O(^NurEmr.NurEmrSubItmLinkArcI("TypeCodeLink"," "_type," "_link,dr,par))  q:par=""  d
+    ..s a=##class(NurEmr.NurEmrSubItmLinkArc).%OpenId(par)
+    ..s codename=a.EmrItmDesc
+    ..s itmcode=a.EmrItmCode
+    ..s linkname=a.Linkdesc
+    ..s ordertype=a.ORDERType
+    ..//q:(ordtype'="")&&(ordertype'=ordtype)
+    ..s ordername=""
+    ..i ordertype="NL" s ordername="新开长嘱"
+    ..i ordertype="SL" s ordername="新停长嘱"
+    ..i ordertype="T"  s ordername="临时医嘱"
+    ..i type="ORDER" s linkdr=$p(a.Linkdr,"|",1)_"_"_$p(a.Linkdr,"|",3)
+    ..e  s linkdr=a.Linkdr
+    ..s aa="Desc|"_codename_"^Code|"_itmcode_"^LinkDesc|"_linkname_"^LinkCode|"_linkdr_"^id|"_par_"^Ordertype|"_ordername
+    ..b ;3
+	..d outtyp3
+    Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+outtyp3
+	set Data=$lb(aa)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+]]></Implementation>
+</Method>
+
+<Method name="GetLinkItmByOrdOrDiagFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>GetLinkItmByOrdOrDiagExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="GetLinkItmByOrdOrDiag">
+<Type>%Query</Type>
+<FormalSpec>parr:%String</FormalSpec>
+<Parameter name="ROWSPEC" value="aa"/>
+</Query>
+
+<Method name="GetLinkItmByOrdOrDiagClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>GetLinkItmByOrdOrDiagExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+    Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OnPage">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	//s userLoc = %session.Get("LOGON.CTLOCID")
+	s Loc = $Get(%request.Data("Loc",1),"")
+	q:(Loc="") $$$OK
+	s ^TEMPGuoxubo("1029")=Loc
+	s userLoc = Loc			//当前登录用户科室
+	d ..Getxmlstr(userLoc)	
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="Getxmlstr">
+<Description>
+InPut： session['LOGON.CTLOCID']
+w ##class(NurEmr.NurEmrSubItmLinkArc).Getxmlstr("42")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>userLoc</FormalSpec>
+<Implementation><![CDATA[
+   s str=##class(web.DHCNurknowInterface).GetListKn(userLoc)
+   s keystr=$p(str,"^",1)
+   s treename=$p(keystr,"|",1)
+   s title=$p(keystr,"|",2)   
+   d ..GetNodeByXML(treename)
+   /*
+   s xmlstr=""
+   s id=##class(NurEmr.NurEmrSub).getData(treename)
+   s chr=0  for  s chr=$o(^NurEmr.NurEmrSubS(id,chr))  q:chr=""  d
+   .s temstr=$g(^NurEmr.NurEmrSubS(id,chr))
+   .s xmlstr=$g(xmlstr)_temstr
+   q xmlstr
+   */
+]]></Implementation>
+</Method>
+
+<Method name="GetNodeByXML">
+<Description>
+解析xml
+InPut： 右边知识库某个模板code
+Output：左边知识库列表返回JSON,工ext树使用
+w ##class(NurEmr.NurEmrSubItmLinkArc).GetNodeByXML("281Kn")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>code:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	   //取xml的头指针Reader
+	   s str=##class(NurEmr.NurEmrSub).GetKCode(code)
+       if str="" s str=##class(NurEmr.NurEmrSub).getData(code)
+       s Data=""
+       if str'=""   
+	   {
+		S ITM=##CLASS(NurEmr.NurEmrSub).%OpenId(str)
+		s Data=ITM.EmrSubData
+		s title=ITM.EmrSubDesc
+	   }
+	   q:str="" 
+	   d Data.Rewind()
+	   s itmRelName=""
+	   s Reader=##class(web.DHCNUREMR).GetReader(code,Data)
+	   
+	   
+	   /**************************静态加载树*****************************/
+	   
+	   //存储有删除标记的数据路径
+	  s DELStr=""
+	  s i=0
+	  while Reader.Read()
+	  {
+	   if Reader.MoveToAttributeName("Delflag")
+		 { 
+		     if (Reader.Value="Y")
+		       {
+			      //s DELStr=$g(DELStr)_","_Reader.Path 
+			      s i=i+1
+			      s DELStr(i)=Reader.Path  
+			   }
+		 }
+	   
+	  }
+	   
+	   
+	      d Reader.Rewind()   //初始化指针Reader，指向xml的开始位置
+	   	  s startNodeFlag=1 
+	      s minPathLength=4   //最短的，eg：/ROOT/NOD/fold2
+	      s lastPath=""  
+	      s delPath=""
+          w "["  
+          while Reader.Read()
+	      {
+		    s pathLength=$l(Reader.Path,"/")
+		    continue:pathLength<minPathLength
+		    s quitFlag=..IfDelPath(pathLength,Reader.Path,.DELStr)
+		    continue:quitFlag=1
+		    	
+		   if Reader.NodeType'="endelement"  
+		   {  
+		 
+		      if Reader.Name["fold"
+		      {
+			     if startNodeFlag=1  w "{"
+	             else  w ",{"
+			     if Reader.MoveToAttributeName("RelName") w "id:'"_Reader.Value_"'"
+			     if Reader.MoveToAttributeName("Title") w ",text:'"_Reader.Value_"'"
+			     w ",cls:'folder'"	        
+		      }
+		      if Reader.Name["itm"
+		      {
+		        if (lastPath'="")&(Reader.Path[lastPath) 
+			    { 
+			       if Reader.MoveToAttributeName("RelName") s qtipstr=..GetKnowledge(Reader.Value)
+			       w ",children:["
+			       w "{"
+			       if Reader.MoveToAttributeName("RelName") w "id:'"_Reader.Value_"'"
+			       if Reader.MoveToAttributeName("RelName") w ",qtip:'"_qtipstr_"'"
+			       if Reader.MoveToAttributeName("Title") w ",text:'"_Reader.Value_"'"
+			       w ",leaf:'ture'"
+			       w ",icon:'../images/tree/book.gif'"
+			       w ",cls:'folder'"
+	            }
+	            else
+		        {
+			       if Reader.MoveToAttributeName("RelName") s qtipstr=..GetKnowledge(Reader.Value)
+		           if startNodeFlag=1  w "{"
+	               else  w ",{"
+			       if Reader.MoveToAttributeName("RelName") w "id:'"_Reader.Value_"'"
+			       if Reader.MoveToAttributeName("RelName") w ",qtip:'"_qtipstr_"'"
+			       if Reader.MoveToAttributeName("Title") w ",text:'"_Reader.Value_"'"
+			       w ",leaf:'ture'"
+			       w ",icon:'../images/tree/book.gif'"
+			       w ",cls:'folder'"		  	
+			    }
+		      }
+		  }
+		  		  
+		 if Reader.NodeType="endelement"
+		 {
+		   if (lastPath'="")&(lastPath[Reader.Path)&(lastPath'=Reader.Path)  
+			{ 
+			    w "]"
+			    
+			}
+		  if (lastPath'="")&(Reader.Path=lastPath)&(Reader.Name["fold")
+			{
+			    w ",children:[]"
+		    }
+		    
+		    w "}"
+		 } 
+		  
+		  s lastPath=Reader.Path
+		  s startNodeFlag=0
+		    
+	  }
+
+        w "]"
+
+		  	   
+     
+       /*********************************************************************
+       //动态加载树时可以用
+       
+        //取最长的路径长度
+	   s maxPathLength=0
+	    while Reader.Read()
+	   { s pathLength=$l(Reader.Path,"/")
+	     if pathLength>maxPathLength s maxPathLength=pathLength
+	   }
+	   s minPathLength=4   //最短的，eg：/ROOT/NOD/fold2
+       
+	   //按层读出节点
+	   w "["
+	   for L=minPathLength:1:maxPathLength
+	   { 
+	      d Reader.Rewind()
+	     // w "["
+          while Reader.Read()
+	      {
+		    s pathLength=$l(Reader.Path,"/")
+		    continue:pathLength'=L
+		    continue:Reader.NodeType="endelement"
+		    
+		    if Reader.Name["itm"
+		    {
+		       w "{"
+			   if Reader.MoveToAttributeName("RelName") w "id:'"_Reader.Value_"'"
+			   if Reader.MoveToAttributeName("Title") w ",text:'"_Reader.Value_"'"
+			   w ",leaf:'ture'"
+			   w ",cls:'folder'"
+			   w "},"	
+			}
+			
+			if (Reader.Name'["itm")&(Reader.Name["fold")
+		    {
+	           w "{"
+			   if Reader.MoveToAttributeName("RelName") w "id:'"_Reader.Value_"'"
+			   if Reader.MoveToAttributeName("Title") w ",text:'"_Reader.Value_"'"
+			   w ",cls:'folder'"
+			   w "},"	 
+		    }
+	      	
+	      }
+	   }
+	  w "]"
+	   ********************************************************************************/
+]]></Implementation>
+</Method>
+
+<Method name="IfDelPath">
+<Description>
+InPut： PathLength,Reader.Path,delarry
+OutPut:1(是有删除标记的路径)
+w ##class(NurEmr.NurEmrSubItmLinkArc)IfDelPath("42")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>length,path,delarry</FormalSpec>
+<Implementation><![CDATA[
+	;b ;000
+	s ret=0
+	s n="" for  s n=$o(delarry(n)) q:(n="")||(ret=1)  d
+	.i path=delarry(n) d  
+	..s ret=1
+	.i $p(path,1,length-1)=delarry(n) d  
+	..s ret=1
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="GetKnowledge">
+<Description>
+通过知识库关键字code取知识库数据
+InPut:知识库模板关键字
+OutPut: 知识库xml转化的字符串
+w ##class(NurEmr.NurEmrSubItmLinkArc).GetKnowledge("281Kn.NODitm12")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>code</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+   
+    //取知识库数据XML头指针Reader  
+	q:""=code ""
+	s KnowledgeXml=##class(web.DHCNurknowInterface).GetZSKStream(code)
+	q:""=KnowledgeXml ""
+	d KnowledgeXml.Rewind()
+	s Reader=##class(web.DHCNUREMR).GetReader(code,KnowledgeXml)
+	
+	s txt=""
+	//转化Xml	
+	while Reader.Read()
+	  {
+		  continue:(Reader.Path)'["InstanceData"		  
+		  s itmType=$E($p(Reader.Path,"/",4),0,1)
+		  s value=""
+		  if $p(Reader.Path,"/",4)="FreeText"
+		  {
+		     s itm=Reader.Value
+		     s itm=$TR(itm,"&nbsp;","")	  
+		     s itm=$TR(itm,"&KeyEnter;","\n\r")
+		     s txt=txt_itm  
+		  } 
+		  else 
+		  {
+			  s value=Reader.Value
+		  }
+		  
+		  if itmType="S"
+		  {
+			  s txt=txt_value
+		  }
+		  if itmType="O"
+		  {
+			 s txt=txt_"【"
+			  while Reader.Read()
+			   {
+				  s pathLength=$L(Reader.Path,"/")
+				  q:pathLength=4
+				  if Reader.Name="" s txt=txt_Reader.Value_","
+			   }
+			  s txt=txt_"】"
+		  }
+		   if itmType="M"
+		  {
+			  s txt=txt_"【"
+			  while Reader.Read()
+			   {
+				  s pathLength=$L(Reader.Path,"/")
+				  q:pathLength=4
+				  if Reader.Name="" s txt=txt_Reader.Value_","
+			   }
+			   s txt=txt_"】"
+		  }
+		    if itmType="D"
+		  {
+			 s value="",tFlag="",value=""
+		  	 if Reader.MoveToAttributeName("DateFlag") s dFlag=Reader.Value
+		  	 if Reader.MoveToAttributeName("TimeFlag") s tFlag=Reader.Value
+		  	 if Reader.MoveToAttributeName("Value")    s value=Reader.Value
+		  	
+		     if (dFlag="Y")&(tFlag="Y")
+            	{
+	                s value=value
+                }
+             if (dFlag="Y")&(tFlag="N")
+            	{
+	                s value=$p(value," ",1)
+                }
+             if (dFlag="N")&(tFlag="Y")
+            	{
+	                s value=$p(value," ",2)
+                }
+             s txt=txt_value    	
+                   	   
+		   
+		  
+		  }
+		 
+	  }
+	
+	
+	Quit txt
+]]></Implementation>
+</Method>
+
+<Method name="GetListAllLoc">
+<Description>
+取科室combox的json数据
+w ##class(NurEmr.NurEmrSubItmLinkArc).GetListAllLoc()</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+   s ret=""
+   s rw="" f  s rw=$O(^NurEmr.KnowledgeLocI("Loc",rw)) q:rw=""  d
+   .s id=$tr(rw," """)
+   .q:id=""
+   .s des=$p(^CTLOC(id),"^",2)
+   .i ret="" s ret="["_id_",'"_des_"']"
+   .e  s ret=ret_","_"["_id_",'"_des_"']"
+   q "["_ret_"]"
+]]></Implementation>
+</Method>
+
+<Method name="GetLocDesc">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>LocID</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	q:LocID="" ""
+	s desc=$p(^CTLOC(LocID),"^",1)
+	q desc
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^NurEmr.NurEmrSubItmLinkArcD</DataLocation>
+<DefaultData>NurEmrSubItmLinkArcDefaultData</DefaultData>
+<IdLocation>^NurEmr.NurEmrSubItmLinkArcD</IdLocation>
+<IndexLocation>^NurEmr.NurEmrSubItmLinkArcI</IndexLocation>
+<StreamLocation>^NurEmr.NurEmrSubItmLinkArcS</StreamLocation>
+<Data name="NurEmrSubItmLinkArcDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>EmrItmCode</Value>
+</Value>
+<Value name="3">
+<Value>EmrItmDesc</Value>
+</Value>
+<Value name="4">
+<Value>Linkdr</Value>
+</Value>
+<Value name="5">
+<Value>Type</Value>
+</Value>
+<Value name="6">
+<Value>Linkdesc</Value>
+</Value>
+<Value name="7">
+<Value>ORDERType</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

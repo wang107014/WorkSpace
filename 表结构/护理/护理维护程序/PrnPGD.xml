@@ -1,0 +1,12 @@
+<Root DataType="xml" ShapePrn="N" XuPrn="N">
+  <InstanceData IDNO="0" />
+  <MetaData RelName="DHCNURMoudPrnPGD" />
+  <PrintCon PaperType="A4" kind="9" LandFlag="false" left="25" right="25" top="25" bottom="25" Width="210" Height="297" PageNum="1" />
+  <SHAPES HeadPrn="" />
+  <WinTmp />
+  <CheckS>
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a,b" Width="15" Height="15" typ="NurEmrMaintain.RectangleShape" />
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a,b+0.5H" P2="a+0.5W,b+1H" typ="NurEmrMaintain.LineShape" />
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a+0.5W,b+1H" P2="a+0.75W,b-0.2H" typ="NurEmrMaintain.LineShape" />
+  </CheckS>
+</Root>

@@ -1,0 +1,162 @@
+﻿<Root>
+  <T114 Head="50^75^0^0^1^0^0^D115^CareDate^日期|50^60^1^0^2^75^0^D116^CareTime^时间|50^63^2^0^3^135^0^O159^Item6^意识|50^50^3^0^4^198^0^S120^Item1^T(℃)|50^69^4^0^5^248^0^S127^Item2^P/HR(次/min)|50^68^5^0^6^317^0^S121^Item3^R(次/min)|50^53^6^0^7^385^0^S122^Item4^BP(mmHg)|30^113^7^0^8^438^0^^^入量|30^113^8^0^10^551^0^^^出量|50^66^9^0^12^664^0^O172^Item13^中医操作|50^66^10^0^13^730^0^O173^Item14^辨证施膳|50^50^11^0^14^796^0^O174^Item15^畅情志|50^66^12^0^15^846^0^O175^Item16^用药指导|50^50^13^0^16^912^0^O185^Item31^其他(一)|50^50^14^0^17^962^0^O186^Item32^其他(二)|50^50^15^0^18^1012^0^O187^Item33^其他(三)|50^50^16^0^19^1062^0^O188^Item34^其他(四)|50^50^17^0^20^1112^0^O189^Item35^其他(五)|50^262^18^0^21^1162^0^S176^CaseMeasure^病情观察与措施|50^62^19^0^22^1424^0^S177^User^护士签名|50^50^20^0^23^1486^0^S178^rw^rw|50^50^21^0^24^1536^0^S179^par^par|20^50^22^1^8^438^30^O180^Item9^名称|20^63^23^1^9^488^30^S144^Item10^量(ml)|20^50^24^1^10^551^30^O170^Item11^名称_|20^63^25^1^11^601^30^S171^Item12^量(ml)_|">
+    <D115 Title="日期" />
+    <D116 Title="时间" />
+    <O159 Title="意识" />
+    <S120 Title="T(℃)" />
+    <S127 Title="P/HR(次/min)" />
+    <S121 Title="R(次/min)" />
+    <S122 Title="BP(mmHg)" />
+    <T1140 Title="入量">
+      <O180 Title="名称" />
+      <S144 Title="量(ml)" />
+    </T1140>
+    <T1141 Title="出量">
+      <O170 Title="名称_" />
+      <S171 Title="量(ml)_" />
+    </T1141>
+    <O172 Title="中医操作" />
+    <O173 Title="辨证施膳" />
+    <O174 Title="畅情志" />
+    <O175 Title="用药指导" />
+    <O185 Title="其他(一)" />
+    <O186 Title="其他(二)" />
+    <O187 Title="其他(三)" />
+    <O188 Title="其他(四)" />
+    <O189 Title="其他(五)" />
+    <S176 Title="病情观察与措施" />
+    <S177 Title="护士签名" />
+    <S178 Title="rw" />
+    <S179 Title="par" />
+  </T114>
+  <MetaData ComFlag="N" Link="" RelName="DHCNURBAZYYGSKHLJLD">
+    <S101 Title="GetQueryData" Link="web.DHCMGNurComm.GetQueryData" hidden="Y" Edit="N" Pos="" RelName="GetQueryData" Query="False" MIndex="False" />
+    <S102 Title="RecSave" Link="Nur.DHCNurseRecSub.Save" hidden="Y" Edit="N" Pos="" RelName="RecSave" Query="False" MIndex="False" />
+    <S103 Title="GetRadiaNote" Link="web.DHCNurJYRESULT.GetRadiaNote" hidden="Y" Edit="N" Pos="" RelName="GetRadiaNote" Query="False" MIndex="False" />
+    <S104 Title="GetLabItemdata" Link="web.DHCNurJYRESULT.GetLabItemdata" hidden="Y" Edit="N" Pos="" RelName="GetLabItemdata" Query="False" MIndex="False" />
+    <S105 Title="GeInOutAmount" Link="web.DHCNurseRecordComm.GetInOutAmountComm1" hidden="Y" Edit="N" Pos="" RelName="GeInOutAmount" Query="False" MIndex="False" />
+    <S106 Title="SaveOutIn" Link="Nur.DHCNurPatSumInOut.SaveComm" hidden="Y" Edit="N" Pos="" RelName="SaveOutIn" Query="False" MIndex="False" />
+    <S107 Title="SavePrnSet" Link="Nur.DHCNursePrintRec.Save" hidden="Y" Edit="N" Pos="" RelName="SavePrnSet" Query="False" MIndex="False" />
+    <S108 Title="GetPrnSet" Link="Nur.DHCNursePrintRec.getprnsetcomm" hidden="Y" Edit="N" Pos="" RelName="GetPrnSet" Query="False" MIndex="False" />
+    <S109 Title="GetNurPrnSet" Link="web.DHCNurseRecordComm.getprnset" hidden="Y" Edit="N" Pos="" RelName="GetNurPrnSet" Query="False" MIndex="False" />
+    <S110 Title="SPrnSet" Link="Nur.DHCNursePrintRec.SavePrnSet" hidden="Y" Edit="N" Pos="" RelName="SPrnSet" Query="False" MIndex="False" />
+    <S111 Title="GetHead" Link="web.DHCNurseRecordPrint.GetHead" hidden="Y" Edit="N" Pos="" RelName="GetHead" Query="False" MIndex="False" />
+    <S112 Title="getcheckform" Link="web.DHCNUREMR.getcheckform" hidden="Y" Edit="N" Pos="" RelName="getcheckform" Query="False" MIndex="False" />
+    <S113 Title="GetMulti" Link="web.DHCNUREMR.GetMulti" hidden="Y" Edit="N" Pos="" RelName="GetMulti" Query="False" MIndex="False" />
+    <S139 Title="GetLableRec" Link="Nur.DHCNurChangeLableRec.GetLableRec" hidden="Y" Edit="N" Pos="" RelName="GetLableRec" Query="False" MIndex="False" />
+    <S140 Title="GetNurseRecSet" Link="Nur.DHCNurseRecSet.getSet" hidden="Y" Edit="N" Pos="" RelName="GetNurseRecSet" Query="False" MIndex="False" />
+    <S141 Title="GetSubInOut" Link="web.DHCNurseRecordComm.GetSubInOut" hidden="Y" Edit="N" Pos="" RelName="GetSubInOut" Query="False" MIndex="False" />
+    <S142 Title="GetUserType" Link="web.DHCNurseRecordComm.GetUserType" hidden="Y" Edit="N" Pos="" RelName="GetUserType" Query="False" MIndex="False" />
+    <S143 Title="CancelRecord" Link="web.DHCNurseRecordComm.CancelRecord" hidden="Y" Edit="N" Pos="" RelName="CancelRecord" Query="False" MIndex="False" />
+    <S156 Title="GetCurrHeadDR" Link="Nur.DHCNurRecHeadChangeRec.getcurrrow" hidden="Y" Edit="N" Pos="" RelName="GetCurrHeadDR" Query="False" MIndex="False" />
+    <S157 Title="GetQueryData1" Link="web.DHCNurseRecordComm.GetQueryData" hidden="Y" Edit="N" Pos="" RelName="GetQueryData1" Query="False" MIndex="False" />
+    <S158 Title="GetPatInfo" Link="web.DHCMGNurComm.PatInfo" hidden="Y" Edit="N" Pos="" RelName="GetPatInfo" Query="False" MIndex="False" />
+    <S182 Title="LinkTemp" Link="Nur.DHCNurseRecSub.LinkTemp" hidden="Y" Edit="N" Pos="" RelName="LinkTemp" Query="False" MIndex="False" />
+    <S183 Title="GeInOutAmountNL" Link="web.DHCNurseRecordComm.GetInOutAmountCommNL1" hidden="Y" Edit="N" Pos="" RelName="GeInOutAmountNL" Query="False" MIndex="False" />
+    <S184 Title="SaveOutInNL" Link="Nur.DHCNurPatSumInOut.SaveCommNL" hidden="Y" Edit="N" Pos="" RelName="SaveOutInNL" Query="False" MIndex="False" />
+    <T114 Title="T114" CheckSel="N" Link="" hidden="N" Edit="Y" Pos="114" RelName="mygrid" Query="False" MIndex="False">
+      <D115 Title="日期" DateFlag="Y" TimeFlag="N" Link="" hidden="N" Edit="N" Pos="" RelName="CareDate" Query="False" MIndex="False" />
+      <D116 Title="时间" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="CareTime" Query="False" MIndex="False" />
+      <O159 Title="意识" Link="" hidden="N" Edit="N" Pos="" RelName="Item6" Query="False" MIndex="False">
+        <Itms>
+          <Itm>清醒</Itm>
+          <Itm>模糊</Itm>
+          <Itm>朦胧</Itm>
+          <Itm>嗜睡</Itm>
+          <Itm>浅昏迷</Itm>
+          <Itm>中昏迷</Itm>
+          <Itm>深昏迷</Itm>
+          <Itm>谵妄</Itm>
+        </Itms>
+      </O159>
+      <S120 Title="T(℃)" Link="" hidden="N" Edit="N" Pos="" RelName="Item1" Query="False" MIndex="False" />
+      <S127 Title="P/HR(次/min)" Link="" hidden="N" Edit="N" Pos="" RelName="Item2" Query="False" MIndex="False" />
+      <S121 Title="R(次/min)" Link="" hidden="N" Edit="N" Pos="" RelName="Item3" Query="False" MIndex="False" />
+      <S122 Title="BP(mmHg)" Link="" hidden="N" Edit="N" Pos="" RelName="Item4" Query="False" MIndex="False" />
+      <O180 Title="名称" Link="" hidden="N" Edit="N" Pos="" RelName="Item9" Query="False" MIndex="False">
+        <Itms>
+          <Itm>输液量</Itm>
+          <Itm>食物</Itm>
+          <Itm>水</Itm>
+          <Itm>药物</Itm>
+          <Itm>鼻饲</Itm>
+          <Itm>血小板</Itm>
+          <Itm>血浆</Itm>
+          <Itm>红细胞悬液</Itm>
+          <Itm>免疫球蛋白</Itm>
+        </Itms>
+      </O180>
+      <S144 Title="量(ml)" Link="" hidden="N" Edit="N" Pos="" RelName="Item10" Query="False" MIndex="False" />
+      <O170 Title="名称_" Link="" hidden="N" Edit="N" Pos="" RelName="Item11" Query="False" MIndex="False">
+        <Itms>
+          <Itm>尿液</Itm>
+          <Itm>大便</Itm>
+          <Itm>引流物</Itm>
+          <Itm>痰量</Itm>
+          <Itm>汗液</Itm>
+          <Itm>呕吐物</Itm>
+        </Itms>
+      </O170>
+      <S171 Title="量(ml)_" Link="" hidden="N" Edit="N" Pos="" RelName="Item12" Query="False" MIndex="False" />
+      <O172 Title="中医操作" Link="" hidden="N" Edit="N" Pos="172" RelName="Item13" Query="False" MIndex="False">
+        <Itms>
+          <Itm>①中药封包</Itm>
+          <Itm>②拔火罐</Itm>
+          <Itm>③艾灸</Itm>
+          <Itm>④穴位按摩</Itm>
+          <Itm>⑤刮痧</Itm>
+          <Itm>⑥贴敷法</Itm>
+          <Itm>⑦耳穴埋豆</Itm>
+          <Itm>⑧药物罐</Itm>
+        </Itms>
+      </O172>
+      <O173 Title="辨证施膳" Link="" hidden="N" Edit="N" Pos="" RelName="Item14" Query="False" MIndex="False">
+        <Itms>
+          <Itm>√</Itm>
+        </Itms>
+      </O173>
+      <O174 Title="畅情志" Link="" hidden="N" Edit="N" Pos="" RelName="Item15" Query="False" MIndex="False">
+        <Itms>
+          <Itm>√</Itm>
+        </Itms>
+      </O174>
+      <O175 Title="用药指导" Link="" hidden="N" Edit="N" Pos="" RelName="Item16" Query="False" MIndex="False">
+        <Itms>
+          <Itm>√</Itm>
+        </Itms>
+      </O175>
+      <O185 Title="其他(一)" Link="" hidden="N" Edit="N" Pos="" RelName="Item31" Query="False" MIndex="False">
+        <Itms>
+          <Itm>√</Itm>
+        </Itms>
+      </O185>
+      <O186 Title="其他(二)" Link="" hidden="N" Edit="N" Pos="" RelName="Item32" Query="False" MIndex="False">
+        <Itms>
+          <Itm>√</Itm>
+        </Itms>
+      </O186>
+      <O187 Title="其他(三)" Link="" hidden="N" Edit="N" Pos="" RelName="Item33" Query="False" MIndex="False">
+        <Itms>
+          <Itm>√</Itm>
+        </Itms>
+      </O187>
+      <O188 Title="其他(四)" Link="" hidden="N" Edit="N" Pos="" RelName="Item34" Query="False" MIndex="False">
+        <Itms>
+          <Itm>√</Itm>
+        </Itms>
+      </O188>
+      <O189 Title="其他(五)" Link="" hidden="N" Edit="N" Pos="" RelName="Item35" Query="False" MIndex="False">
+        <Itms>
+          <Itm>√</Itm>
+        </Itms>
+      </O189>
+      <S176 Title="病情观察与措施" Link="" hidden="N" Edit="N" Pos="" RelName="CaseMeasure" Query="False" MIndex="False" />
+      <S177 Title="护士签名" Link="" hidden="N" Edit="N" Pos="" RelName="User" Query="False" MIndex="False" />
+      <S178 Title="rw" Link="" hidden="N" Edit="N" Pos="" RelName="rw" Query="False" MIndex="False" />
+      <S179 Title="par" Link="" hidden="N" Edit="N" Pos="" RelName="par" Query="False" MIndex="False" />
+    </T114>
+  </MetaData>
+  <InstanceData IDNO="189" Width="876" Height="697" Continue="False">
+    <T114 type="SourceGrid.Grid" text="" left="1" top="2" ofx="0" ofy="0" width="859" height="315" tabindex="0" bgcolor="Moccasin" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World">30^20^30^20^30^20^30^20^30^20^30^$75^60^63^50^69^68^53^50^63^50^63^66^66^50^66^50^50^50^50^50^262^62^50^50^$!!!!!!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!!!!!!!!!^</T114>
+  </InstanceData>
+</Root>

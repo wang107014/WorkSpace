@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="24" zv="Cache for Windows (x86-32) 2010.2.8 (Build 1104U)" ts="2015-01-14 20:05:26">
+<Class name="web.DHCNurEmrComm">
+<ClassType/>
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%RegisteredObject</Super>
+<TimeChanged>63566,63888.422471</TimeChanged>
+<TimeCreated>62299,56276</TimeCreated>
+
+<UDLText name="T">
+<Content><![CDATA[
+//根据打印模板取界面模板
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+// w ##class(web.DHCNurEmrComm).getlinkcode("DHCNurMoudPrn_GX_HLJL")
+
+]]></Content>
+</UDLText>
+
+<Method name="getlinkcode">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrintCode:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s code=$zcvt(PrintCode,"U")
+	s id=$o(^User.DHCNURMoudelLinkI("PrintCode"," "_code,""))
+	s ret=""
+	b ;
+	i id'=""  d
+	.s a=##class(User.DHCNURMoudelLink).%OpenId(id)
+	.s name=a.Name
+	.s code=a.Code
+	.s type=a.typ
+	.s ret=name_"^"_code_"^"_type
+	q ret
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//关联界面模板和打印模板
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+// w ##class(web.DHCNurEmrComm).Save(^objcyfddd)
+
+]]></Content>
+</UDLText>
+
+<Method name="Save">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>parr:%String,id:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s ^objcyfddd=parr
+	s aa=##class(web.DHCMGNurComm).settmp(parr,.tmp)
+	q:$g(tmp("Code"))="" "界面模板关键字不能为空"
+	s rw=""
+	s code=$zcvt(tmp("PrintCode"),"U")
+	i id="" s id=$o(^User.DHCNURMoudelLinkI("PrintCode"," "_code,""))
+	//q:rw'="" "该界面模板已经保存过"
+	q:$g(tmp("PrintCode"))="" "打印模板关键字不能为空"
+	q:$g(tmp("typ"))="" "类型不能为空"
+	q:$g(tmp("Name"))="" "模板名称不能为空"
+	if id=""
+	{
+	 s a=##class(User.DHCNURMoudelLink).%New()
+	}else
+	{
+	 s a=##class(User.DHCNURMoudelLink).%OpenId(id)
+	}
+	if $D(tmp("Code")) s a.Code=tmp("Code")
+	if $D(tmp("PrintCode")) s a.PrintCode=tmp("PrintCode")
+	if $D(tmp("typ")) s a.typ=tmp("typ")
+	if $D(tmp("MakePic")) s a.MakePic=tmp("MakePic")
+	if $D(tmp("Upload")) s a.Upload=tmp("Upload")
+	if $D(tmp("Name")) s a.Name=tmp("Name")
+	//if $g(tmp("XuFlag"))="" s a.XuFlag="N"
+	//else  s a.XuFlag=tmp("XuFlag")
+	s a.RECDate=$p($h,",",1)
+	s a.RECTime=$p($h,",",2)
+	//s a.UserREC=%session.Get("LOGON.USERNAME")
+	d a.%Save()
+	q 0
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//w ##class(%ResultSet).RunQuery("web.DHCNurEmrComm","GetKnCodeDep","")
+
+]]></Content>
+</UDLText>
+
+<Method name="GetKnCodeDepExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,loc:%String=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$I(^CacheTemp)
+ 	s ind=1
+ 	//s parr="2^2010-04-10^2010-04-20^WinTmpver211itm21fold2NOD"
+ 	//s dep=parr
+ 	s ^oiiei=loc
+ 	if loc=""  Set qHandle=$lb(0,repid,0) Quit $$$OK
+    s rw="" f  s rw=$O(^NurEmr.KnowledgeLocI("Loc"," "_loc,rw)) q:rw=""  d
+   .s a=^NurEmr.KnowledgeLocD(rw)
+   .s code=$list(a,3)
+   .s flag=$listget(a,4)
+   .if flag=""  s flag="false"
+   .if flag="Y" s flag="true"
+   .if flag="N" s flag="false"
+   .s depdes=$P($G(^CTLOC(loc)),"^",2)
+   .s id=##class(NurEmr.NurEmrSub).getId(code)
+   .s knname=""
+   .if id'="" d
+   ..s b=##class(NurEmr.NurEmrSub).%OpenId(id)
+   ..s knname=b.EmrSubDesc
+   .s kncode=code
+   .d OutRowtyp
+   
+    Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+OutRowtyp
+	set Data=$lb(depdes,knname,kncode,loc,flag,rw)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+	quit
+]]></Implementation>
+</Method>
+
+<Method name="GetKnCodeDepFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>GetKnCodeDepExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GetKnCodeDepClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>GetKnCodeDepExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+ 	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="GetKnCodeDep">
+<Type>%Query</Type>
+<FormalSpec>parr:%String</FormalSpec>
+<Parameter name="ROWSPEC" value="depdes,knname,kncode,depid,flag,rw"/>
+</Query>
+</Class>
+</Export>

@@ -1,0 +1,26 @@
+﻿<Root>
+  <MetaData ComFlag="N" Link="" RelName="DHCNURList_ddzc">
+    <S125 Title="GetQueryCombox" Link="web.DHCMGNurComm.GetQueryCombox" hidden="Y" Edit="N" Pos="" RelName="GetQueryCombox" Query="False" MIndex="False" />
+    <S126 Title="GetQueryData" Link="web.DHCThreeNew.GetQueryData" hidden="Y" Edit="N" Pos="" RelName="GetQueryData" Query="False" MIndex="False" />
+    <S127 Title="SetStatus" Link="Nur.DHCMoudData.SetStatus" hidden="Y" Edit="N" Pos="" RelName="SetStatus" Query="False" MIndex="False" />
+    <S128 Title="GetLayoutItem" Link="web.DHCMgssgrPlaySub.GetLayoutItem" hidden="Y" Edit="N" Pos="" RelName="GetLayoutItem" Query="False" MIndex="False" />
+    <S130 Title="GetHead" Link="web.DHCNurseRecordPrint.GetHead" hidden="Y" Edit="N" Pos="" RelName="GetHead" Query="False" MIndex="False" />
+    <S132 Title="delete1" Link="Nur.DHCNurseData.delete" hidden="Y" Edit="N" Pos="" RelName="delete1" Query="False" MIndex="False" />
+    <T101 Title="表格式护理单" CheckSel="N" Link="" hidden="N" Edit="N" Pos="" RelName="mygrid" Query="False" MIndex="False">
+      <S105 Title="科室" Link="" hidden="N" Edit="N" Pos="" RelName="Item1" Query="False" MIndex="False" />
+      <S131 Title="床号" Link="" hidden="N" Edit="N" Pos="" RelName="Item2" Query="False" MIndex="False" />
+      <S104 Title="姓名" Link="" hidden="N" Edit="N" Pos="" RelName="Item3" Query="False" MIndex="False" />
+      <S106 Title="性别" Link="" hidden="N" Edit="N" Pos="" RelName="Item4" Query="False" MIndex="False" />
+      <S102 Title="年龄" Link="" hidden="N" Edit="N" Pos="" RelName="Item5" Query="False" MIndex="False" />
+      <S103 Title="住院号" Link="" hidden="N" Edit="N" Pos="" RelName="Item6" Query="False" MIndex="False" />
+      <S120 Title="诊断" Link="" hidden="N" Edit="N" Pos="" RelName="Item7" Query="False" MIndex="False" />
+      <S142 Title="住院日期" Link="" hidden="N" Edit="N" Pos="" RelName="Item8" Query="False" MIndex="False" />
+      <S143 Title="日期" Link="" hidden="N" Edit="N" Pos="" RelName="Item10" Query="False" MIndex="False" />
+      <S136 Title="住院（转入）第几日" Link="" hidden="N" Edit="N" Pos="" RelName="Item9" Query="False" MIndex="False" />
+      <S137 Title="par" Link="" hidden="N" Edit="N" Pos="" RelName="par" Query="False" MIndex="False" />
+    </T101>
+  </MetaData>
+  <InstanceData IDNO="143" Width="808" Height="693" Continue="False">
+    <T101 type="SourceGrid.Grid" text="" left="3" top="4" ofx="0" ofy="0" width="806" height="240" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World">30^20^20^20^20^20^20^20^20^20^$96^50^83^50^72^96^118^102^99^98^50^$!!!!!!!!!!!^!!!!!!!!!!!^!!!!!!!!!!!^!!!!!!!!!!!^!!!!!!!!!!!^!!!!!!!!!!!^!!!!!!!!!!!^!!!!!!!!!!!^!!!!!!!!!!!^</T101>
+  </InstanceData>
+</Root>

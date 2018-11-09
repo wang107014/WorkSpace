@@ -1,0 +1,94 @@
+web.DHCNUREMR
+1  getPagData方法中：
+   ***************
+   1.1  在
+   if ($E(xname,0,1)="T")
+   {
+   下增加：
+    //显示顺序按表头分组
+    d ..getTtitle(xname,code)
+    s itmifor=""
+    ***************
+    1.2 在 if ($E(Reader.Name,0,1)="M")!($E(Reader.Name,0,1)="O")!($E(Reader.Name,0,1)="I")!($E(Reader.Name,0,1)="R")
+	判断中的
+        if Reader.NodeType'="endelement" s itm=..getitm(.Reader,colname,.itmdata,code)
+        上面增加：
+         s itmifor(colname)=$G(head)_"!"_$G(Relname)_"!"_colname_"!"_$G(Pos)_"^"
+    *************** 
+    1.3  在 else 中的    
+         s title=title_$G(head)_"!"_$G(Relname)_"!"_colname_"!"_$G(Pos)_"^"
+         后面增加：
+         s itmifor(colname)=$G(head)_"!"_$G(Relname)_"!"_colname_"!"_$G(Pos)_"^"
+    ***************
+    1.4   将
+          s itmdata(code,xname)=title
+          修改为：s itmdata(code,xname)=str
+          该句前面增加：
+                                  s str=""
+				  s i="" f  s i=$o(^DHCNurEmrGen2(i)) q:i=""  d
+				  .s itm=""  f  s itm=$o(^DHCNurEmrGen2(i,itm)) q:itm=""  d
+				  ..s val=$g(itmifor(itm))
+				  ..q:val=""
+				  ..i str="" d
+				  ...s str=val
+				  ..e  d
+				  ...s str=str_val
+
+2 增加方法：
+  //显示顺序按表头分组
+ClassMethod readxml2(xRead, code, nod, typ, prev, num)
+{
+    if (nod=code)&(typ="endelement") 
+    {
+	    s ^flag2="1"
+    }
+	while xRead.Read()
+	{  
+	    s prevnod=nod
+	    s curr=nod
+		s nod=xRead.Name
+	    if ^flag2="1"  q
+		s path=xRead.Path
+		s l=$l(path,"/")
+		s id=$p(path,"/",l)
+	    if xRead.MoveToAttributeName("Title")	
+        {
+	        if id[code continue
+	        s ^DHCNurEmrGen2(num,id)=xRead.Value
+	    }
+		s num=num+1			    
+        d ..readxml2(xRead,code,nod,xRead.NodeType,prevnod,.num)
+	    if ^flag2="1"  q
+	}
+}
+//显示顺序按表头分组
+ClassMethod getTtitle(Code,EmrCode) As %String
+{
+       k ^t2,^DHCNurEmrGen2
+       s str=##class(NurEmr.NurEmrSub).GetKCode(EmrCode)
+       if str="" s str=##class(NurEmr.NurEmrSub).getData(EmrCode)
+       if str'=""   
+	   {
+		S ITM=##CLASS(NurEmr.NurEmrSub).%OpenId(str)
+		s Data=ITM.EmrSubData
+		s title=ITM.EmrSubDesc
+	   }else
+	   {
+	    q ""
+	   }
+	   d Data.Rewind()
+       s Reader=..GetReader(str,Data)
+       s ^flag2="0"
+       s num=0
+       while Reader.Read()
+       {
+	     if Reader.Name=Code
+	     {   
+	       d ..readxml2(Reader,Code,Code,Reader.NodeType,"",.num) 
+	       if ^flag2="1" q
+		 }
+       }
+       k ^t2    
+      
+       
+}

@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="24" zv="Cache for UNIX (IBM AIX for System P5-64) 2010.2.7 (Build 1004U)" ts="2014-05-22 09:57:02">
+<Class name="NurEmr.MainNameBack">
+<Super>%Persistent</Super>
+<TimeChanged>63322,39902.53448</TimeChanged>
+<TimeCreated>63322,37679.987795</TimeCreated>
+
+<Property name="EmrCode">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="type">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="EmrData">
+<Type>%GlobalCharacterStream</Type>
+<Parameter name="LOCATION" value="^NurEmr.MainNameBackS"/>
+</Property>
+
+<Property name="RecDate">
+<Type>%Library.Date</Type>
+<InitialExpression>+$p($h,",",1)</InitialExpression>
+<Required>1</Required>
+<Parameter name="FORMAT" value="1"/>
+</Property>
+
+<Property name="RecTime">
+<Type>%Library.Time</Type>
+<InitialExpression>+$p($h,",",2)</InitialExpression>
+<Required>1</Required>
+</Property>
+
+<Index name="EmrCodeDT">
+<Properties>EmrCode,type</Properties>
+</Index>
+
+<Method name="SaveMainName">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>code,type,data:%GlobalCharacterStream</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s ^cyf5141=code
+	s ^cyf5142=data
+    s code=$ZConvert(code,"U")
+    s id=""
+    i $d(^NurEmr.MainNameBackI("EmrCodeDT")) s id=$O(^NurEmr.MainNameBackI("EmrCodeDT"," "_code," "_type,""))
+    i id '= "" d
+    .s Itm =##class(NurEmr.MainNameBack).%OpenId(id) 
+    e  d
+    .s Itm = ##class(NurEmr.MainNameBack).%New()
+    s Itm.EmrCode = code
+    s Itm.type=type
+	i id'="" d Itm.EmrData.Clear()
+	while (data.AtEnd = 0)
+	{ 
+	    
+	    s leng=data.Size
+	    s leng=1024
+		s readstring=data.Read(leng)
+		if $l(readstring)'=1024 d 
+	    .s readstring=$e(readstring,0,$l(readstring))
+	    d Itm.EmrData.Write(readstring)
+	}
+	d Itm.%Save()
+	q 0
+]]></Implementation>
+</Method>
+
+<Storage name="Default">
+<Type>%Library.CacheStorage</Type>
+<DataLocation>^NurEmr.MainNameBackD</DataLocation>
+<DefaultData>MainNameBackDefaultData</DefaultData>
+<IdLocation>^NurEmr.MainNameBackD</IdLocation>
+<IndexLocation>^NurEmr.MainNameBackI</IndexLocation>
+<StreamLocation>^NurEmr.MainNameBackS</StreamLocation>
+<Data name="MainNameBackDefaultData">
+<Structure>listnode</Structure>
+<Subscript/>
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>EmrCode</Value>
+</Value>
+<Value name="3">
+<Value>EmrData</Value>
+</Value>
+<Value name="4">
+<Value>RecDate</Value>
+</Value>
+<Value name="5">
+<Value>RecTime</Value>
+</Value>
+<Value name="6">
+<Value>type</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

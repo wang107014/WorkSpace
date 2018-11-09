@@ -1,0 +1,45 @@
+<configuration>
+  <Type name="2打印模板(界面)" constr="WP" />
+  <Type name="1普通表格" constr="BG" />
+  <Type name="3评估单" constr="PGD" />
+  <Type name="4混合类型" constr="HHD" />
+  <Type name="5弹出式List" constr="TList" />
+  <Type name="6弹出式New" constr="TNew" />
+  <TypePrn name="1打印模板（表格）" constr="PrnBG" />
+  <TypePrn name="2打印模板（评估单）" constr="PrnPGD" />
+  <ServerIp1>CN_IPTCP:10.211.55.5[1972]:websrc</ServerIp1>
+  <ServerIp1>CN_IPTCP:172.21.21.98[1972]:dhc-app</ServerIp1>
+  <ServerIp1>CN_IPTCP:127.0.0.1[1972]:dhc-app:_system:SYS</ServerIp1>
+  <ServerIp1>CN_IPTCP:10.160.16.90[1972]:DHC-App:_system:sys</ServerIp1>
+  <ServerIp1>CN_IPTCP:10.160.17.11[1972]:dhc-app:dhapp:Qaz!@#</ServerIp1>
+  <ServerIp1>CN_IPTCP:10.193.10.128[1972]:websource</ServerIp1>
+  <ServerIp1>CN_IPTCP:192.192.10.150[1972]:websource</ServerIp1>
+  <colorR>191</colorR>
+  <colorG>219</colorG>
+  <colorB>255</colorB>
+  <Controls>
+    <con typ="Pointer" key="_Pointer" Ico="Pointer">指针</con>
+    <con typ="System.Windows.Forms.Label" key="_Label" Ico="">标签</con>
+    <con typ="System.Windows.Forms.Button" key="_Button" Ico="">按钮</con>
+    <con typ="System.Windows.Forms.GroupBox" key="_Group" Ico="">方框</con>
+    <con typ="DesignForm.QVline" key="_QVLine" Ico="">竖线</con>
+    <con typ="DesignForm.QHLine" key="_QHLine" Ico="">水平线</con>
+  </Controls>
+  <CheckS>
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a,b" Width="15" Height="15" typ="NurEmrMaintain.RectangleShape" />
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a,b+0.5H" P2="a+0.5W,b+1H" typ="NurEmrMaintain.LineShape" />
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a+0.5W,b+1H" P2="a+0.75W,b-0.2H" typ="NurEmrMaintain.LineShape" />
+  </CheckS>
+  <ServerIp name="local" constr="http://127.0.0.1/dthealth/web" />
+  <ServerIp name="天长206.2" constr="http://130.150.206.2/dthealth/web" />
+  <ServerIp name="78" constr="http://172.21.21.78/dthealth/web" />
+  <ServerIp name="200" constr="http://10.56.32.200/dthealth/web" />
+  <ServerIp name="31" constr="http://172.16.1.31/dthealth/web" />
+  <ServerIp name="30" constr="http://10.160.16.30/dthealth/web" />
+  <ServerIp name="望京11" constr="http://192.168.1.11/dthealth/web" />
+  <BackColor val="White" R="255" A="255" G="255" B="255" />
+  <ServerIp name="123" constr="http://114.251.235.123/dthealth/web" />
+  <ServerIp name="58" constr="http://172.19.19.58/dthealth/web" />
+  <ServerIp name="京东方" constr="http://10.65.142.202/dthealth/web" />
+  <ServerIp name="8.2" constr="http://10.63.17.117/dthealth/web" />
+</configuration>

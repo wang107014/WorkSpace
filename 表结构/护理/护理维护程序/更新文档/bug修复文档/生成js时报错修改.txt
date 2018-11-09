@@ -1,0 +1,3 @@
+web.DHCNUREMR:getPagData
+第一句的%session.Data("LOGON.USERID")加$g;
+i $D(%session) s a=##class(Nur.DHCNurRecHeadChangeRec).gethead(EpisodeId,$g(%session.Data("LOGON.USERID")),code,.headtmp)

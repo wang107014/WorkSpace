@@ -1,0 +1,46 @@
+2.0.1.8->2.0.1.9更新：
+1 导入类：webDHCNurEmrComm.xml
+2 2.1
+  如果User.DHCNURMoudelLink.cls不存在则导入该类（在可能需要导入的类文件夹中，注意：2015年前已经上了集中打印的项目不要导入）
+  **********  
+  2.2
+  如果该类存在：增加索引：
+  Index PrintCode On PrintCode;
+  ***
+  terminal执行：d ##class(User.DHCNURMoudelLink).%BuildIndices()
+  Save()方法改为：
+  ClassMethod Save(parr As %String, id As %String) As %String
+  {
+	//s ^objcyfddd=parr_"&"_id
+	s aa=##class(web.DHCMGNurComm).settmp(parr,.tmp)
+	q:$g(tmp("Code"))="" "界面模板关键字不能为空"
+	s rw=""
+	s code=$zcvt(tmp("PrintCode"),"U")
+	i id="" s rw=$o(^User.DHCNURMoudelLinkI("PrintCode"," "_code,""))
+	q:rw'="" "该打印模板已经保存过"
+	q:$g(tmp("PrintCode"))="" "打印模板关键字不能为空"
+	q:$g(tmp("typ"))="" "类型不能为空"
+	q:$g(tmp("Name"))="" "模板名称不能为空"
+	
+	
+	if id=""
+	{
+	 s a=##class(User.DHCNURMoudelLink).%New()
+	}else
+	{
+	 s a=##class(User.DHCNURMoudelLink).%OpenId(id)
+	}
+	if $D(tmp("Code")) s a.Code=tmp("Code")
+	if $D(tmp("PrintCode")) s a.PrintCode=tmp("PrintCode")
+	if $D(tmp("typ")) s a.typ=tmp("typ")
+	if $D(tmp("MakePic")) s a.MakePic=tmp("MakePic")
+	if $D(tmp("Upload")) s a.Upload=tmp("Upload")
+	if $D(tmp("Name")) s a.Name=tmp("Name")
+	if $g(tmp("XuFlag"))="" s a.XuFlag="N"
+	else  s a.XuFlag=tmp("XuFlag")
+	s a.RECDate=$p($h,",",1)
+	s a.RECTime=$p($h,",",2)
+	s a.UserREC=%session.Get("LOGON.USERNAME")
+	d a.%Save()
+	q 0
+    }

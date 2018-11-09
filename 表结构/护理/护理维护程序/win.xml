@@ -1,0 +1,9 @@
+<ROOT>
+  <NOD Title="界面模版">
+    <fold1 Title="newitem" Desc="" foldtyp="标准项" foldcat="管理">
+      <itm11 Title="ff">
+        <ver111 Title="Ver" Date="2009年12月31日" />
+      </itm11>
+    </fold1>
+  </NOD>
+</ROOT>

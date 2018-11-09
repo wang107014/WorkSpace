@@ -1,0 +1,58 @@
+用2.1.1.16版本维护程序 O单元勾选上“自动行号和多选checkbox”则单选变为下拉多选
+1 web.DHCNUREMR.getPagData
+ .if $E(name,0,1)="O" d
+ ..s xtype="combo"
+ ..s pl=..getvalFlag(a1)
+ ..s defaultval=$P(itmdataVal(code,name),"|",pl)
+ ..s flag=1
+ ..s datastore=..GetStore(a1)  //b //combo
+ ..i typ="UtilityLibrary.Combos.CheckCombo"  d  //多选
+ ...s xtype="lovcombo"  
+ ...s defaultval=$tr(itmdataVal(code,name),"|",",")
+ ...d ff.Write("{name:'"_cnname_"',id:'"_cnname_"',tabIndex:'"_tab_"',x:"_x_",y:"_y_",height:"_h_",width:"_w_",editable:true,xtype:'"_xtype_"',showSelectAll:'true',store:"_datastore_",triggerAction:'all', displayField:'desc', valueField:'id',allowBlank: true,mode:'local',value:'"_defaultval_"'},") 
+ ..e  d
+ ...d ff.Write("{name:'"_cnname_"',id:'"_cnname_"',tabIndex:'"_tab_"',x:"_x_",y:"_y_",height:"_h_",width:"_w_",xtype:'"_xtype_"',store:"_datastore_",triggerAction:'all', displayField:'desc', valueField:'id',allowBlank: true,mode:'local',value:'"_defaultval_"'},") 
+ *************
+ getsinglval方法返回：
+ q code_"@"_sel
+
+2 功能js修改
+    function eachItem1(item,index,length) {  中增加
+    if (item.xtype=="lovcombo") {   
+        //下拉多选   
+        var loval=item.getValue()
+        comboret=  comboret+item.id+"|"+loval+"!"+"^";        
+    } 
+    *********
+    setvalue()方法：
+     ha = new Hashtable();
+     for (var i=0 ; i<ha.keys().length;i++)//for...in statement get all of Array's index
+	{
+		var key = ha.keys()[i];		
+		if (key.indexOf("_") == -1) 
+		{
+			var flag=ifflag(key );		  
+			if (flag==true)
+			{
+				if (ha.contains(key)) setVal2(key ,ha.items(key));				
+				continue;
+			}
+			var itm = Ext.getCmp(key);			
+			if (itm)
+			{			 
+			  if (ha.contains(key)) 
+			  {				 
+			     itm.setValue(getval(ha.items(key)));
+			  }			 
+			}
+			
+	    }else{
+			var aa=key.split('_');
+			if(ha.contains(aa[0]))
+			{
+			  setcheckvalue(key,ha.items(aa[0]));
+			}
+		}
+      }
+
+3 更新多选控件bug(见“护理病历表格单有多个多选列串值bug修复.rar”)

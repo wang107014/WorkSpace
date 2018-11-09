@@ -1,0 +1,244 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="24" zv="Cache for UNIX (IBM AIX for System P5-64) 2010.2.7 (Build 1004U)" ts="2014-05-22 09:15:37">
+<Class name="DWR.NurseEmrComm">
+<ClassType/>
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SOAP.WebService</Super>
+<TimeChanged>63322,39123.735005</TimeChanged>
+<TimeCreated>63265,68717.872632</TimeCreated>
+
+<Parameter name="SERVICENAME">
+<Description>
+Name of the WebService.		"parr:"+ItmName + "^" + ID + "^" + MultID + "^" + MthArr+"!"	"parr:DHCNURMGCHECKSUMPRN^^^!"	string</Description>
+<Default>DocServComm</Default>
+</Parameter>
+
+<Parameter name="NAMESPACE">
+<Description>
+TODO: change this to actual SOAP namespace.
+SOAP Namespace for the WebService</Description>
+<Default>http://dhcc.com.cn</Default>
+</Parameter>
+
+<Parameter name="USECLASSNAMESPACES">
+<Default>1</Default>
+</Parameter>
+
+<UDLText name="T">
+<Content><![CDATA[
+//w ##class(DWR.NurseEmrComm).GetData("web.DHCNurEmrMainComm:SaveMBStream","parr:4558^")
+
+]]></Content>
+</UDLText>
+
+<Method name="Excute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>clsName,methodName,parameters</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	//w ##class(DWR.NurseEmrComm).Excute("web.DHCNUREMR","generatorJs",^objcyf329)
+	//s ^objcyf329=parameters
+	s ret=##class(Nur.QueryBrokerEmr).ExcuteWebService(clsName, methodName,parameters)
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="ImportBarCodeTemplate">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>code,TemplateContent</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	s ret=##class(web.DHCNUREMR).ImportBarCodeTemplate(code, TemplateContent)
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="ExportBarCodeTemplate">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>code</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	s ret=##class(web.DHCNUREMR).ExportBarCodeTemplate( code)
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="GetData22">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>mth:%String,parrm:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+   s mth="##class("_$P(mth,":")_")."_$P(mth,":",2)
+   s l=$L(parrm,"^")
+
+   s pp=""
+   //s ^oiiiecyf=mth_"  ***"_parrm
+   if $F(parrm,"^")'=0
+   {
+	   f i=1:1:l
+	   {
+	     s itm=$P(parrm,"^",i)
+	     if itm="" continue
+	     	 //  s ^TMP("aa")="ffff"
+         b ;44
+	     s p=$P(itm,":",1)
+	     s v=$P(itm,":",2)
+	     s @p=v
+	     if pp'="" s pp=pp_","_p
+	     e  s pp=p 
+	     b //
+	   }
+   }
+   	s mth=mth_"("_pp_")"
+   	b
+   	s c="a="_mth
+   	set @c
+   	s b="a"
+   	s aa=@b
+   	
+	s a=$TR(aa,$C(1),"@")
+	s a=$TR(a,$C(2),"!")
+	s a=$TR(a,$C(3),"$")
+	q a
+]]></Implementation>
+</Method>
+
+<Method name="GetQueryDataX">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>QueryName,parrm,del</FormalSpec>
+<ReturnType>%XML.DataSet</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	
+  s a= ##class(Nur.QueryBrokerEmr).GetQueryDataX(QueryName, parrm, del)
+  q a
+]]></Implementation>
+</Method>
+
+<Method name="GetData">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>mth,parrm,del</FormalSpec>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+ s a=##class(Nur.QueryBrokerEmr).GetData(mth, parrm, del)
+ q a
+]]></Implementation>
+</Method>
+
+<Method name="GetLoc">
+<ClassMethod>1</ClassMethod>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+ s a=##class(web.DHCNurEmrMainComm).GetLoc()
+ q a
+]]></Implementation>
+</Method>
+
+<Method name="generatorJs">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>parr</FormalSpec>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+ s a=##class(web.DHCNUREMR).generatorJs(parr)
+ q a
+]]></Implementation>
+</Method>
+
+<Method name="GetQueryHead">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>parr</FormalSpec>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+ s a=##class(web.DHCNurEmrMainComm).GetQueryHead(parr)
+ q 0
+]]></Implementation>
+</Method>
+
+<Method name="GetEmrData">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>mth,parrm,del</FormalSpec>
+<ReturnType>DWR.DHCTranStream</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+ s a=##class(Nur.QueryBrokerEmr).GetEmrData(mth, parrm, del)
+ q a
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//保存模板信息
+
+]]></Content>
+</UDLText>
+
+<Method name="SaveMBData">
+<FormalSpec>parr,data:%GlobalCharacterStream</FormalSpec>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	d data.Rewind()
+	q ##class(web.DHCNurEmrMainComm).SaveMBStream(parr,data)
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//保存维护程序目录信息
+
+]]></Content>
+</UDLText>
+
+<Method name="SaveEmrMian">
+<FormalSpec>code,data:%GlobalCharacterStream</FormalSpec>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	d data.Rewind()
+	q ##class(web.DHCNurEmrMainComm).SaveEmrMian(code,data)
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//保存维护程序目录fold名字
+
+]]></Content>
+</UDLText>
+
+<Method name="SaveMainName">
+<FormalSpec>code,type,data:%GlobalCharacterStream</FormalSpec>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	d data.Rewind()
+	q ##class(NurEmr.MainNameBack).SaveMainName(code,type,data)
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+//保存知识库信息
+
+]]></Content>
+</UDLText>
+
+<Method name="SaveEmrItm">
+<FormalSpec>code,desc,data:%GlobalCharacterStream</FormalSpec>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	d data.Rewind()
+	q ##class(web.DHCNurEmrMainComm).SaveEmrItm(code,desc,data)
+]]></Implementation>
+</Method>
+</Class>
+</Export>

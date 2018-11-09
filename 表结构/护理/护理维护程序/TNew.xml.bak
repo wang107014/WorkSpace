@@ -1,0 +1,42 @@
+<Root>
+  <MetaData ComFlag="N" Link="" RelName="DHCNURXHPGD_SSBRJJD">
+    <S101 Title="SaveMoudle" Link="web.DHCMGMoudleSave.SaveMoudle" hidden="Y" Edit="N" Pos="" RelName="SaveMoudle" Query="False" MIndex="False" />
+    <S102 Title="getEpisodeIdRowId" Link="NurEmr.DHCMgEmrData.getEpisodeIdRowId" hidden="Y" Edit="N" Pos="" RelName="getEpisodeIdRowId" Query="False" MIndex="False" />
+    <S103 Title="GetPerson" Link="web.DHCMGNurComm.GetSSPerson" hidden="Y" Edit="N" Pos="" RelName="GetPerson" Query="False" MIndex="False" />
+    <S104 Title="Save" Link="Nur.DHCMoudData.Save" hidden="Y" Edit="N" Pos="" RelName="Save" Query="False" MIndex="False" />
+    <S105 Title="GetId" Link="Nur.DHCMoudData.GetId" hidden="Y" Edit="N" Pos="" RelName="GetId" Query="False" MIndex="False" />
+    <S106 Title="getVal" Link="Nur.DHCMoudData.getVal" hidden="Y" Edit="N" Pos="" RelName="getVal" Query="False" MIndex="False" />
+    <S107 Title="PatInfo" Link="web.DHCMGNurComm.PatInfo" hidden="Y" Edit="N" Pos="" RelName="PatInfo" Query="False" MIndex="False" />
+      <S108 Title="¿ÆÊÒ" Link="" hidden="N" Edit="N" Pos="" RelName="Item1" Query="False" MIndex="False" />
+      <S109 Title="´²ºÅ" Link="" hidden="N" Edit="N" Pos="" RelName="Item2" Query="False" MIndex="False" />
+      <S110 Title="ÐÕÃû" Link="" hidden="N" Edit="N" Pos="" RelName="Item3" Query="False" MIndex="False" />
+      <S111 Title="ÐÔ±ð" Link="" hidden="N" Edit="N" Pos="" RelName="Item4" Query="False" MIndex="False" />
+      <S112 Title="ÄêÁä" Link="" hidden="N" Edit="N" Pos="" RelName="Item5" Query="False" MIndex="False" />
+      <S113 Title="×¡ÔººÅ" Link="" hidden="N" Edit="N" Pos="" RelName="Item6" Query="False" MIndex="False" />
+      <S114 Title="Õï¶Ï" Link="" hidden="N" Edit="N" Pos="" RelName="Item7" Query="False" MIndex="False" />
+      <S115 Title="×¡ÔºÈÕÆÚ" Link="" hidden="N" Edit="N" Pos="" RelName="Item8" Query="False" MIndex="False" />
+      <S116 Title="ÈÕÆÚ" Link="" hidden="N" Edit="N" Pos="" RelName="Item10" Query="False" MIndex="False" />
+      <S117 Title="×¡Ôº£¨×ªÈë£©µÚ¼¸ÈÕ" Link="" hidden="N" Edit="N" Pos="" RelName="Item9" Query="False" MIndex="False" />
+      <S161 Title="¿Õ°×11" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item11" Query="False" MIndex="False" />
+      <S162 Title="¿Õ°×12" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item12" Query="False" MIndex="False" />
+      <S163 Title="¿Õ°×13" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item13" Query="False" MIndex="False" />
+      <S164 Title="¿Õ°×14" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item14" Query="False" MIndex="False" />
+      <S165 Title="¿Õ°×15" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item15" Query="False" MIndex="False" />
+      <M166 Title="¿Õ°×16" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item16" Query="False" MIndex="False" />      
+      <O167 Title="¿Õ°×17" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item17" Query="False" MIndex="False" />           
+      <S168 Title="¿Õ°×18" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item18" Query="False" MIndex="False" />        
+      <O169 Title="¿Õ°×19" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item19" Query="False" MIndex="False" />        
+      <M170 Title="¿Õ°×20" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item20" Query="False" MIndex="False" />
+      <S171 Title="¿Õ°×21" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item21" Query="False" MIndex="False" />
+      <S172 Title="¿Õ°×22" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item22" Query="False" MIndex="False" />
+      <S173 Title="¿Õ°×23" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item23" Query="False" MIndex="False" />
+      <S174 Title="¿Õ°×24" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item24" Query="False" MIndex="False" />
+      <M175 Title="¿Õ°×25" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item25" Query="False" MIndex="False" />
+      <O176 Title="¿Õ°×26" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item26" Query="False" MIndex="False" />      
+      <O177 Title="¿Õ°×27" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item27" Query="False" MIndex="False" />           
+      <O178 Title="¿Õ°×28" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item28" Query="False" MIndex="False" />        
+      <O179 Title="¿Õ°×29" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item29" Query="False" MIndex="False" />        
+      <M180 Title="¿Õ°×30" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item30" Query="False" MIndex="False" />
+  </MetaData>
+  <InstanceData IDNO="110" Width="808" Height="725" Continue="False" />
+</Root>

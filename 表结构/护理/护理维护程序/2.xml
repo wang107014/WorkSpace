@@ -1,0 +1,20 @@
+<Root>
+  <MetaData Link="">
+    <O101 Title="O101" />
+    <S102 Title="S102" Link="" Query="False" MIndex="False" />
+    <T104 Title="T104">
+      <S105 Title="S105" />
+      <O106 Title="O106" />
+      <D108 Title="D108" DateFlag="Y" TimeFlag="Y" />
+      <S109 Title="S109" />
+    </T104>
+  </MetaData>
+  <InstanceData IDNO="102">
+    <O101 type="System.Windows.Forms.ComboBox" text="" left="173" top="51" ofx="0" ofy="0" width="118" height="20" tabindex="0" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <B101 type="System.Windows.Forms.Label" text="B101" left="47" top="55" ofx="0" ofy="0" width="89" height="14" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <textBox1 type="System.Windows.Forms.TextBox" text="" left="-56" top="448" ofx="0" ofy="0" width="8" height="21" tabindex="1" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <U1 type="DesignForm.U1" text="" left="-100" top="100" ofx="0" ofy="0" width="50" height="50" tabindex="2" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <S102 type="System.Windows.Forms.TextBox" text="S102" left="399" top="47" ofx="0" ofy="0" width="70" height="21" tabindex="0" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <_Group6 type="System.Windows.Forms.GroupBox" text="" left="7" top="3" ofx="0" ofy="0" width="675" height="290" tabindex="3" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+  </InstanceData>
+</Root>

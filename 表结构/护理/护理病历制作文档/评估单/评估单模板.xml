@@ -1,0 +1,38 @@
+﻿<Root>
+  <MetaData ComFlag="N" Link="" RelName="DHCNURBAOAN_XYJPGD">
+    <S194 Title="SaveMoudle" Link="Nur.DHCMoudData.Save" hidden="Y" Edit="N" Pos="" RelName="SaveMoudle" Query="False" MIndex="False" />
+    <S195 Title="GetPerson" Link="web.DHCMGNurComm.GetPerson" hidden="Y" Edit="N" Pos="" RelName="GetPerson" Query="False" MIndex="False" />
+    <S196 Title="Save" Link="Nur.DHCMoudData.Save" hidden="Y" Edit="N" Pos="" RelName="Save" Query="False" MIndex="False" />
+    <S197 Title="PatInfo" Link="web.DHCMGNurComm.GetPatInfo" hidden="Y" Edit="N" Pos="" RelName="PatInfo" Query="False" MIndex="False" />
+    <S198 Title="getVal" Link="Nur.DHCMoudData.getVal" hidden="Y" Edit="N" Pos="" RelName="getVal" Query="False" MIndex="False" />
+    <S199 Title="GetId" Link="Nur.DHCMoudData.GetId" hidden="Y" Edit="N" Pos="" RelName="GetId" Query="False" MIndex="False" />
+    <C200 Title="打印" Link="" hidden="N" Edit="N" Pos="" RelName="butPrint" Query="False" MIndex="False" />
+    <C201 Title="保存" Link="" hidden="N" Edit="N" Pos="" RelName="butSave" Query="False" MIndex="False" />
+    <S217 Title="tempatinfo" Link="web.DHCTHREEE.GetFirstData" hidden="Y" Edit="N" Pos="" RelName="tempatinfo" Query="False" MIndex="False" />
+    <S219 Title="姓名：" Link="" hidden="N" Edit="N" Pos="" RelName="Item1" Query="False" MIndex="False" />
+    <S220 Title="性别：" Link="" hidden="N" Edit="N" Pos="" RelName="Item2" Query="False" MIndex="False" />
+    <S221 Title="年龄：" Link="" hidden="N" Edit="N" Pos="" RelName="Item3" Query="False" MIndex="False" />
+    <S222 Title="科室：" Link="" hidden="N" Edit="N" Pos="" RelName="Item4" Query="False" MIndex="False" />
+    <S223 Title="床号：" Link="" hidden="N" Edit="N" Pos="" RelName="Item5" Query="False" MIndex="False" />
+    <S224 Title="住院号：" Link="" hidden="N" Edit="N" Pos="" RelName="Item6" Query="False" MIndex="False" />
+    <D225 Title="入院日期：" DateFlag="Y" TimeFlag="N" Link="" hidden="N" Edit="N" Pos="" RelName="Item7" Query="False" MIndex="False" />
+  </MetaData>
+  <InstanceData IDNO="225" Width="756" Height="1162" Continue="False">
+    <S224 type="System.Windows.Forms.TextBox" text="" left="62" top="40" ofx="0" ofy="0" width="103" height="21" tabindex="0" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <B224 type="System.Windows.Forms.Label" text="住院号：" left="10" top="45" ofx="0" ofy="0" width="61" height="20" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <B225 type="System.Windows.Forms.Label" text="入院日期：" left="346" top="48" ofx="0" ofy="0" width="70" height="16" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <D225 type="DesignForm.QDateTime" text="" left="414" top="41" ofx="0" ofy="0" width="109" height="24" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" DateTimeVal="" />
+    <S223 type="System.Windows.Forms.TextBox" text="" left="572" top="12" ofx="0" ofy="0" width="67" height="21" tabindex="0" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <B223 type="System.Windows.Forms.Label" text="床号：" left="534" top="17" ofx="0" ofy="0" width="43" height="16" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <S222 type="System.Windows.Forms.TextBox" text="" left="385" top="12" ofx="0" ofy="0" width="146" height="21" tabindex="0" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <B222 type="System.Windows.Forms.Label" text="科室：" left="347" top="17" ofx="0" ofy="0" width="43" height="21" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <S221 type="System.Windows.Forms.TextBox" text="" left="286" top="13" ofx="0" ofy="0" width="57" height="21" tabindex="0" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <B221 type="System.Windows.Forms.Label" text="年龄：" left="246" top="17" ofx="0" ofy="0" width="43" height="18" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <S220 type="System.Windows.Forms.TextBox" text="" left="204" top="13" ofx="0" ofy="0" width="36" height="21" tabindex="0" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <B220 type="System.Windows.Forms.Label" text="性别：" left="164" top="17" ofx="0" ofy="0" width="47" height="22" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <S219 type="System.Windows.Forms.TextBox" text="" left="53" top="13" ofx="0" ofy="0" width="103" height="21" tabindex="0" bgcolor="Window" fontcolor="WindowText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <B219 type="System.Windows.Forms.Label" text="姓名：" left="12" top="17" ofx="0" ofy="0" width="47" height="17" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <C200 type="System.Windows.Forms.Button" text="打印" left="489" top="1032" ofx="0" ofy="0" width="134" height="32" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <C201 type="System.Windows.Forms.Button" text="保存" left="268" top="1033" ofx="0" ofy="0" width="134" height="32" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+  </InstanceData>
+</Root>

@@ -1,0 +1,81 @@
+web.DHCNUREMR.cls修改
+1 generatorJs中:
+   k ^NurEmr.NurEmrSubK("Kcode",code)
+   下面增加:
+   k ^NurEmr.NurEmrSubK("Tips",code)
+  ******
+   d ..writecomm(file)
+   改为:
+   d ..writecomm(file,code)
+2 writecomm方法定义改为:
+  ClassMethod writecomm(file,code) As %String
+  ****
+  d file.WriteLine("BodyLoadHandler();")
+  下面增加:
+   s name=""  f  s name=$O(^NurEmr.NurEmrSubK("Tips",code,name)) q:name=""  d
+     .s value=^NurEmr.NurEmrSubK("Tips",code,name)
+     .s value=$replace(value,$c(13,10),"<br>")
+     .d file.WriteLine("new Ext.ToolTip({html:"_""""_value_""""_",target:"_"'"_name_"'"_"});")
+3 getPagData中：
+   3.1增加下面//Tips标注的四句
+           while Reader.Read()
+           {
+	      	  if (Reader.Name="MetaData")&(Reader.NodeType="endelement")  q
+              s itmname=Reader.Name             
+	   	      if ($E(Reader.Name,0,1)="M")!($E(Reader.Name,0,1)="O")!($E(Reader.Name,0,1)="R")
+	   	       {
+	          	 if Reader.MoveToAttributeName("RelName") s itmRelName(code,itmname)=Reader.Value
+ 		         if Reader.MoveToAttributeName("Link") s itmLinkName(code,itmname)=Reader.Value
+                 if Reader.MoveToAttributeName("Title") s itmTitle(code,itmname)=Reader.Value
+                
+                 if Reader.MoveToAttributeName("Tips") s itmTips(code,itmname)=Reader.Value            //Tips
+		         if Reader.MoveToAttributeName("LabelTips") s itmLabelTips(code,itmname)=Reader.Value  //Tips
+				 
+                 s itm=..getitm(.Reader,itmname,.itmdata,code)
+	   	       }
+		      // w !,Reader.Name," //00",Reader.Path
+		      // if Reader.Name="T11" b
+              s xname=Reader.Name
+	          if Reader.MoveToAttributeName("RelName") s itmRelName(code,xname)=Reader.Value
+		      if Reader.MoveToAttributeName("Link") s itmLinkName(code,xname)=Reader.Value
+		    
+		      if Reader.MoveToAttributeName("Title") s itmTitle(code,xname)=Reader.Value
+		      if Reader.MoveToAttributeName("Edit") s itmEdit(code,xname)=Reader.Value
+		      if Reader.MoveToAttributeName("CheckSel") s itmCheckSel(code,xname)=Reader.Value
+		      if Reader.MoveToAttributeName("hidden") 
+		      {
+			      s itmHidd(code,xname)=Reader.Value
+			      if ((Reader.Value="Y")&($E(xname,0,1)="S"))
+			      {
+				       s itmdata(code,xname)=""
+				       /// b hide
+			      }
+		      }
+		      if Reader.MoveToAttributeName("Tips") s itmTips(code,xname)=Reader.Value            //Tips
+		      if Reader.MoveToAttributeName("LabelTips") s itmLabelTips(code,xname)=Reader.Value  //Tips
+	***************
+	3.2 
+	s name=""  f  s name=$O(itmdata(code,name)) q:name=""  d
+ .q:$D(itmtable(code,name))
+ 下面增加:
+ .i $g(itmTips(code,name))'=""  d  //Tips
+ ..s RelName=$G(itmRelName(code,name))
+ ..s tipval=itmTips(code,name)
+ ..s labeltipval=itmLabelTips(code,name)
+ ..i RelName'="" d
+ ...i labeltipval="N" d //元素上显示
+ ....i (name["M") d //多选子元素上显示
+ .....s tiplen=$l(tipval,"^")
+ .....f tipseq=1:1:tiplen  d
+ ......s subtip=$p(tipval,"^",tipseq)
+ ......q:subtip=""
+ ......s subitm=RelName_"_"_tipseq
+ ......s ^NurEmr.NurEmrSubK("Tips",code,subitm)=subtip
+ ....e  d
+ .....s ^NurEmr.NurEmrSubK("Tips",code,RelName)=tipval
+ ...i labeltipval="Y" D //标签上显示
+ ....s newitm="B"_$e(name,2,$l(name))
+ ....s ^NurEmr.NurEmrSubK("Tips",code,newitm)=tipval
+ 
+ 4 护理程序中维护悬浮框显示，多选M元素不同元素间的内容用^区分
+   最后生成js

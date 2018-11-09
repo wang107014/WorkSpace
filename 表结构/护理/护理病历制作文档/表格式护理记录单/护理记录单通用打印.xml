@@ -1,0 +1,60 @@
+﻿<Root DataType="qt" ShapePrn="N" XuPrn="N">
+  <InstanceData IDNO="52">
+    <PageHead37 type="System.Windows.Forms.Label" text="LOC" left="110" top="93" ofx="0" ofy="0" width="240" height="20" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead33 type="System.Windows.Forms.Label" text="科室：" left="58" top="93" ofx="0" ofy="0" width="53" height="20" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead45 type="System.Windows.Forms.Label" text="住院号：" left="738" top="114" ofx="0" ofy="0" width="67" height="19" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead46 type="System.Windows.Forms.Label" text="MedCareNo" left="805" top="114" ofx="0" ofy="0" width="81" height="19" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead36 type="System.Windows.Forms.Label" text="DIAG" left="789" top="86" ofx="0" ofy="0" width="285" height="20" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead34 type="System.Windows.Forms.Label" text="诊断：" left="737" top="86" ofx="0" ofy="0" width="52" height="20" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead50 type="System.Windows.Forms.Label" text="护理记录单" left="527" top="53" ofx="0" ofy="0" width="197" height="30" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="15.75" b="True" i="False" u="False" fontunit="Point" />
+    <PageHead32 type="System.Windows.Forms.Label" text="深圳市宝安区中医院" left="469" top="14" ofx="0" ofy="0" width="296" height="36" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="18" b="True" i="False" u="False" fontunit="Point" />
+    <PageHead52 type="System.Windows.Forms.Label" text="AdmDate" left="1003" top="110" ofx="0" ofy="0" width="99" height="22" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead51 type="System.Windows.Forms.Label" text="入院日期：" left="922" top="110" ofx="0" ofy="0" width="82" height="22" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead38 type="System.Windows.Forms.Label" text="床号：" left="532" top="115" ofx="0" ofy="0" width="60" height="19" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead35 type="System.Windows.Forms.Label" text="BEDCODE" left="592" top="115" ofx="0" ofy="0" width="64" height="19" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead43 type="System.Windows.Forms.Label" text="AGE" left="428" top="115" ofx="0" ofy="0" width="72" height="18" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead42 type="System.Windows.Forms.Label" text="年龄：" left="374" top="115" ofx="0" ofy="0" width="55" height="18" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead41 type="System.Windows.Forms.Label" text="SEX" left="289" top="115" ofx="0" ofy="0" width="54" height="19" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead40 type="System.Windows.Forms.Label" text="性别：" left="233" top="115" ofx="0" ofy="0" width="56" height="19" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead44 type="System.Windows.Forms.Label" text="PATNAME" left="111" top="115" ofx="0" ofy="0" width="75" height="19" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead39 type="System.Windows.Forms.Label" text="姓名：" left="58" top="115" ofx="0" ofy="0" width="54" height="19" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="10.5" b="False" i="False" u="False" fontunit="Point" />
+    <PageHead47 type="System.Windows.Forms.Label" text="第" left="519" top="755" ofx="0" ofy="0" width="18" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageNo49 type="System.Windows.Forms.Label" text="页码49" left="541" top="755" ofx="0" ofy="0" width="30" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead48 type="System.Windows.Forms.Label" text="页" left="577" top="755" ofx="0" ofy="0" width="19" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+  </InstanceData>
+  <QtData typ="Record" Cls="web.DHCNurHCRecPrint" mth="GetCareRecComm" parrm="">
+    <aa />
+  </QtData>
+  <MetaData RelName="DHCNURMouldPrn_BAZYYGSKHLJLD" />
+  <PageHeadFoot>
+    <PageHead32 />
+    <PageHead33 />
+    <PageHead34 />
+    <PageHead35 />
+    <PageHead36 />
+    <PageHead37 />
+    <PageHead38 />
+    <PageHead39 />
+    <PageHead40 />
+    <PageHead41 />
+    <PageHead42 />
+    <PageHead43 />
+    <PageHead44 />
+    <PageHead45 />
+    <PageHead46 />
+    <PageHead47 />
+    <PageHead48 />
+    <PageNo49 />
+    <PageHead50 />
+    <PageHead51 />
+    <PageHead52 />
+  </PageHeadFoot>
+  <PrintCon PaperType="A4" kind="9" LandFlag="true" left="15" right="15" top="35" bottom="20" Width="297" Height="210" PageNum="1" Rown="35" Coln="1" />
+  <SHAPES HeadPrn="" />
+  <WinTmp />
+  <CheckS>
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a,b" Width="15" Height="15" typ="NurEmrMaintain.RectangleShape" />
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a,b+0.5H" P2="a+0.5W,b+1H" typ="NurEmrMaintain.LineShape" />
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a+0.5W,b+1H" P2="a+0.75W,b-0.2H" typ="NurEmrMaintain.LineShape" />
+  </CheckS>
+</Root>

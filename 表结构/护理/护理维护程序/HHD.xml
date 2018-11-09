@@ -1,0 +1,79 @@
+﻿<Root>
+  <MetaData ComFlag="N" Link="" RelName="DHCNURHHD_">
+    <S101 Title="GetQueryData" Link="web.DHCMGNurComm.GetQueryData" hidden="Y" Pos="" RelName="GetQueryData" Query="False" MIndex="False" Edit="N" />
+    <S102 Title="GetRadiaNote" Link="web.DHCNurJYRESULT.GetRadiaNote" hidden="Y" Pos="" RelName="GetRadiaNote" Query="False" MIndex="False" />
+    <S103 Title="GetLabItemdata" Link="web.DHCNurJYRESULT.GetLabItemdata" hidden="Y" Pos="" RelName="GetLabItemdata" Query="False" MIndex="False" />
+    <S104 Title="SavePrnSet" Link="Nur.DHCNursePrintRec.Save" hidden="Y" Pos="" RelName="SavePrnSet" Query="False" MIndex="False" Edit="N" />
+    <S105 Title="GetPrnSet" Link="Nur.DHCNursePrintRec.getprnsetcomm" hidden="Y" Pos="" RelName="GetPrnSet" Query="False" MIndex="False" Edit="N" />
+    <S106 Title="GetNurPrnSet" Link="web.DHCNurseRecordComm.getprnset" hidden="Y" Pos="" RelName="GetNurPrnSet" Query="False" MIndex="False" />
+    <S107 Title="SPrnSet" Link="Nur.DHCNursePrintRec.SavePrnSet" hidden="Y" Pos="" RelName="SPrnSet" Query="False" MIndex="False" />
+    <S108 Title="GetHead" Link="web.DHCNurseRecordPrint.GetHead" hidden="Y" Pos="" RelName="GetHead" Query="False" MIndex="False" Edit="N" />
+    <S109 Title="getcheckform" Link="web.DHCNUREMR.getcheckform" hidden="Y" Edit="N" Pos="" RelName="getcheckform" Query="False" MIndex="False" />
+    <S110 Title="GetMulti" Link="web.DHCNUREMR.GetMulti" hidden="Y" Edit="N" Pos="" RelName="GetMulti" Query="False" MIndex="False" />
+    <S111 Title="GetGtoMl" Link="web.DHCNUREMR.GetGtoMl" hidden="Y" Edit="N" Pos="" RelName="GetGtoMl" Query="False" MIndex="False" />
+    <S112 Title="GetLableRec" Link="Nur.DHCNurChangeLableRec.GetLableRec" hidden="Y" Edit="N" Pos="" RelName="GetLableRec" Query="False" MIndex="False" />
+    <S113 Title="GetNurseRecSet" Link="Nur.DHCNurseRecSet.getSet" hidden="Y" Edit="N" Pos="" RelName="GetNurseRecSet" Query="False" MIndex="False" />
+    <S114 Title="GetSubInOut" Link="web.DHCNurseRecordComm.GetSubInOut" hidden="Y" Edit="N" Pos="" RelName="GetSubInOut" Query="False" MIndex="False" />
+    <S115 Title="RecSave" Link="Nur.DHCNurseRecSub.Save" hidden="Y" Edit="N" Pos="" RelName="RecSave" Query="False" MIndex="False" />
+    <S116 Title="GetPatInfo" Link="web.DHCMGNurComm.PatInfo" hidden="Y" Edit="N" Pos="" RelName="GetPatInfo" Query="False" MIndex="False" />
+    <S117 Title="CancelRecord" Link="web.DHCNurseRecordComm.CancelRecord" hidden="Y" Edit="N" Pos="" RelName="CancelRecord" Query="False" MIndex="False" />
+    <S118 Title="GetQueryData1" Link="web.DHCNurseRecordComm.GetQueryData" hidden="Y" Edit="N" Pos="" RelName="GetQueryData1" Query="False" MIndex="False" />
+    <S119 Title="GetMulti" Link="web.DHCNUREMR.GetMulti" hidden="Y" Edit="N" Pos="" RelName="GetMulti" Query="False" MIndex="False" />
+    <S120 Title="GetId" Link="Nur.DHCMoudData.GetId" hidden="Y" Edit="N" Pos="" RelName="GetId" Query="False" MIndex="False" />
+    <S121 Title="GeInOutAmount" Link="web.DHCNurseRecordComm.GetInOutAmountComm1" hidden="Y" Edit="N" Pos="" RelName="GeInOutAmount" Query="False" MIndex="False" />
+    <S123 Title="Save" Link="Nur.DHCMoudData.Save" hidden="Y" Edit="N" Pos="" RelName="Save" Query="False" MIndex="False" />
+    <S124 Title="getVal" Link="Nur.DHCMoudData.getVal" hidden="Y" Edit="N" Pos="" RelName="getVal" Query="False" MIndex="False" />
+    <S125 Title="PatInfo" Link="web.DHCMGNurComm.GetPatInfo" hidden="Y" Edit="N" Pos="" RelName="PatInfo" Query="False" MIndex="False" />
+    <T101 Title="T103" Link="" hidden="N" Edit="Y" Pos="" RelName="mygrid" Query="False" MIndex="False">
+      <D126 Title="日期" DateFlag="Y" TimeFlag="N" Link="" hidden="N" Edit="N" Pos="" RelName="CareDate" Query="False" MIndex="False" />
+      <D127 Title="时间" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="CareTime" Query="False" MIndex="False" />
+      <S128 Title="空白1" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item1" Query="False" MIndex="False" />
+      <S129 Title="空白2" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item2" Query="False" MIndex="False" />
+      <S130 Title="空白3" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item3" Query="False" MIndex="False" />
+      <S131 Title="空白4" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item4" Query="False" MIndex="False" />
+      <S132 Title="空白5" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item5" Query="False" MIndex="False" />
+      <O133 Title="空白6" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item6" Query="False" MIndex="False" />      
+      <O134 Title="空白7" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item7" Query="False" MIndex="False" />           
+      <O135 Title="空白8" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item8" Query="False" MIndex="False" />        
+      <O136 Title="空白9" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item9" Query="False" MIndex="False" />        
+      <S137 Title="空白10" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item10" Query="False" MIndex="False" />
+      <G138 Title="病情变化及措施" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="CaseMeasure" Query="False" MIndex="False" />
+      <S139 Title="签名" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="User" Query="False" MIndex="False" />
+      <S140 Title="rw" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="rw" Query="False" MIndex="False" />
+      <S141 Title="par" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="par" Query="False" MIndex="False" />
+    </T101>
+      <S151 Title="空白1" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item1" Query="False" MIndex="False" />
+      <S152 Title="空白2" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item2" Query="False" MIndex="False" />
+      <S153 Title="空白3" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item3" Query="False" MIndex="False" />
+      <S154 Title="空白4" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item4" Query="False" MIndex="False" />
+      <S155 Title="空白5" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item5" Query="False" MIndex="False" />
+      <M156 Title="空白6" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item6" Query="False" MIndex="False" />      
+      <O157 Title="空白7" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item7" Query="False" MIndex="False" />           
+      <O158 Title="空白8" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item8" Query="False" MIndex="False" />        
+      <O159 Title="空白9" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item9" Query="False" MIndex="False" />        
+      <M160 Title="空白10" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item10" Query="False" MIndex="False" />
+      <S161 Title="空白11" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item11" Query="False" MIndex="False" />
+      <S162 Title="空白12" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item12" Query="False" MIndex="False" />
+      <S163 Title="空白13" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item13" Query="False" MIndex="False" />
+      <S164 Title="空白14" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item14" Query="False" MIndex="False" />
+      <S165 Title="空白15" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item15" Query="False" MIndex="False" />
+      <M166 Title="空白16" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item16" Query="False" MIndex="False" />      
+      <O167 Title="空白17" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item17" Query="False" MIndex="False" />           
+      <O168 Title="空白18" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item18" Query="False" MIndex="False" />        
+      <O169 Title="空白19" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item19" Query="False" MIndex="False" />        
+      <M170 Title="空白20" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item20" Query="False" MIndex="False" />
+      <S171 Title="空白21" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item21" Query="False" MIndex="False" />
+      <S172 Title="空白22" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item22" Query="False" MIndex="False" />
+      <S173 Title="空白23" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item23" Query="False" MIndex="False" />
+      <S174 Title="空白24" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item24" Query="False" MIndex="False" />
+      <M175 Title="空白25" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item25" Query="False" MIndex="False" />
+      <O176 Title="空白26" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item26" Query="False" MIndex="False" />      
+      <O177 Title="空白27" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item27" Query="False" MIndex="False" />           
+      <O178 Title="空白28" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item28" Query="False" MIndex="False" />        
+      <O179 Title="空白29" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item29" Query="False" MIndex="False" />        
+      <M180 Title="空白30" DateFlag="N" TimeFlag="Y" Link="" hidden="N" Edit="N" Pos="" RelName="Item30" Query="False" MIndex="False" />
+  </MetaData>
+  <InstanceData IDNO="107" Width="808" Height="725" Continue="False" >
+      <T101 type="SourceGrid.Grid" text="" left="0" top="336" ofx="0" ofy="0" width="794" height="347" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World">30^20^20^20^20^20^20^20^20^20^$83^50^50^50^50^50^50^50^50^50^50^50^107^50^50^50^$!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!^!!!!!!!!!!!!!!!!^</T101>
+  </InstanceData>
+</Root>

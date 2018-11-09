@@ -1,0 +1,56 @@
+﻿<Root DataType="qt" ShapePrn="N" XuPrn="N">
+  <InstanceData IDNO="50">
+    <PageHead45 type="System.Windows.Forms.Label" text="住院号" left="970" top="80" ofx="0" ofy="0" width="46" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead46 type="System.Windows.Forms.Label" text="MedCareNo" left="1024" top="80" ofx="0" ofy="0" width="60" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead38 type="System.Windows.Forms.Label" text="床号" left="602" top="80" ofx="0" ofy="0" width="39" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead35 type="System.Windows.Forms.Label" text="BEDCODE" left="648" top="80" ofx="0" ofy="0" width="64" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead43 type="System.Windows.Forms.Label" text="AGE" left="421" top="80" ofx="0" ofy="0" width="45" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead42 type="System.Windows.Forms.Label" text="年龄" left="374" top="80" ofx="0" ofy="0" width="34" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead41 type="System.Windows.Forms.Label" text="SEX" left="281" top="80" ofx="0" ofy="0" width="54" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead40 type="System.Windows.Forms.Label" text="性别" left="233" top="80" ofx="0" ofy="0" width="38" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead44 type="System.Windows.Forms.Label" text="PATNAME" left="96" top="80" ofx="0" ofy="0" width="57" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead39 type="System.Windows.Forms.Label" text="姓名" left="58" top="80" ofx="0" ofy="0" width="32" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead33 type="System.Windows.Forms.Label" text="科室" left="58" top="58" ofx="0" ofy="0" width="34" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead34 type="System.Windows.Forms.Label" text="病区" left="373" top="58" ofx="0" ofy="0" width="34" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead36 type="System.Windows.Forms.Label" text="WARD" left="419" top="58" ofx="0" ofy="0" width="285" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead37 type="System.Windows.Forms.Label" text="LOC" left="95" top="58" ofx="0" ofy="0" width="240" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead47 type="System.Windows.Forms.Label" text="第" left="519" top="755" ofx="0" ofy="0" width="18" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageNo49 type="System.Windows.Forms.Label" text="页码49" left="541" top="755" ofx="0" ofy="0" width="30" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead48 type="System.Windows.Forms.Label" text="页" left="577" top="755" ofx="0" ofy="0" width="19" height="15" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="False" i="False" u="False" fontunit="World" />
+    <PageHead50 type="System.Windows.Forms.Label" text="******记录单" left="713" top="16" ofx="0" ofy="0" width="197" height="21" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="True" i="False" u="False" fontunit="Point" />
+    <PageHead32 type="System.Windows.Forms.Label" text="****医院" left="469" top="14" ofx="0" ofy="0" width="197" height="24" tabindex="0" bgcolor="ffc6dfff" fontcolor="ControlText" fontname="宋体" fontsize="12" b="True" i="False" u="False" fontunit="Point" />
+  </InstanceData>
+  <QtData typ="Record" Cls="web.DHCNurRecPrint" mth="GetCareRecComm" parrm="">
+    <aa />
+  </QtData>
+  <MetaData RelName="DHCNURMouldPrn_" />
+  <PageHeadFoot>
+    <PageHead32 />
+    <PageHead33 />
+    <PageHead34 />
+    <PageHead35 />
+    <PageHead36 />
+    <PageHead37 />
+    <PageHead38 />
+    <PageHead39 />
+    <PageHead40 />
+    <PageHead41 />
+    <PageHead42 />
+    <PageHead43 />
+    <PageHead44 />
+    <PageHead45 />
+    <PageHead46 />
+    <PageHead47 />
+    <PageHead48 />
+    <PageNo49 />
+    <PageHead50 />
+  </PageHeadFoot>
+  <PrintCon PaperType="A4" kind="9" LandFlag="true" left="15" right="15" top="25" bottom="20" Width="297" Height="210" PageNum="1" />
+  <SHAPES HeadPrn="" />
+  <WinTmp />
+  <CheckS>
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a,b" Width="15" Height="15" typ="NurEmrMaintain.RectangleShape" />
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a,b+0.5H" P2="a+0.5W,b+1H" typ="NurEmrMaintain.LineShape" />
+    <SHAPE penwidth="1" pencolor="0,0,0" P1="a+0.5W,b+1H" P2="a+0.75W,b-0.2H" typ="NurEmrMaintain.LineShape" />
+  </CheckS>
+</Root>
