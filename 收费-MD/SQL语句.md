@@ -280,3 +280,70 @@
 	//急诊分级表
 	SELECT * FROM CT_Acuity WHERE CTACU_RowId=3
 
+
+
+##
+
+	//根据登记号找裴钱
+	SELECT * FROM PA_PatMas WHERE PAPMI_No='020000000411'
+	
+	//裴钱下诊断找就诊号
+	SELECT * FROM PA_Adm WHERE PAADM_PAPMI_DR='1'
+	
+	//裴钱所下医嘱收费收据
+	SELECT * FROM Dhc_invprt WHERE PRT_PAPMI_DR='1'
+	
+	//裴钱所下医嘱费用明细表
+	SELECT * FROM DHC_PatientBill WHERE PB_Adm_Dr='201'
+	
+	//账单收费项目明细表
+	SELECT * FROM dhc_patbilldetails WHERE PBD_PBO_ParRef='423005||1'
+	
+	//收费项目名称
+	SELECT * FROM DHC_TarItem WHERE TARI_RowId='18659'
+	
+	//根据裴钱所下的就诊号找医嘱id
+	SELECT * FROM oe_order WHERE OEORD_Adm_DR='201'
+	
+	//根据医嘱id找医生下的具体医嘱(处方号)
+	SELECT OEORI_PrescNo, * FROM OE_OrdItem WHERE OEORI_OEORD_ParRef='197'
+	
+	//根据医嘱名称id找具体的医嘱名称
+	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId='19095||1'
+
+
+##药房
+
+	//处方审核/门诊拒绝发药子表
+	SELECT * FROM DHC_PHAORDMONITOR 
+	
+	//处方审核/门诊拒绝发药子表
+	SELECT * FROM DHC_PHAORDMONITORLIST 
+	
+	//审核拒绝原因表
+	SELECT * FROM DHC_PHCNTSREASON
+
+	//门诊配/发药主表
+	SELECT PHD_PYFLAG,phd_pattype, * FROM DHC_PHDISPEN
+	
+	//门诊配/发药子表
+	SELECT PHDI_OEORI_DR, * FROM DHC_PHDISITEM
+
+	//门诊配/发药孙表
+	SELECT * FROM DHC_PHDISITMCLB	
+
+	//发票表
+	SELECT * FROM DHC_INVPRT WHERE PRT_Rowid='378100'
+	
+	//病人信息表
+	SELECT * FROM PA_PATMAS WHERE PAPMI_RowId1=11
+
+
+	//根据处方号找医生下的具体医嘱(处方号)
+	SELECT OEORI_PrescNo, * FROM OE_OrdItem WHERE OEORI_PrescNo='O181025000001'
+
+	//医嘱表
+	SELECT * FROM OE_OrdItem WHERE OEORI_RowId='19||1'
+	
+	//医嘱名称表
+	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId='19356||1'
