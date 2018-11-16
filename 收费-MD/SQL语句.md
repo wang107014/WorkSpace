@@ -282,7 +282,7 @@
 
 
 
-##
+##根据登记号找病人医嘱和账单
 
 	//根据登记号找裴钱
 	SELECT * FROM PA_PatMas WHERE PAPMI_No='020000000411'
@@ -312,16 +312,16 @@
 	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId='19095||1'
 
 
-##药房
+##门诊药房
 
 	//处方审核/门诊拒绝发药子表
 	SELECT * FROM DHC_PHAORDMONITOR 
 	
 	//处方审核/门诊拒绝发药子表
 	SELECT * FROM DHC_PHAORDMONITORLIST 
-	
-	//审核拒绝原因表
-	SELECT * FROM DHC_PHCNTSREASON
+
+	//处方审核拒绝表
+	SELECT * FROM DHC_PHCNTSREASON WHERE PCR_RowID IN (237,238,241,246)
 
 	//门诊配/发药主表
 	SELECT PHD_PYFLAG,phd_pattype, * FROM DHC_PHDISPEN
@@ -332,6 +332,24 @@
 	//门诊配/发药孙表
 	SELECT * FROM DHC_PHDISITMCLB	
 
+	//门诊退药申请主表
+	SELECT PHReq_RetFlag, * FROM DHC_PHREQUEST
+	
+	//门诊退药申请子表
+	SELECT * FROM DHC_PHREQITEM
+	
+	//门诊退药记录主表
+	SELECT * FROM DHC_PHRETURN
+	
+	//门诊退药记录子表
+	SELECT * FROM DHC_PHRETITM
+
+	//门诊计费药房中间表(PHA_FINFLAG发药标志)
+	SELECT PHA_FINFLAG, * FROM DHC_PHARWIN WHERE PHA_ROWID='47'
+
+	//门诊计费药房中间表(PHA_NOUSER:计费组发票作废或退费)
+	SELECT PHA_NOUSER, * FROM DHC_PHARWIN WHERE PHA_ROWID='47'
+	
 	//发票表
 	SELECT * FROM DHC_INVPRT WHERE PRT_Rowid='378100'
 	
@@ -347,3 +365,7 @@
 	
 	//医嘱名称表
 	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId='19356||1'
+
+
+
+
