@@ -368,4 +368,8 @@
 
 
 
+##取科室信息
+
+	SELECT PCL_Loc_Dr, * FROM DHC_EmPatCheckLev
+	SELECT * FROM CT_Loc WHERE CTLOC_RowID=37
 
