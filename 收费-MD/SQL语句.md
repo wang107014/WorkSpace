@@ -373,3 +373,24 @@
 	SELECT PCL_Loc_Dr, * FROM DHC_EmPatCheckLev
 	SELECT * FROM CT_Loc WHERE CTLOC_RowID=37
 
+
+
+
+
+	//病人表
+	SELECT * FROM PA_PatMas WHERE PAPMI_RowId1 IN (5,1,16,73)
+	
+	//就诊表:就诊完成标识
+	SELECT PAADM_Completed, * FROM PA_Adm WHERE  PAADM_RowID IN (275,276,277,278)
+	
+	//队列表:排队状态
+	SELECT QueStateDr->PersName,QueFirstDr->FirstcName, * FROM DHCQueue WHERE QuePaadmDr IN (275,276,277,278)
+	
+	//就诊病历表
+	SELECT MRADM_ADM_DR, * FROM MR_Adm WHERE MRADM_ADM_DR IN (275,276,277,278)
+	
+	//就诊诊断表
+	SELECT MRDIA_MRADM_Parref,MRDIA_ICDCode_DR, * FROM MR_Diagnos WHERE MRDIA_MRADM_ParRef IN (275,276,277,278)
+	
+	//诊断表
+	SELECT * FROM MRC_ICDDX WHERE MRCID_RowId IN (24983,16462,25320)
