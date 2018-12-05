@@ -184,6 +184,19 @@
 	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId='19352||1'
 
 
+	//发票表
+	SELECT * FROM DHC_INVPRT WHERE PRT_Rowid=380327
+	
+	//支付方式表
+	SELECT * FROM DHC_INVPayMode WHERE IPM_PRT_ParRef=380327
+	
+	//票据账单连接表
+	SELECT * FROM DHC_BillConINV WHERE DHCBCI_INVDR=380327
+	
+	//账单主表
+	SELECT * FROM DHC_PatientBill WHERE PB_RowId='426300'
+
+
 #门诊日报结算流程
 
 
