@@ -271,6 +271,8 @@
 	SELECT * FROM DHC_BillExtTradePay
 	SELECT * FROM DHC_BillExtTradeConSub
 	SELECT * FROM DHC_INVPRT WHERE PRT_PAPMI_DR=3418 
+	//预交金明细表
+	SELECT * FROM dhc_sfprintdetail
 
 
 
@@ -415,3 +417,30 @@
 	
 	//诊断表
 	SELECT * FROM MRC_ICDDX WHERE MRCID_RowId IN (24983,16462,25320)
+
+
+#体检
+
+##体检信息
+
+	//个人基本信息表
+	SELECT PIBI_RowId, * FROM DHC_PE_PreIBaseInfo WHERE PIBI_PAPMINo='020000000039'
+	
+	//个人ADM表
+	SELECT PIADM_RowId, * FROM DHC_PE_PreIADM WHERE PIADM_PIBI_DR='9782'
+	
+	//个人项目表
+	SELECT PIOI_OrdEnt_DR,PIOI_ItmMast_DR, * FROM DHC_PE_PreIOrdItem WHERE PIOI_ParRef='11805'
+	
+	//关联医嘱套
+	SELECT PIOE_OrderSets_DR, * FROM DHC_PE_PreIOrdEnt WHERE PIOE_RowId='11805||1'
+	
+	//个人项目套餐表
+	SELECT * FROM ARC_OrdSets WHERE ARCOS_RowId1='24980'
+	
+	//医嘱表
+	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId IN ('17224||1','17222||1','17227||1','20454||1','20460||1')
+	
+	
+	//团体分组项目表
+	SELECT * FROM dhc_pe_preGTOrdItem
