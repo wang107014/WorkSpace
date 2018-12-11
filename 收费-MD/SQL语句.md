@@ -441,6 +441,14 @@
 	//医嘱表
 	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId IN ('17224||1','17222||1','17227||1','20454||1','20460||1')
 	
-	
 	//团体分组项目表
 	SELECT * FROM dhc_pe_preGTOrdItem
+
+	//团体客户ADM表
+	SELECT * FROM DHC_PE_PreGADM
+
+	//团体和个人ADM审核表
+	SELECT * FROM DHC_PE_PreAudit
+
+	//团体分组表
+	SELECT * FROM DHC_PE_PreGTeam
