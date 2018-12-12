@@ -452,3 +452,8 @@
 
 	//团体分组表
 	SELECT * FROM DHC_PE_PreGTeam
+
+	SELECT * FROM DHC_PE_PreTimeManager
+
+	//时间段信息表
+	SELECT * FROM DHC_PE_HomeTimeInfo
