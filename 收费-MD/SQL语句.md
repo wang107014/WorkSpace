@@ -457,3 +457,6 @@
 
 	//时间段信息表
 	SELECT * FROM DHC_PE_HomeTimeInfo
+
+	//医嘱套餐表
+	SELECT * FROM ARC_OrdSets
