@@ -435,6 +435,9 @@
 	//关联医嘱套
 	SELECT PIOE_OrderSets_DR, * FROM DHC_PE_PreIOrdEnt WHERE PIOE_RowId='11805||1'
 	
+	//具体项目
+	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId IN ('20460||1','20454||1','17227||1','17222||1','20502||1')	
+
 	//个人项目套餐表
 	SELECT * FROM ARC_OrdSets WHERE ARCOS_RowId1='24980'
 	
