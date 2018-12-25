@@ -1,0 +1,309 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2018-12-20 18:28:03">
+<Class name="User.DHCPackageOrderDetails">
+<ClassType>persistent</ClassType>
+<SqlRowIdName>ordd_rowid</SqlRowIdName>
+<SqlTableName>DHC_Package_OrderDetails</SqlTableName>
+<StorageStrategy>SQLStorage</StorageStrategy>
+<Super>%Persistent</Super>
+<TimeChanged>65002,66477.946866</TimeChanged>
+<TimeCreated>65001,69780.827114</TimeCreated>
+
+<Property name="DHCPackageBillDetailParRef">
+<Description>
+关联父表DHCPackageBillDetail</Description>
+<Type>DHCPackageBillDetail</Type>
+<Cardinality>parent</Cardinality>
+<Inverse>ChildDHCPackageOrderDetails</Inverse>
+<Relationship>1</Relationship>
+<SqlFieldName>ordd_Parref</SqlFieldName>
+</Property>
+
+<Property name="DHCChildSub">
+<Type>%Library.Numeric</Type>
+<InitialExpression>$i(^DHCPACKAGEBILL(+%d(0),"C",$p($p(%d(0),$c(1)),"||",2),"Order",0))</InitialExpression>
+<Required>1</Required>
+<SqlColumnNumber>2</SqlColumnNumber>
+<SqlFieldName>ordd_ChildSub</SqlFieldName>
+<Parameter name="SCALE" value="0"/>
+</Property>
+
+<Index name="DHCChildSub">
+<IdKey>1</IdKey>
+<PrimaryKey>1</PrimaryKey>
+<Properties>DHCChildSub</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Property name="ChildDHCPackageItemDetails">
+<Description>
+关联的子表DHCPackageItemDetails</Description>
+<Type>DHCPackageItemDetails</Type>
+<Cardinality>children</Cardinality>
+<Inverse>DHCPackageOrderDetailsParRef</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="orddpatientid">
+<Type>User.PAPatMas</Type>
+<Required>1</Required>
+<SqlColumnNumber>3</SqlColumnNumber>
+<SqlFieldName>ordd_patientid</SqlFieldName>
+</Property>
+
+<Property name="orddarcimid">
+<Type>User.ARCItmMast</Type>
+<Required>1</Required>
+<SqlColumnNumber>4</SqlColumnNumber>
+<SqlFieldName>ordd_arcimid</SqlFieldName>
+</Property>
+
+<Property name="ordduomid">
+<Type>User.CTUOM</Type>
+<Required>1</Required>
+<SqlColumnNumber>5</SqlColumnNumber>
+<SqlFieldName>ordd_uomid</SqlFieldName>
+</Property>
+
+<Property name="orddvalidstartdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>6</SqlColumnNumber>
+<SqlFieldName>ordd_validstartdate</SqlFieldName>
+</Property>
+
+<Property name="orddvalidenddate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>7</SqlColumnNumber>
+<SqlFieldName>ordd_validenddate</SqlFieldName>
+</Property>
+
+<Property name="orddquantity">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>8</SqlColumnNumber>
+<SqlFieldName>ordd_quantity</SqlFieldName>
+</Property>
+
+<Property name="orddpriceperunit">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>9</SqlColumnNumber>
+<SqlFieldName>ordd_priceperunit</SqlFieldName>
+</Property>
+
+<Property name="orddpackagedetailprice">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>10</SqlColumnNumber>
+<SqlFieldName>ordd_packagedetailprice</SqlFieldName>
+</Property>
+
+<Property name="orddbaseamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>11</SqlColumnNumber>
+<SqlFieldName>ordd_baseamount</SqlFieldName>
+</Property>
+
+<Property name="orddmanualdiscountamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>12</SqlColumnNumber>
+<SqlFieldName>ordd_manualdiscountamount</SqlFieldName>
+</Property>
+
+<Property name="orddextendedamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>13</SqlColumnNumber>
+<SqlFieldName>ordd_extendedamount</SqlFieldName>
+</Property>
+
+<Property name="orddremainingquantity">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>14</SqlColumnNumber>
+<SqlFieldName>ordd_remainingquantity</SqlFieldName>
+</Property>
+
+<Property name="ordddeductpriceperunit">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>15</SqlColumnNumber>
+<SqlFieldName>ordd_deductpriceperunit</SqlFieldName>
+</Property>
+
+<Property name="orddsalespromotionid">
+<Description>
+促销活动应指向“促销活动”实体,但不知道实体</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<SqlColumnNumber>16</SqlColumnNumber>
+<SqlFieldName>ordd_salespromotionid</SqlFieldName>
+</Property>
+
+<Property name="orddcouponid">
+<Description>
+优惠券应指向“优惠券”实体,但不知道实体</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<SqlColumnNumber>17</SqlColumnNumber>
+<SqlFieldName>ordd_couponid</SqlFieldName>
+</Property>
+
+<Property name="orddsalesorderdiscountid">
+<Description>
+订单优惠政策应指向实体,但不知道实体</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<SqlColumnNumber>18</SqlColumnNumber>
+<SqlFieldName>ordd_salesorderdiscountid</SqlFieldName>
+</Property>
+
+<Property name="ordddelayoperdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>19</SqlColumnNumber>
+<SqlFieldName>ordd_delayoperdate</SqlFieldName>
+</Property>
+
+<Property name="ordddelayopertime">
+<Type>%Time</Type>
+<Required>1</Required>
+<SqlColumnNumber>20</SqlColumnNumber>
+<SqlFieldName>ordd_delayopertime</SqlFieldName>
+</Property>
+
+<Property name="ordddelayoperator">
+<Type>User.SSUser</Type>
+<Required>1</Required>
+<SqlColumnNumber>21</SqlColumnNumber>
+<SqlFieldName>ordd_delayoperator</SqlFieldName>
+</Property>
+
+<Property name="ordddelayreason">
+<Type>%String</Type>
+<Required>1</Required>
+<SqlColumnNumber>22</SqlColumnNumber>
+<SqlFieldName>ordd_delayreason</SqlFieldName>
+</Property>
+
+<Storage name="SQLStorage">
+<Type>%CacheSQLStorage</Type>
+<StreamLocation>^User.DHCPackageOrderDetailsS</StreamLocation>
+<SQLMap name="Map1">
+<Type>data</Type>
+<Global>^DHCPACKAGEBILL</Global>
+<Subscript name="1">
+<Expression>{DHC_Package_Bill.bill_rowid}</Expression>
+</Subscript>
+<Subscript name="2">
+<Expression>"C"</Expression>
+</Subscript>
+<Subscript name="3">
+<Expression>{DHC_Package_BillDetail.bd_ChildSub}</Expression>
+</Subscript>
+<Subscript name="4">
+<Expression>"Order"</Expression>
+</Subscript>
+<Subscript name="5">
+<Expression>{ordd_ChildSub}</Expression>
+</Subscript>
+<RowIdSpec name="1">
+<Expression>{L1}</Expression>
+<Field>DHC_Package_Bill.bill_rowid</Field>
+</RowIdSpec>
+<RowIdSpec name="2">
+<Expression>{L3}</Expression>
+<Field>DHC_Package_BillDetail.bd_ChildSub</Field>
+</RowIdSpec>
+<RowIdSpec name="3">
+<Expression>{L5}</Expression>
+<Field>ordd_ChildSub</Field>
+</RowIdSpec>
+<Data name="ordd_arcimid">
+<Delimiter>"^"</Delimiter>
+<Piece>2</Piece>
+</Data>
+<Data name="ordd_baseamount">
+<Delimiter>"^"</Delimiter>
+<Piece>9</Piece>
+</Data>
+<Data name="ordd_couponid">
+<Delimiter>"^"</Delimiter>
+<Piece>15</Piece>
+</Data>
+<Data name="ordd_deductpriceperunit">
+<Delimiter>"^"</Delimiter>
+<Piece>13</Piece>
+</Data>
+<Data name="ordd_delayoperator">
+<Delimiter>"^"</Delimiter>
+<Piece>19</Piece>
+</Data>
+<Data name="ordd_delayoperdate">
+<Delimiter>"^"</Delimiter>
+<Piece>17</Piece>
+</Data>
+<Data name="ordd_delayopertime">
+<Delimiter>"^"</Delimiter>
+<Piece>18</Piece>
+</Data>
+<Data name="ordd_delayreason">
+<Delimiter>"^"</Delimiter>
+<Piece>20</Piece>
+</Data>
+<Data name="ordd_extendedamount">
+<Delimiter>"^"</Delimiter>
+<Piece>11</Piece>
+</Data>
+<Data name="ordd_manualdiscountamount">
+<Delimiter>"^"</Delimiter>
+<Piece>10</Piece>
+</Data>
+<Data name="ordd_packagedetailprice">
+<Delimiter>"^"</Delimiter>
+<Piece>8</Piece>
+</Data>
+<Data name="ordd_patientid">
+<Delimiter>"^"</Delimiter>
+<Piece>1</Piece>
+</Data>
+<Data name="ordd_priceperunit">
+<Delimiter>"^"</Delimiter>
+<Piece>7</Piece>
+</Data>
+<Data name="ordd_quantity">
+<Delimiter>"^"</Delimiter>
+<Piece>6</Piece>
+</Data>
+<Data name="ordd_remainingquantity">
+<Delimiter>"^"</Delimiter>
+<Piece>12</Piece>
+</Data>
+<Data name="ordd_salesorderdiscountid">
+<Delimiter>"^"</Delimiter>
+<Piece>16</Piece>
+</Data>
+<Data name="ordd_salespromotionid">
+<Delimiter>"^"</Delimiter>
+<Piece>14</Piece>
+</Data>
+<Data name="ordd_uomid">
+<Delimiter>"^"</Delimiter>
+<Piece>3</Piece>
+</Data>
+<Data name="ordd_validenddate">
+<Delimiter>"^"</Delimiter>
+<Piece>5</Piece>
+</Data>
+<Data name="ordd_validstartdate">
+<Delimiter>"^"</Delimiter>
+<Piece>4</Piece>
+</Data>
+</SQLMap>
+</Storage>
+</Class>
+</Export>

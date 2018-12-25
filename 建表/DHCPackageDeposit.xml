@@ -1,0 +1,172 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2018-12-20 18:24:49">
+<Class name="User.DHCPackageDeposit">
+<ClassType>persistent</ClassType>
+<SqlRowIdName>dep_rowid</SqlRowIdName>
+<SqlTableName>dhc_package_deposit</SqlTableName>
+<StorageStrategy>SQLStorage</StorageStrategy>
+<Super>%Persistent</Super>
+<TimeChanged>65002,66278.75123</TimeChanged>
+<TimeCreated>65002,58694.573848</TimeCreated>
+
+<Property name="ChildDHCPackageDepositPayMode">
+<Description>
+关联的子表DHCPackageDepositPayMode</Description>
+<Type>DHCPackageDepositPayMode</Type>
+<Cardinality>children</Cardinality>
+<Inverse>DHCPackageDepositRef</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="deppatienttid">
+<Type>User.PAPatMas</Type>
+<Required>1</Required>
+<SqlColumnNumber>3</SqlColumnNumber>
+<SqlFieldName>dep_patienttid</SqlFieldName>
+</Property>
+
+<Property name="depType">
+<Description>
+Pay||P 交押金、Refund||R 退押金、Trans||T 转账</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<SqlColumnNumber>4</SqlColumnNumber>
+<SqlFieldName>dep_Type</SqlFieldName>
+<Parameter name="DISPLAYLIST" value=",P,R,T"/>
+<Parameter name="VALUELIST" value=",P,R,T"/>
+</Property>
+
+<Property name="depamt">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>5</SqlColumnNumber>
+<SqlFieldName>dep_amt</SqlFieldName>
+</Property>
+
+<Property name="depdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>6</SqlColumnNumber>
+<SqlFieldName>dep_date</SqlFieldName>
+</Property>
+
+<Property name="deptime">
+<Type>%Time</Type>
+<Required>1</Required>
+<SqlColumnNumber>7</SqlColumnNumber>
+<SqlFieldName>dep_time</SqlFieldName>
+</Property>
+
+<Property name="depuserid">
+<Type>User.SSUser</Type>
+<Required>1</Required>
+<SqlColumnNumber>8</SqlColumnNumber>
+<SqlFieldName>dep_userid</SqlFieldName>
+</Property>
+
+<Property name="depno">
+<Type>%String</Type>
+<SqlColumnNumber>9</SqlColumnNumber>
+<SqlFieldName>dep_no</SqlFieldName>
+</Property>
+
+<Property name="depreportdr">
+<Type>User.DHCPackageInvprtReports</Type>
+<SqlColumnNumber>10</SqlColumnNumber>
+<SqlFieldName>dep_reportdr</SqlFieldName>
+</Property>
+
+<Property name="dephandin">
+<Description>
+Y:是、N：否</Description>
+<Type>%String</Type>
+<SqlColumnNumber>11</SqlColumnNumber>
+<SqlFieldName>dep_handin</SqlFieldName>
+<Parameter name="DISPLAYLIST" value=",Y,N"/>
+<Parameter name="VALUELIST" value=",Y,N"/>
+</Property>
+
+<Property name="dephandindate">
+<Type>%Date</Type>
+<SqlColumnNumber>12</SqlColumnNumber>
+<SqlFieldName>dep_handindate</SqlFieldName>
+</Property>
+
+<Property name="dephandintime">
+<Type>%Time</Type>
+<SqlColumnNumber>13</SqlColumnNumber>
+<SqlFieldName>dep_handintime</SqlFieldName>
+</Property>
+
+<Property name="deprefundreason">
+<Type>%String</Type>
+<SqlColumnNumber>14</SqlColumnNumber>
+<SqlFieldName>dep_refundreason</SqlFieldName>
+</Property>
+
+<Storage name="SQLStorage">
+<Type>%CacheSQLStorage</Type>
+<SqlIdExpression>$I(^mdata("DHCPACKAGEDEPOSIT"))</SqlIdExpression>
+<StreamLocation>^User.DHCPackageDepositS</StreamLocation>
+<SQLMap name="Map1">
+<Type>data</Type>
+<Global>^DHCPACKAGEDEPOSIT</Global>
+<Subscript name="1">
+<Expression>{dep_rowid}</Expression>
+</Subscript>
+<RowIdSpec name="1">
+<Expression>{L1}</Expression>
+<Field>dep_rowid</Field>
+</RowIdSpec>
+<Data name="dep_Type">
+<Delimiter>"^"</Delimiter>
+<Piece>2</Piece>
+</Data>
+<Data name="dep_amt">
+<Delimiter>"^"</Delimiter>
+<Piece>3</Piece>
+</Data>
+<Data name="dep_date">
+<Delimiter>"^"</Delimiter>
+<Piece>4</Piece>
+</Data>
+<Data name="dep_handin">
+<Delimiter>"^"</Delimiter>
+<Piece>9</Piece>
+</Data>
+<Data name="dep_handindate">
+<Delimiter>"^"</Delimiter>
+<Piece>10</Piece>
+</Data>
+<Data name="dep_handintime">
+<Delimiter>"^"</Delimiter>
+<Piece>11</Piece>
+</Data>
+<Data name="dep_no">
+<Delimiter>"^"</Delimiter>
+<Piece>7</Piece>
+</Data>
+<Data name="dep_patienttid">
+<Delimiter>"^"</Delimiter>
+<Piece>1</Piece>
+</Data>
+<Data name="dep_refundreason">
+<Delimiter>"^"</Delimiter>
+<Piece>12</Piece>
+</Data>
+<Data name="dep_reportdr">
+<Delimiter>"^"</Delimiter>
+<Piece>8</Piece>
+</Data>
+<Data name="dep_time">
+<Delimiter>"^"</Delimiter>
+<Piece>5</Piece>
+</Data>
+<Data name="dep_userid">
+<Delimiter>"^"</Delimiter>
+<Piece>6</Piece>
+</Data>
+</SQLMap>
+</Storage>
+</Class>
+</Export>

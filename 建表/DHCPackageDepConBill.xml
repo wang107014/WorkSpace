@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2018-12-20 18:25:04">
+<Class name="User.DHCPackageDepConBill">
+<ClassType>persistent</ClassType>
+<SqlRowIdName>dcb_rowid</SqlRowIdName>
+<SqlTableName>dhc_package_depconbill</SqlTableName>
+<StorageStrategy>SQLStorage</StorageStrategy>
+<Super>%Persistent</Super>
+<TimeChanged>65002,61666.75995</TimeChanged>
+<TimeCreated>65002,61665.353623</TimeCreated>
+
+<Property name="dcbpatientid">
+<Type>User.PAPatMas</Type>
+<Required>1</Required>
+<SqlColumnNumber>2</SqlColumnNumber>
+<SqlFieldName>dcb_patientid</SqlFieldName>
+</Property>
+
+<Property name="dcbdepositdr">
+<Type>User.DHCPackageDeposit</Type>
+<Required>1</Required>
+<SqlColumnNumber>3</SqlColumnNumber>
+<SqlFieldName>dcb_depositdr</SqlFieldName>
+</Property>
+
+<Property name="dcbbilldr">
+<Type>User.DHCPackageBill</Type>
+<Required>1</Required>
+<SqlColumnNumber>4</SqlColumnNumber>
+<SqlFieldName>dcb_billdr</SqlFieldName>
+</Property>
+
+<Storage name="SQLStorage">
+<Type>%CacheSQLStorage</Type>
+<SqlIdExpression>$I(^mdata("DHCPACKAGEDEPCONBILL"))</SqlIdExpression>
+<StreamLocation>^User.DHCPackageDepConBillS</StreamLocation>
+<SQLMap name="Map1">
+<Type>data</Type>
+<ConditionalWithHostVars/>
+<Global>^DHCPACKAGEDEPCONBILL</Global>
+<Subscript name="1">
+<Expression>{dcb_rowid}</Expression>
+</Subscript>
+<RowIdSpec name="1">
+<Expression>{L1}</Expression>
+<Field>dcb_rowid</Field>
+</RowIdSpec>
+<Data name="dcb_billdr">
+<Delimiter>"^"</Delimiter>
+<Piece>3</Piece>
+</Data>
+<Data name="dcb_depositdr">
+<Delimiter>"^"</Delimiter>
+<Piece>2</Piece>
+</Data>
+<Data name="dcb_patientid">
+<Delimiter>"^"</Delimiter>
+<Piece>1</Piece>
+</Data>
+</SQLMap>
+</Storage>
+</Class>
+</Export>

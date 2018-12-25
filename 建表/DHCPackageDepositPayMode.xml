@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2018-12-20 18:24:58">
+<Class name="User.DHCPackageDepositPayMode">
+<ClassType>persistent</ClassType>
+<SqlTableName>dhc_package_depositpaymode</SqlTableName>
+<StorageStrategy>SQLStorage</StorageStrategy>
+<Super>%Persistent</Super>
+<TimeChanged>65002,66232.302661</TimeChanged>
+<TimeCreated>65002,60883.634058</TimeCreated>
+
+<Property name="DHCPackageDepositRef">
+<Description>
+关联的父表DHCPackageDeposit</Description>
+<Type>DHCPackageDeposit</Type>
+<Cardinality>parent</Cardinality>
+<Inverse>ChildDHCPackageDepositPayMode</Inverse>
+<Relationship>1</Relationship>
+<SqlFieldName>dpm_dep_parref</SqlFieldName>
+</Property>
+
+<Property name="DBChildSub">
+<Type>%Library.Numeric</Type>
+<InitialExpression>$i(^DHCPACKAGEDEPOSIT($p(%d(0),$c(1),1),"P",0))</InitialExpression>
+<Required>1</Required>
+<SqlColumnNumber>2</SqlColumnNumber>
+<SqlFieldName>dpm_childsub</SqlFieldName>
+<Parameter name="SCALE" value="0"/>
+</Property>
+
+<Index name="DBChildSub">
+<IdKey>1</IdKey>
+<PrimaryKey>1</PrimaryKey>
+<Properties>DBChildSub</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Property name="dpmpaymodedr">
+<Type>User.CTPayMode</Type>
+<Required>1</Required>
+<SqlColumnNumber>3</SqlColumnNumber>
+<SqlFieldName>dpm_paymode_dr</SqlFieldName>
+</Property>
+
+<Property name="dpmamt">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>4</SqlColumnNumber>
+<SqlFieldName>dpm_amt</SqlFieldName>
+</Property>
+
+<Property name="dpmcardchequeno">
+<Type>%String</Type>
+<SqlColumnNumber>5</SqlColumnNumber>
+<SqlFieldName>dpm_cardchequeno</SqlFieldName>
+</Property>
+
+<Property name="dpmbankdr">
+<Description>
+银行ID应指向一个实体类,但不清楚该实体类</Description>
+<Type>%String</Type>
+<SqlColumnNumber>6</SqlColumnNumber>
+<SqlFieldName>dpm_bank_dr</SqlFieldName>
+</Property>
+
+<Property name="dpmcarddr">
+<Description>
+银行卡类型应指向一个实体类,但不清楚该实体类</Description>
+<Type>%String</Type>
+<SqlColumnNumber>7</SqlColumnNumber>
+<SqlFieldName>dpm_card_dr</SqlFieldName>
+</Property>
+
+<Property name="dpmdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>8</SqlColumnNumber>
+<SqlFieldName>dpm_date</SqlFieldName>
+</Property>
+
+<Property name="dpmtime">
+<Type>%Time</Type>
+<Required>1</Required>
+<SqlColumnNumber>9</SqlColumnNumber>
+<SqlFieldName>dpm_time</SqlFieldName>
+</Property>
+
+<Property name="dpmunitdr">
+<Description>
+支付单位应指向一个实体类,但不清楚该实体类</Description>
+<Type>%String</Type>
+<SqlColumnNumber>10</SqlColumnNumber>
+<SqlFieldName>dpm_unitdr</SqlFieldName>
+</Property>
+
+<Property name="dpmpayaccno">
+<Type>%String</Type>
+<SqlColumnNumber>11</SqlColumnNumber>
+<SqlFieldName>dpm_payaccno</SqlFieldName>
+</Property>
+
+<Property name="dpmchequedate">
+<Type>%Date</Type>
+<SqlColumnNumber>12</SqlColumnNumber>
+<SqlFieldName>dpm_chequedate</SqlFieldName>
+</Property>
+
+<Storage name="SQLStorage">
+<Type>%CacheSQLStorage</Type>
+<StreamLocation>^User.DHCPackageDepositPayModeS</StreamLocation>
+<SQLMap name="Map1">
+<Type>data</Type>
+<Global>^DHCPACKAGEDEPOSIT</Global>
+<Subscript name="1">
+<Expression>{dhc_package_deposit.dep_rowid}</Expression>
+</Subscript>
+<Subscript name="2">
+<Expression>"P"</Expression>
+</Subscript>
+<Subscript name="3">
+<Expression>{dpm_childsub}</Expression>
+</Subscript>
+<RowIdSpec name="1">
+<Expression>{L1}</Expression>
+<Field>dhc_package_deposit.dep_rowid</Field>
+</RowIdSpec>
+<RowIdSpec name="2">
+<Expression>{L3}</Expression>
+<Field>dpm_childsub</Field>
+</RowIdSpec>
+<Data name="dpm_amt">
+<Delimiter>"^"</Delimiter>
+<Piece>2</Piece>
+</Data>
+<Data name="dpm_bank_dr">
+<Delimiter>"^"</Delimiter>
+<Piece>4</Piece>
+</Data>
+<Data name="dpm_card_dr">
+<Delimiter>"^"</Delimiter>
+<Piece>5</Piece>
+</Data>
+<Data name="dpm_cardchequeno">
+<Delimiter>"^"</Delimiter>
+<Piece>3</Piece>
+</Data>
+<Data name="dpm_chequedate">
+<Delimiter>"^"</Delimiter>
+<Piece>10</Piece>
+</Data>
+<Data name="dpm_date">
+<Delimiter>"^"</Delimiter>
+<Piece>6</Piece>
+</Data>
+<Data name="dpm_payaccno">
+<Delimiter>"^"</Delimiter>
+<Piece>9</Piece>
+</Data>
+<Data name="dpm_paymode_dr">
+<Delimiter>"^"</Delimiter>
+<Piece>1</Piece>
+</Data>
+<Data name="dpm_time">
+<Delimiter>"^"</Delimiter>
+<Piece>7</Piece>
+</Data>
+<Data name="dpm_unitdr">
+<Delimiter>"^"</Delimiter>
+<Piece>8</Piece>
+</Data>
+</SQLMap>
+</Storage>
+</Class>
+</Export>

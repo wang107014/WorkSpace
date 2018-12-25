@@ -1,0 +1,247 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2018-12-20 18:28:15">
+<Class name="User.DHCPackageBillDetail">
+<ClassType>persistent</ClassType>
+<SqlRowIdName>bd_rowid</SqlRowIdName>
+<SqlTableName>DHC_Package_BillDetail</SqlTableName>
+<StorageStrategy>SQLStorage</StorageStrategy>
+<Super>%Persistent</Super>
+<TimeChanged>65002,59775.907694</TimeChanged>
+<TimeCreated>65002,31528.521779</TimeCreated>
+
+<Property name="DHCPackageBillParRef">
+<Description>
+关联的父表DHCPackageBill</Description>
+<Type>DHCPackageBill</Type>
+<Cardinality>parent</Cardinality>
+<Inverse>ChildDHCPackageBillDetail</Inverse>
+<Relationship>1</Relationship>
+<SqlFieldName>bd_Parref</SqlFieldName>
+</Property>
+
+<Property name="DBChildSub">
+<Type>%Library.Numeric</Type>
+<InitialExpression>$i(^DHCPACKAGEBILL($p(%d(0),$c(1),1),"C",0))</InitialExpression>
+<Required>1</Required>
+<SqlColumnNumber>2</SqlColumnNumber>
+<SqlFieldName>bd_ChildSub</SqlFieldName>
+<Parameter name="SCALE" value="0"/>
+</Property>
+
+<Index name="DBChildSub">
+<IdKey>1</IdKey>
+<PrimaryKey>1</PrimaryKey>
+<Properties>DBChildSub</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Property name="ChildDHCPackageOrderDetails">
+<Description>
+关联的子表DHCPackageBillDetail</Description>
+<Type>DHCPackageOrderDetails</Type>
+<Cardinality>children</Cardinality>
+<Inverse>DHCPackageBillDetailParRef</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="bdpatientid">
+<Type>User.PAPatMas</Type>
+<Required>1</Required>
+<SqlColumnNumber>3</SqlColumnNumber>
+<SqlFieldName>bd_patientid</SqlFieldName>
+</Property>
+
+<Property name="bdproductid">
+<Type>User.DHCPackageProduct</Type>
+<Required>1</Required>
+<SqlColumnNumber>4</SqlColumnNumber>
+<SqlFieldName>bd_productid</SqlFieldName>
+</Property>
+
+<Property name="bduomid">
+<Type>User.CTUOM</Type>
+<Required>1</Required>
+<SqlColumnNumber>5</SqlColumnNumber>
+<SqlFieldName>bd_uomid</SqlFieldName>
+</Property>
+
+<Property name="bdvalidstartdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>6</SqlColumnNumber>
+<SqlFieldName>bd_validstartdate</SqlFieldName>
+</Property>
+
+<Property name="bdvalidenddate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>7</SqlColumnNumber>
+<SqlFieldName>bd_validenddate</SqlFieldName>
+</Property>
+
+<Property name="bdquantity">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>8</SqlColumnNumber>
+<SqlFieldName>bd_quantity</SqlFieldName>
+</Property>
+
+<Property name="bdpriceperunit">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>9</SqlColumnNumber>
+<SqlFieldName>bd_priceperunit</SqlFieldName>
+</Property>
+
+<Property name="bdbaseamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>10</SqlColumnNumber>
+<SqlFieldName>bd_baseamount</SqlFieldName>
+</Property>
+
+<Property name="bdmanualdiscountamount">
+<Type>%Float</Type>
+<SqlColumnNumber>11</SqlColumnNumber>
+<SqlFieldName>bd_manualdiscountamount</SqlFieldName>
+</Property>
+
+<Property name="bdextendedamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>12</SqlColumnNumber>
+<SqlFieldName>bd_extendedamount</SqlFieldName>
+</Property>
+
+<Property name="bdremainingquantity">
+<Type>%Float</Type>
+<SqlColumnNumber>13</SqlColumnNumber>
+<SqlFieldName>bd_remainingquantity</SqlFieldName>
+</Property>
+
+<Property name="bddeductpriceperunit">
+<Type>%Float</Type>
+<SqlColumnNumber>14</SqlColumnNumber>
+<SqlFieldName>bd_deductpriceperunit</SqlFieldName>
+</Property>
+
+<Property name="bdsalespromotioncode">
+<Type>%String</Type>
+<SqlColumnNumber>15</SqlColumnNumber>
+<SqlFieldName>bd_salespromotioncode</SqlFieldName>
+</Property>
+
+<Property name="bdcouponcode">
+<Type>%String</Type>
+<SqlColumnNumber>16</SqlColumnNumber>
+<SqlFieldName>bd_couponcode</SqlFieldName>
+</Property>
+
+<Property name="bdsalesorderdiscountid">
+<Type>%String</Type>
+<SqlColumnNumber>17</SqlColumnNumber>
+<SqlFieldName>bd_salesorderdiscountid</SqlFieldName>
+</Property>
+
+<Property name="bdproducttypecode">
+<Description>
+1：基础产品；2：套餐；3：套餐子项</Description>
+<Type>%Integer</Type>
+<Required>1</Required>
+<SqlColumnNumber>18</SqlColumnNumber>
+<SqlFieldName>bd_producttypecode</SqlFieldName>
+<Parameter name="DISPLAYLIST" value=",1,2,3"/>
+<Parameter name="VALUELIST" value=",1,2,3"/>
+</Property>
+
+<Storage name="SQLStorage">
+<Type>%CacheSQLStorage</Type>
+<StreamLocation>^User.DHCPackageBillDetailS</StreamLocation>
+<SQLMap name="Map1">
+<Type>data</Type>
+<Global>^DHCPACKAGEBILL</Global>
+<Subscript name="1">
+<Expression>{DHC_Package_Bill.bill_rowid}</Expression>
+</Subscript>
+<Subscript name="2">
+<Expression>"C"</Expression>
+</Subscript>
+<Subscript name="3">
+<Expression>{bd_ChildSub}</Expression>
+</Subscript>
+<RowIdSpec name="1">
+<Expression>{L1}</Expression>
+<Field>DHC_Package_Bill.bill_rowid</Field>
+</RowIdSpec>
+<RowIdSpec name="2">
+<Expression>{L3}</Expression>
+<Field>bd_ChildSub</Field>
+</RowIdSpec>
+<Data name="bd_baseamount">
+<Delimiter>"^"</Delimiter>
+<Piece>8</Piece>
+</Data>
+<Data name="bd_couponcode">
+<Delimiter>"^"</Delimiter>
+<Piece>14</Piece>
+</Data>
+<Data name="bd_deductpriceperunit">
+<Delimiter>"^"</Delimiter>
+<Piece>12</Piece>
+</Data>
+<Data name="bd_extendedamount">
+<Delimiter>"^"</Delimiter>
+<Piece>10</Piece>
+</Data>
+<Data name="bd_manualdiscountamount">
+<Delimiter>"^"</Delimiter>
+<Piece>9</Piece>
+</Data>
+<Data name="bd_patientid">
+<Delimiter>"^"</Delimiter>
+<Piece>1</Piece>
+</Data>
+<Data name="bd_priceperunit">
+<Delimiter>"^"</Delimiter>
+<Piece>7</Piece>
+</Data>
+<Data name="bd_productid">
+<Delimiter>"^"</Delimiter>
+<Piece>2</Piece>
+</Data>
+<Data name="bd_producttypecode">
+<Delimiter>"^"</Delimiter>
+<Piece>16</Piece>
+</Data>
+<Data name="bd_quantity">
+<Delimiter>"^"</Delimiter>
+<Piece>6</Piece>
+</Data>
+<Data name="bd_remainingquantity">
+<Delimiter>"^"</Delimiter>
+<Piece>11</Piece>
+</Data>
+<Data name="bd_salesorderdiscountid">
+<Delimiter>"^"</Delimiter>
+<Piece>15</Piece>
+</Data>
+<Data name="bd_salespromotioncode">
+<Delimiter>"^"</Delimiter>
+<Piece>13</Piece>
+</Data>
+<Data name="bd_uomid">
+<Delimiter>"^"</Delimiter>
+<Piece>3</Piece>
+</Data>
+<Data name="bd_validenddate">
+<Delimiter>"^"</Delimiter>
+<Piece>5</Piece>
+</Data>
+<Data name="bd_validstartdate">
+<Delimiter>"^"</Delimiter>
+<Piece>4</Piece>
+</Data>
+</SQLMap>
+</Storage>
+</Class>
+</Export>

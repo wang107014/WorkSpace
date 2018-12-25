@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2018-12-20 18:21:56">
+<Class name="User.DHCPackageInvprtReports">
+<ClassType>persistent</ClassType>
+<SqlRowIdName>rep_rowid</SqlRowIdName>
+<SqlTableName>dhc_package_invprtreports</SqlTableName>
+<StorageStrategy>SQLStorage</StorageStrategy>
+<Super>%Persistent</Super>
+<TimeChanged>65002,56640.836382</TimeChanged>
+<TimeCreated>65002,52444.594196</TimeCreated>
+
+<Property name="ChildDHCPackageReportPayMode">
+<Description>
+关联的子表DHCPackageBillDetail</Description>
+<Type>DHCPackageReportPayMode</Type>
+<Cardinality>children</Cardinality>
+<Inverse>DHCPackageInvprtReportsRef</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="ChildDHCPackageReportSub">
+<Description>
+关联的子表DHCPackageBillDetail</Description>
+<Type>DHCPackageReportSub</Type>
+<Cardinality>children</Cardinality>
+<Inverse>DHCPackageInvprtRef</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="repdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>2</SqlColumnNumber>
+<SqlFieldName>rep_date</SqlFieldName>
+</Property>
+
+<Property name="reptime">
+<Type>%Time</Type>
+<Required>1</Required>
+<SqlColumnNumber>3</SqlColumnNumber>
+<SqlFieldName>rep_time</SqlFieldName>
+</Property>
+
+<Property name="repstartdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>4</SqlColumnNumber>
+<SqlFieldName>rep_startdate</SqlFieldName>
+</Property>
+
+<Property name="repstarttime">
+<Type>%Time</Type>
+<Required>1</Required>
+<SqlColumnNumber>5</SqlColumnNumber>
+<SqlFieldName>rep_starttime</SqlFieldName>
+</Property>
+
+<Property name="rependdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>6</SqlColumnNumber>
+<SqlFieldName>rep_enddate</SqlFieldName>
+</Property>
+
+<Property name="rependtime">
+<Type>%Time</Type>
+<Required>1</Required>
+<SqlColumnNumber>7</SqlColumnNumber>
+<SqlFieldName>rep_endtime</SqlFieldName>
+</Property>
+
+<Property name="repuserid">
+<Type>User.SSUser</Type>
+<Required>1</Required>
+<SqlColumnNumber>8</SqlColumnNumber>
+<SqlFieldName>rep_userid</SqlFieldName>
+</Property>
+
+<Property name="repamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>9</SqlColumnNumber>
+<SqlFieldName>rep_amount</SqlFieldName>
+</Property>
+
+<Property name="repnum">
+<Type>%Float</Type>
+<SqlColumnNumber>10</SqlColumnNumber>
+<SqlFieldName>rep_num</SqlFieldName>
+</Property>
+
+<Property name="repinvno">
+<Type>%Float</Type>
+<SqlColumnNumber>11</SqlColumnNumber>
+<SqlFieldName>rep_invno</SqlFieldName>
+</Property>
+
+<Property name="repinvroundsum">
+<Type>%Float</Type>
+<SqlColumnNumber>12</SqlColumnNumber>
+<SqlFieldName>rep_invroundsum</SqlFieldName>
+</Property>
+
+<Property name="rephospitalid">
+<Type>User.CTHospital</Type>
+<Required>1</Required>
+<SqlColumnNumber>13</SqlColumnNumber>
+<SqlFieldName>rep_hospitalid</SqlFieldName>
+</Property>
+
+<Storage name="SQLStorage">
+<Type>%CacheSQLStorage</Type>
+<SqlIdExpression>$I(^mdata("DHCPACKAGEINVPRTREPORTS"))</SqlIdExpression>
+<StreamLocation>^User.DHCPackageInvprtReportsS</StreamLocation>
+<SQLMap name="Map1">
+<Type>data</Type>
+<Global>^DHCPACKAGEINVPRTREPORTS</Global>
+<Subscript name="1">
+<Expression>{rep_rowid}</Expression>
+</Subscript>
+<RowIdSpec name="1">
+<Expression>{L1}</Expression>
+<Field>rep_rowid</Field>
+</RowIdSpec>
+<Data name="rep_amount">
+<Delimiter>"^"</Delimiter>
+<Piece>8</Piece>
+</Data>
+<Data name="rep_date">
+<Delimiter>"^"</Delimiter>
+<Piece>1</Piece>
+</Data>
+<Data name="rep_enddate">
+<Delimiter>"^"</Delimiter>
+<Piece>5</Piece>
+</Data>
+<Data name="rep_endtime">
+<Delimiter>"^"</Delimiter>
+<Piece>6</Piece>
+</Data>
+<Data name="rep_hospitalid">
+<Delimiter>"^"</Delimiter>
+<Piece>12</Piece>
+</Data>
+<Data name="rep_invno">
+<Delimiter>"^"</Delimiter>
+<Piece>10</Piece>
+</Data>
+<Data name="rep_invroundsum">
+<Delimiter>"^"</Delimiter>
+<Piece>11</Piece>
+</Data>
+<Data name="rep_num">
+<Delimiter>"^"</Delimiter>
+<Piece>9</Piece>
+</Data>
+<Data name="rep_startdate">
+<Delimiter>"^"</Delimiter>
+<Piece>3</Piece>
+</Data>
+<Data name="rep_starttime">
+<Delimiter>"^"</Delimiter>
+<Piece>4</Piece>
+</Data>
+<Data name="rep_time">
+<Delimiter>"^"</Delimiter>
+<Piece>2</Piece>
+</Data>
+<Data name="rep_userid">
+<Delimiter>"^"</Delimiter>
+<Piece>7</Piece>
+</Data>
+</SQLMap>
+</Storage>
+</Class>
+</Export>

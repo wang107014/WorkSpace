@@ -1,0 +1,155 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2018-12-20 18:22:14">
+<Class name="User.DHCPackageReportPayMode">
+<ClassType>persistent</ClassType>
+<SqlRowIdName>rpm_rowid</SqlRowIdName>
+<SqlTableName>dhc_package_reportpaymode</SqlTableName>
+<StorageStrategy>SQLStorage</StorageStrategy>
+<Super>%Persistent</Super>
+<TimeChanged>65002,54804.505343</TimeChanged>
+<TimeCreated>65002,53911.844455</TimeCreated>
+
+<Property name="DHCPackageInvprtReportsRef">
+<Description>
+关联的父表DHCPackageBill</Description>
+<Type>DHCPackageInvprtReports</Type>
+<Cardinality>parent</Cardinality>
+<Inverse>ChildDHCPackageReportPayMode</Inverse>
+<Relationship>1</Relationship>
+<SqlFieldName>rpm_rep_parref</SqlFieldName>
+</Property>
+
+<Property name="DBChildSub">
+<Type>%Library.Numeric</Type>
+<InitialExpression>$i(^DHCPACKAGEINVPRTREPORTS($p(%d(0),$c(1),1),"P",0))</InitialExpression>
+<Required>1</Required>
+<SqlColumnNumber>2</SqlColumnNumber>
+<SqlFieldName>rpm_childsub</SqlFieldName>
+<Parameter name="SCALE" value="0"/>
+</Property>
+
+<Index name="DBChildSub">
+<IdKey>1</IdKey>
+<PrimaryKey>1</PrimaryKey>
+<Properties>DBChildSub</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Property name="rpmpaymodedr">
+<Type>User.CTPayMode</Type>
+<Required>1</Required>
+<SqlColumnNumber>3</SqlColumnNumber>
+<SqlFieldName>rpm_paymodedr</SqlFieldName>
+</Property>
+
+<Property name="rpminvpayum">
+<Type>%Float</Type>
+<SqlColumnNumber>4</SqlColumnNumber>
+<SqlFieldName>rpm_invpayum</SqlFieldName>
+</Property>
+
+<Property name="rpminvpaynum">
+<Type>%Float</Type>
+<SqlColumnNumber>5</SqlColumnNumber>
+<SqlFieldName>rpm_invpaynum</SqlFieldName>
+</Property>
+
+<Property name="rpminvrefundsum">
+<Type>%Float</Type>
+<SqlColumnNumber>6</SqlColumnNumber>
+<SqlFieldName>rpm_invrefundsum</SqlFieldName>
+</Property>
+
+<Property name="rpminvrefundnum">
+<Type>%Float</Type>
+<SqlColumnNumber>7</SqlColumnNumber>
+<SqlFieldName>rpm_invrefundnum</SqlFieldName>
+</Property>
+
+<Property name="rpmdepnum">
+<Type>%Float</Type>
+<SqlColumnNumber>8</SqlColumnNumber>
+<SqlFieldName>rpm_depnum</SqlFieldName>
+</Property>
+
+<Property name="rpmdepsum">
+<Type>%Float</Type>
+<SqlColumnNumber>9</SqlColumnNumber>
+<SqlFieldName>rpm_depsum</SqlFieldName>
+</Property>
+
+<Property name="rpmdeprefundnum">
+<Type>%Float</Type>
+<SqlColumnNumber>10</SqlColumnNumber>
+<SqlFieldName>rpm_deprefundnum</SqlFieldName>
+</Property>
+
+<Property name="rpmdeprefundsum">
+<Type>%Float</Type>
+<SqlColumnNumber>11</SqlColumnNumber>
+<SqlFieldName>rpm_deprefundsum</SqlFieldName>
+</Property>
+
+<Storage name="SQLStorage">
+<Type>%CacheSQLStorage</Type>
+<StreamLocation>^User.DHCPackageReportPayModeS</StreamLocation>
+<SQLMap name="Map1">
+<Type>data</Type>
+<Global>^DHCPACKAGEINVPRTREPORTS</Global>
+<Subscript name="1">
+<Expression>{dhc_package_invprtreports.rep_rowid}</Expression>
+</Subscript>
+<Subscript name="2">
+<Expression>"P"</Expression>
+</Subscript>
+<Subscript name="3">
+<Expression>{rpm_childsub}</Expression>
+</Subscript>
+<RowIdSpec name="1">
+<Expression>{L1}</Expression>
+<Field>dhc_package_invprtreports.rep_rowid</Field>
+</RowIdSpec>
+<RowIdSpec name="2">
+<Expression>{L3}</Expression>
+<Field>rpm_childsub</Field>
+</RowIdSpec>
+<Data name="rpm_depnum">
+<Delimiter>"^"</Delimiter>
+<Piece>6</Piece>
+</Data>
+<Data name="rpm_deprefundnum">
+<Delimiter>"^"</Delimiter>
+<Piece>8</Piece>
+</Data>
+<Data name="rpm_deprefundsum">
+<Delimiter>"^"</Delimiter>
+<Piece>9</Piece>
+</Data>
+<Data name="rpm_depsum">
+<Delimiter>"^"</Delimiter>
+<Piece>7</Piece>
+</Data>
+<Data name="rpm_invpaynum">
+<Delimiter>"^"</Delimiter>
+<Piece>3</Piece>
+</Data>
+<Data name="rpm_invpayum">
+<Delimiter>"^"</Delimiter>
+<Piece>2</Piece>
+</Data>
+<Data name="rpm_invrefundnum">
+<Delimiter>"^"</Delimiter>
+<Piece>5</Piece>
+</Data>
+<Data name="rpm_invrefundsum">
+<Delimiter>"^"</Delimiter>
+<Piece>4</Piece>
+</Data>
+<Data name="rpm_paymodedr">
+<Delimiter>"^"</Delimiter>
+<Piece>1</Piece>
+</Data>
+</SQLMap>
+</Storage>
+</Class>
+</Export>

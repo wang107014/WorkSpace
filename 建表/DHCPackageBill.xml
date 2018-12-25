@@ -1,0 +1,299 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2018-12-20 18:28:20">
+<Class name="User.DHCPackageBill">
+<ClassType>persistent</ClassType>
+<SqlRowIdName>bill_rowid</SqlRowIdName>
+<SqlTableName>DHC_Package_Bill</SqlTableName>
+<StorageStrategy>SQLStorage</StorageStrategy>
+<Super>%Persistent</Super>
+<TimeChanged>65002,66412.667336</TimeChanged>
+<TimeCreated>65002,30741.645816</TimeCreated>
+
+<Property name="ChildDHCPackageBillDetail">
+<Description>
+关联的子表DHCPackageBillDetail</Description>
+<Type>DHCPackageBillDetail</Type>
+<Cardinality>children</Cardinality>
+<Inverse>DHCPackageBillParRef</Inverse>
+<Relationship>1</Relationship>
+</Property>
+
+<Property name="billordernumber">
+<Type>%String</Type>
+<Required>1</Required>
+<SqlColumnNumber>2</SqlColumnNumber>
+<SqlFieldName>bill_ordernumber</SqlFieldName>
+</Property>
+
+<Property name="billpatientid">
+<Type>User.PAPatMas</Type>
+<Required>1</Required>
+<SqlColumnNumber>3</SqlColumnNumber>
+<SqlFieldName>bill_patientid</SqlFieldName>
+</Property>
+
+<Property name="billhospitalid">
+<Type>User.CTHospital</Type>
+<Required>1</Required>
+<SqlColumnNumber>4</SqlColumnNumber>
+<SqlFieldName>bill_hospitalid</SqlFieldName>
+</Property>
+
+<Property name="billdeptid">
+<Type>User.CTLoc</Type>
+<SqlColumnNumber>5</SqlColumnNumber>
+<SqlFieldName>bill_deptid</SqlFieldName>
+</Property>
+
+<Property name="billdeptdesc">
+<Type>%String</Type>
+<Required>1</Required>
+<SqlColumnNumber>6</SqlColumnNumber>
+<SqlFieldName>bill_deptdesc</SqlFieldName>
+</Property>
+
+<Property name="billsubmitdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>7</SqlColumnNumber>
+<SqlFieldName>bill_submitdate</SqlFieldName>
+</Property>
+
+<Property name="billsubmittime">
+<Type>%Time</Type>
+<Required>1</Required>
+<SqlColumnNumber>8</SqlColumnNumber>
+<SqlFieldName>bill_submittime</SqlFieldName>
+</Property>
+
+<Property name="billownerid">
+<Type>User.SSUser</Type>
+<SqlColumnNumber>9</SqlColumnNumber>
+<SqlFieldName>bill_ownerid</SqlFieldName>
+</Property>
+
+<Property name="billowner">
+<Type>%String</Type>
+<Required>1</Required>
+<SqlColumnNumber>10</SqlColumnNumber>
+<SqlFieldName>bill_owner</SqlFieldName>
+</Property>
+
+<Property name="billdatasource">
+<Description>
+5:CRM,10:MDM,15:APP,20:官网,25:HIS</Description>
+<Type>%Integer</Type>
+<Required>1</Required>
+<SqlColumnNumber>11</SqlColumnNumber>
+<SqlFieldName>bill_datasource</SqlFieldName>
+<Parameter name="DISPLAYLIST" value=",5,10,15,20,25"/>
+<Parameter name="VALUELIST" value=",5,10,15,20,25"/>
+</Property>
+
+<Property name="billtransactioncurrencyid">
+<Type>%Integer</Type>
+<Required>1</Required>
+<SqlColumnNumber>12</SqlColumnNumber>
+<SqlFieldName>bill_transactioncurrencyid</SqlFieldName>
+</Property>
+
+<Property name="billtotalamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>13</SqlColumnNumber>
+<SqlFieldName>bill_totalamount</SqlFieldName>
+</Property>
+
+<Property name="billtotaldiscountamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>14</SqlColumnNumber>
+<SqlFieldName>bill_totaldiscountamount</SqlFieldName>
+</Property>
+
+<Property name="billtotalpayableamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>15</SqlColumnNumber>
+<SqlFieldName>bill_totalpayableamount</SqlFieldName>
+</Property>
+
+<Property name="billoriginalbilldr">
+<Type>User.CRMSetMeal.dhcpackagebill</Type>
+<SqlColumnNumber>16</SqlColumnNumber>
+<SqlFieldName>bill_originalbilldr</SqlFieldName>
+</Property>
+
+<Property name="billstatuscode">
+<Description>
+5：新建，10：待支付，15：部分支付，20：已支付，25：已完成，30：退费，35：停用</Description>
+<Type>%String</Type>
+<Required>1</Required>
+<SqlColumnNumber>17</SqlColumnNumber>
+<SqlFieldName>bill_statuscode</SqlFieldName>
+<Parameter name="DISPLAYLIST" value=",5,10,15,20,25,30,35"/>
+<Parameter name="VALUELIST" value=",5,10,15,20,25,30,35"/>
+</Property>
+
+<Property name="billvalidstartdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>18</SqlColumnNumber>
+<SqlFieldName>bill_validstartdate</SqlFieldName>
+</Property>
+
+<Property name="billvalidenddate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>19</SqlColumnNumber>
+<SqlFieldName>bill_validenddate</SqlFieldName>
+</Property>
+
+<Property name="billremainingdeductamount">
+<Type>%Float</Type>
+<SqlColumnNumber>20</SqlColumnNumber>
+<SqlFieldName>bill_remainingdeductamount</SqlFieldName>
+</Property>
+
+<Property name="billcreatdate">
+<Type>%Date</Type>
+<Required>1</Required>
+<SqlColumnNumber>21</SqlColumnNumber>
+<SqlFieldName>bill_creatdate</SqlFieldName>
+</Property>
+
+<Property name="billcreattime">
+<Type>%Time</Type>
+<Required>1</Required>
+<SqlColumnNumber>22</SqlColumnNumber>
+<SqlFieldName>bill_creattime</SqlFieldName>
+</Property>
+
+<Property name="billpaymode">
+<Description>
+5：全额支付，10:定金支付</Description>
+<Type>%Integer</Type>
+<Required>1</Required>
+<SqlColumnNumber>23</SqlColumnNumber>
+<SqlFieldName>bill_paymode</SqlFieldName>
+<Parameter name="DISPLAYLIST" value=",5,10"/>
+<Parameter name="VALUELIST" value=",5,10"/>
+</Property>
+
+<Property name="billdepositamt">
+<Type>%Float</Type>
+<SqlColumnNumber>24</SqlColumnNumber>
+<SqlFieldName>bill_depositamt</SqlFieldName>
+</Property>
+
+<Storage name="SQLStorage">
+<Type>%CacheSQLStorage</Type>
+<SqlIdExpression>$I(^mdata("DHCPACKAGEBILL"))</SqlIdExpression>
+<StreamLocation>^User.DHCPackageBill</StreamLocation>
+<SQLMap name="DataMap">
+<Type>data</Type>
+<Global>^DHCPACKAGEBILL</Global>
+<PopulationType>nonnull</PopulationType>
+<Subscript name="1">
+<Expression>{bill_rowid}</Expression>
+</Subscript>
+<RowIdSpec name="1">
+<Expression>{L1}</Expression>
+<Field>bill_rowid</Field>
+</RowIdSpec>
+<Data name="bill_creatdate">
+<Delimiter>"^"</Delimiter>
+<Piece>20</Piece>
+</Data>
+<Data name="bill_creattime">
+<Delimiter>"^"</Delimiter>
+<Piece>21</Piece>
+</Data>
+<Data name="bill_datasource">
+<Delimiter>"^"</Delimiter>
+<Piece>10</Piece>
+</Data>
+<Data name="bill_depositamt">
+<Delimiter>"^"</Delimiter>
+<Piece>23</Piece>
+</Data>
+<Data name="bill_deptdesc">
+<Delimiter>"^"</Delimiter>
+<Piece>5</Piece>
+</Data>
+<Data name="bill_deptid">
+<Delimiter>"^"</Delimiter>
+<Piece>4</Piece>
+</Data>
+<Data name="bill_hospitalid">
+<Delimiter>"^"</Delimiter>
+<Piece>3</Piece>
+</Data>
+<Data name="bill_ordernumber">
+<Delimiter>"^"</Delimiter>
+<Piece>1</Piece>
+</Data>
+<Data name="bill_originalbilldr">
+<Delimiter>"^"</Delimiter>
+<Piece>15</Piece>
+</Data>
+<Data name="bill_owner">
+<Delimiter>"^"</Delimiter>
+<Piece>9</Piece>
+</Data>
+<Data name="bill_ownerid">
+<Delimiter>"^"</Delimiter>
+<Piece>8</Piece>
+</Data>
+<Data name="bill_patientid">
+<Delimiter>"^"</Delimiter>
+<Piece>2</Piece>
+</Data>
+<Data name="bill_paymode">
+<Delimiter>"^"</Delimiter>
+<Piece>22</Piece>
+</Data>
+<Data name="bill_remainingdeductamount">
+<Delimiter>"^"</Delimiter>
+<Piece>19</Piece>
+</Data>
+<Data name="bill_statuscode">
+<Delimiter>"^"</Delimiter>
+<Piece>16</Piece>
+</Data>
+<Data name="bill_submitdate">
+<Delimiter>"^"</Delimiter>
+<Piece>6</Piece>
+</Data>
+<Data name="bill_submittime">
+<Delimiter>"^"</Delimiter>
+<Piece>7</Piece>
+</Data>
+<Data name="bill_totalamount">
+<Delimiter>"^"</Delimiter>
+<Piece>12</Piece>
+</Data>
+<Data name="bill_totaldiscountamount">
+<Delimiter>"^"</Delimiter>
+<Piece>13</Piece>
+</Data>
+<Data name="bill_totalpayableamount">
+<Delimiter>"^"</Delimiter>
+<Piece>14</Piece>
+</Data>
+<Data name="bill_transactioncurrencyid">
+<Delimiter>"^"</Delimiter>
+<Piece>11</Piece>
+</Data>
+<Data name="bill_validenddate">
+<Delimiter>"^"</Delimiter>
+<Piece>18</Piece>
+</Data>
+<Data name="bill_validstartdate">
+<Delimiter>"^"</Delimiter>
+<Piece>17</Piece>
+</Data>
+</SQLMap>
+</Storage>
+</Class>
+</Export>

@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2018-12-20 12:03:58">
+<Class name="User.DHCPackageItemDetails">
+<ClassType>persistent</ClassType>
+<SqlRowIdName>itmd_rowid</SqlRowIdName>
+<SqlTableName>DHC_Package_Itemdetails</SqlTableName>
+<StorageStrategy>SQLStorage</StorageStrategy>
+<Super>%Persistent</Super>
+<TimeChanged>65002,43217.049376</TimeChanged>
+<TimeCreated>65002,43040.736249</TimeCreated>
+
+<Property name="DHCPackageOrderDetailsParRef">
+<Description>
+关联父表DHCPackageBillDetail</Description>
+<Type>DHCPackageOrderDetails</Type>
+<Cardinality>parent</Cardinality>
+<Inverse>ChildDHCPackageItemDetails</Inverse>
+<Relationship>1</Relationship>
+<SqlFieldName>item_Parref</SqlFieldName>
+</Property>
+
+<Property name="DHCChildSub">
+<Type>%Library.Numeric</Type>
+<InitialExpression>$i(^DHCPEPreIADM(+%d(0),"ORDITEM",$p($p(%d(0),$c(1)),"||",2),$p($p($p(%d(0),$c(1)),"||",2),"||",3),"Item",0))</InitialExpression>
+<Required>1</Required>
+<SqlColumnNumber>2</SqlColumnNumber>
+<SqlFieldName>item_ChildSub</SqlFieldName>
+<Parameter name="SCALE" value="0"/>
+</Property>
+
+<Index name="DHCChildSub">
+<IdKey>1</IdKey>
+<PrimaryKey>1</PrimaryKey>
+<Properties>DHCChildSub</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Property name="itmdproductid">
+<Type>User.DHCTarItem</Type>
+<Required>1</Required>
+<SqlColumnNumber>3</SqlColumnNumber>
+<SqlFieldName>itmd_productid</SqlFieldName>
+</Property>
+
+<Property name="itmdquantity">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>4</SqlColumnNumber>
+<SqlFieldName>itmd_quantity</SqlFieldName>
+</Property>
+
+<Property name="itmdpriceperunit">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>5</SqlColumnNumber>
+<SqlFieldName>itmd_priceperunit</SqlFieldName>
+</Property>
+
+<Property name="itmdpackagedetailprice">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>6</SqlColumnNumber>
+<SqlFieldName>itmd_packagedetailprice</SqlFieldName>
+</Property>
+
+<Property name="itmdbaseamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>7</SqlColumnNumber>
+<SqlFieldName>itmd_baseamount</SqlFieldName>
+</Property>
+
+<Property name="itmdmanualdiscountamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>8</SqlColumnNumber>
+<SqlFieldName>itmd_manualdiscountamount</SqlFieldName>
+</Property>
+
+<Property name="itmdextendedamount">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>9</SqlColumnNumber>
+<SqlFieldName>itmd_extendedamount</SqlFieldName>
+</Property>
+
+<Property name="itmddeductpriceperunit">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>10</SqlColumnNumber>
+<SqlFieldName>itmd_deductpriceperunit</SqlFieldName>
+</Property>
+
+<Property name="itmddeducttailnumber">
+<Type>%Float</Type>
+<Required>1</Required>
+<SqlColumnNumber>11</SqlColumnNumber>
+<SqlFieldName>itmd_deducttailnumber</SqlFieldName>
+</Property>
+
+<Storage name="SQLStorage">
+<Type>%CacheSQLStorage</Type>
+<StreamLocation>^User.DHCPackageItemDetailsS</StreamLocation>
+<SQLMap name="Map1">
+<Type>data</Type>
+<ConditionalWithHostVars/>
+<Global>^DHCPACKAGEBILL</Global>
+<Subscript name="1">
+<Expression>{DHC_Package_Bill.bill_rowid}</Expression>
+</Subscript>
+<Subscript name="2">
+<Expression>"C"</Expression>
+</Subscript>
+<Subscript name="3">
+<Expression>{DHC_Package_BillDetail.bd_ChildSub}</Expression>
+</Subscript>
+<Subscript name="4">
+<Expression>"Order"</Expression>
+</Subscript>
+<Subscript name="5">
+<Expression>{DHC_Package_OrderDetails.ordd_ChildSub}</Expression>
+</Subscript>
+<Subscript name="6">
+<Expression>"Item"</Expression>
+</Subscript>
+<Subscript name="7">
+<Expression>{item_ChildSub}</Expression>
+</Subscript>
+<RowIdSpec name="1">
+<Expression>{L1}</Expression>
+<Field>DHC_Package_Bill.bill_rowid</Field>
+</RowIdSpec>
+<RowIdSpec name="2">
+<Expression>{L3}</Expression>
+<Field>DHC_Package_BillDetail.bd_ChildSub</Field>
+</RowIdSpec>
+<RowIdSpec name="3">
+<Expression>{L5}</Expression>
+<Field>DHC_Package_OrderDetails.ordd_ChildSub</Field>
+</RowIdSpec>
+<RowIdSpec name="4">
+<Expression>{L7}</Expression>
+<Field>item_ChildSub</Field>
+</RowIdSpec>
+<Data name="itmd_baseamount">
+<Delimiter>"^"</Delimiter>
+<Piece>5</Piece>
+</Data>
+<Data name="itmd_deductpriceperunit">
+<Delimiter>"^"</Delimiter>
+<Piece>8</Piece>
+</Data>
+<Data name="itmd_deducttailnumber">
+<Delimiter>"^"</Delimiter>
+<Piece>9</Piece>
+</Data>
+<Data name="itmd_extendedamount">
+<Delimiter>"^"</Delimiter>
+<Piece>7</Piece>
+</Data>
+<Data name="itmd_manualdiscountamount">
+<Delimiter>"^"</Delimiter>
+<Piece>6</Piece>
+</Data>
+<Data name="itmd_packagedetailprice">
+<Delimiter>"^"</Delimiter>
+<Piece>4</Piece>
+</Data>
+<Data name="itmd_priceperunit">
+<Delimiter>"^"</Delimiter>
+<Piece>3</Piece>
+</Data>
+<Data name="itmd_productid">
+<Delimiter>"^"</Delimiter>
+<Piece>1</Piece>
+</Data>
+<Data name="itmd_quantity">
+<Delimiter>"^"</Delimiter>
+<Piece>2</Piece>
+</Data>
+</SQLMap>
+</Storage>
+</Class>
+</Export>
