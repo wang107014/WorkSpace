@@ -143,3 +143,22 @@
 	
 	//团体客户基本信息表
 	SELECT PGBI_Desc, * FROM DHC_PE_PreGBaseInfo WHERE PGBI_RowId=233
+
+
+##7、更新表信息
+
+	&SQL(Update Sqluser.DHC_PE_PreIADM set PIADM_BookDateBegin=:Date,PIADM_BookDateEnd=:Date,PIADM_BookTime=:Time where PIADM_RowID=:PreIADM)
+	i SQLCODE'=0
+	{
+		TROLLBACK
+		q "更新预约记录失败"
+	}
+
+	//更新预约时间表
+	SELECT * FROM DHC_PE_PreDateRecord 
+
+##获取VIP等级
+
+	//（预约）个人ADM表
+	SELECT PIADM_Vip, * FROM DHC_PE_PreIADM
+	s PackageType=$p($g(^DHCPEVIPLevel("VIP",PIADM_Vip)),"^",2)
