@@ -121,12 +121,16 @@
 	//体检接口类方法
 	SELECT * FROM DHC_PE_ServiceAction
 
+	//体检预约表
 	SELECT * FROM DHC_PE_NetPreRecord WHERE NPR_RegNo='020000000073'
 
-	//体检套餐
+	//证件表
+	SELECT * FROM PAC_CardType
+
+	//体检HIS套餐
 	SELECT * FROM ARC_OrdSets
 
-	//套餐类型表
+	//套餐表(类型)
 	SELECT * FROM DHC_PE_NetOrdSets WHERE NOS_HisSetsID IN ("24980","25104")
 
 
@@ -157,8 +161,20 @@
 	//更新预约时间表
 	SELECT * FROM DHC_PE_PreDateRecord 
 
-##获取VIP等级
+##8、获取VIP等级
 
 	//（预约）个人ADM表
 	SELECT PIADM_Vip, * FROM DHC_PE_PreIADM
 	s PackageType=$p($g(^DHCPEVIPLevel("VIP",PIADM_Vip)),"^",2)
+
+
+##9、预交金主表
+
+	预交金主表
+	SELECT * FROM DHC_PE_AdvancePayment
+
+	预交金金额变动表
+	SELECT * FROM DHC_PE_APAmountChange
+
+	体检发票表
+	SELECT * FROM DHC_INVOICE
