@@ -42,6 +42,9 @@
 	//医嘱套餐表
 	SELECT * FROM ARC_OrdSets
 
+	//工号
+	SELECT PAPER_EmployeeNo,* FROM PA_Person WHERE PAPER_Name='王莽'
+
 
 ##1、根据登记号判断是否有交费的预约记录
 

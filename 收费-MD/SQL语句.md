@@ -183,14 +183,14 @@
 	//医嘱项表：根据账单医嘱表查找医嘱项表的详细医嘱
 	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId='19352||1'
 
-
+	
 	//发票表
 	SELECT * FROM DHC_INVPRT WHERE PRT_Rowid=380327
-	
-	//支付方式表
+
+	//多种支付方式记录表 例如现金付和扫码付
 	SELECT * FROM DHC_INVPayMode WHERE IPM_PRT_ParRef=380327
 	
-	//票据账单连接表
+	//票据账单连接表--关联发票表、就诊表、账单主表
 	SELECT * FROM DHC_BillConINV WHERE DHCBCI_INVDR=380327
 	
 	//账单主表
@@ -418,13 +418,10 @@
 	//诊断表
 	SELECT * FROM MRC_ICDDX WHERE MRCID_RowId IN (24983,16462,25320)
 
-
-
-
 ##发票
 
 	SELECT PRT_ARRCP_DR, PRT_initInv_DR, * FROM DHC_INVPRT 
-	
+
 	SELECT * FROM AR_Receipts WHERE ARRCP_RowId IN (807,803)
 	//综合打印发票
 	SELECT * FROM DHC_AccPayINV
