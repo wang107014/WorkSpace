@@ -94,3 +94,43 @@
    
 	//病人医嘱费用明细表
 	SELECT * FROM DHC_PatBillOrder  WHERE PBO_PB_ParRef =429041
+
+
+
+
+##优惠劵
+
+	SELECT * FROM DHC_INVPRT WHERE PRT_Rowid=382911
+
+	SELECT * FROM DHC_INVPayMode WHERE IPM_PRT_ParRef=382911
+
+	//CRM支付方式关联
+	SELECT * FROM DHC_CRMPayCONPRT WHERE CPC_PayMode_DR='382911||2'
+
+
+
+
+##第三方平台对账
+
+	//His交易明细表
+	SELECT * FROM DHC_BillExtTradePay WHERE ETP_PayMode=4
+
+	//第三方交易明细表
+	SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_OutTradeNo='185357215410'
+
+
+
+
+##基本信息表
+
+	//挂号表
+	SELECT * FROM DHCRegistrationFee WHERE RegfeeName="陆民飞"
+	
+	//医护人员表
+	SELECT  * FROM CT_CareProv WHERE CTPCP_RowId1=665
+	
+	//科室表
+	SELECT * FROM CT_Loc WHERE CTLOC_RowID=22
+	
+	//就诊表
+	SELECT * FROM PA_Adm WHERE PAADM_RowID=4083
