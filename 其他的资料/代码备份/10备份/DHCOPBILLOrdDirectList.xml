@@ -1,0 +1,2912 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-01-20 14:18:26">
+<Class name="web.DHCOPBILLOrdDirectList">
+<Description>
+Lid 
+2010-05-31
+医嘱导引单类</Description>
+<ClassType/>
+<Import>SQLUser</Import>
+<ProcedureBlock>0</ProcedureBlock>
+<Super>%RegisteredObject,websys.Abstract</Super>
+<TimeChanged>65033,45127.612265</TimeChanged>
+<TimeCreated>62144,30119.98389</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Parameter name="BUILD">
+<Default>624</Default>
+</Parameter>
+
+<Method name="GetDirectListByPrtRowidGXBH">
+<Description>
+Creator:Lid
+CreatDate:2012-12-06
+Description:获取导诊单数据(广西北海)
+Table:DHC_InvPrt,DHC_PatientBill,DHC_BillConInv,OE_OrdItem,ARC_ItmMast,ARC_ItemCat
+Input:PrtRowid:发票表RowID
+Output:
+Return:
+Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidGXBH("356790")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowid:%String,ExpStr=""</FormalSpec>
+<Implementation><![CDATA[
+	New (PrtRowid,ExpStr)
+	;医嘱项目^数量^标本^接受科室
+	Kill ^TMP($ZN,$j,"D")
+	Kill ^TMP($ZN,$j,"PBID")
+	;
+	Quit:+PrtRowid=0 ""
+    ;病人基本信息
+    Set paperDr=$p(^DHCINVPRT(PrtRowid),"^",15)
+	If $d(^PAPER(paperDr,"PAT",1)) Do
+	.Set patNo=$p(^PAPER(paperDr,"PAT",1),"^",1)   ;登记号
+	.Set medicare=$p(^PAPER(paperDr,"PAT",1),"^",22)   ;病案号
+	Set CardNO=""
+	;Set CardInfo=##class(web.UDHCJFBaseCommon).GetCardNOByPAPMI("",paperDr,"")
+	;Set CardNO=$p(CardInfo,"^",1)
+	If $d(^PAPER(paperDr,"ALL")) Do
+	.Set patName=$p(^PAPER(paperDr,"ALL"),"^",1)   ;姓名
+	.Set patmiId=$p(^PAPER(paperDr,"ALL"),"^",9)   ;身份证
+	.Set sex=$p(^PAPER(paperDr,"ALL"),"^",7)       ;性别
+	.If sex'="" s sex=$p(^CT("SEX",sex),"^",2)
+	.Set (patdob,patageyr,patagemth,patageday,age)=""
+	.&sql(select paper_dob,paper_ageyr,paper_agemth,paper_ageday into :patdob,:patageyr,:patagemth,:patageday 
+	      from pa_person where paper_rowid=:paperDr)
+	.;If patdob'="" Set age=..GetAge($zd(+$h,3), $zd(patdob,3))  ;计算年龄
+	.;If +age>120 Set age=""   ;控制年龄上限
+	.;+2015-3-19 hujunbin 使用年龄统一接口
+	.Set age=##Class(web.DHCBillInterface).GetPapmiAge(paperDr,"")
+	;
+	;获取中草药配制
+	Set HerbConfig=##class(web.DHCOPConfig).GetHerbalConfig()
+	Set rtn=$p(HerbConfig,$c(2))
+	Quit:rtn 104   ;配置错误
+	Set FCHerbFlag=$p(HerbConfig,$c(2),2)		;OPFC_HerbalFlag
+	Set FCHerbDesc=$p(HerbConfig,$c(2),3)
+	Set FCHerbNum=$p(HerbConfig,$c(2),4)
+	Set FCHerbRange=$p(HerbConfig,$c(2),5)
+	;
+	Set PrtDate=$p(^DHCINVPRT(PrtRowid),"^",5)
+	Set PrtTime=$p(^DHCINVPRT(PrtRowid),"^",20)
+	Set PrtDateDesc=$zd(PrtDate,3)
+	Set PrtTimeDesc=$zt(PrtTime,1)
+	Set PrtUser=$p(^DHCINVPRT(PrtRowid),"^",21)
+	Set PrtUserDesc=$p(^SSU("SSUSR",PrtUser),"^",2)
+	Set BaseInfo="CardNO"_$c(2)_CardNO_"^"_"PatientNO"_$c(2)_patNo_"^"_"PatientName"_$c(2)_patName_"^"_"Sex"_$c(2)_sex
+	Set BaseInfo=BaseInfo_"^"_"Age"_$c(2)_age_"岁"_"^"_"PrtUser"_$c(2)_PrtUserDesc_"^"_"PrtDate"_$c(2)_PrtDateDesc_" "_PrtTimeDesc
+	;
+	Set FCHerIndex=0,ZJFlagIndex=0
+	;
+	Set BCIDR=""
+    For  Set BCIDR=$o(^DHCBCI(0,"INV",PrtRowid,BCIDR)) Quit:BCIDR=""  Do
+	.Set Bill=$p(^DHCBCI(BCIDR),"^",2)
+	.Set Adm=$p(^DHCBCI(BCIDR),"^",3)   ;就诊Rowid
+	.Quit:'$D(^DHCPB(Bill))
+	.Set PBO=0 
+	.For  Set PBO=$o(^DHCPB(Bill,"O",PBO)) Quit:PBO=""  Do
+	..Quit:($d(^DHCPB(Bill,"O",PBO))=10)
+	..Set OEORIDR=$p(^DHCPB(Bill,"O",PBO),"^",4)							;医嘱表Rowid
+	..Set ARCIMDR=$p(^DHCPB(Bill,"O",PBO),"^",3)							;医嘱项Rowid DHC_PatBillOrder->PBO_ARCIM_DR
+    ..Set PresNo=$p(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),1),"^",14)
+	..Set RecdepDR=$p($g(^OEORD(+OEORIDR,"I",+$p(OEORIDR,"||",2),3)),"^",6) ;接收科室Rowid
+    ..Set LocType=$p(^CTLOC(RecdepDR),"^",13) 
+	..if LocType="" s LocType="Z"	;放在最后?
+	..Set ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	..Set OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+	..If OrderType="R" Do
+	...b ;药品
+	...Set OrdTypeFlag=1
+	..Else  If OrderType="L" Do
+	...;检验
+	...Set OrdTypeFlag=2
+	..Else  Do
+	...Set Flag=##class(web.DHCDocHardCoded).IsExamSubCat(ARCIMDR)
+	...If +Flag=1 Do
+	....;检查
+	....Set OrdTypeFlag=3
+	...Else  Do
+	....;治疗
+	....Set OrdTypeFlag=4
+	..Set ^TMP($ZN,$j,"PBID",OrdTypeFlag,RecdepDR,Bill_"||"_PBO)=""	;按医嘱分类(顺序:药品->检验->检查->治疗)及接收科室重新建立索引
+    ;
+	Set myOrdTypeFlag=""
+	For  Set myOrdTypeFlag=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag)) Quit:myOrdTypeFlag=""  Do
+	.Set:myOrdTypeFlag=1 Str="药品"
+	.Set:myOrdTypeFlag=2 Str="化验"
+	.Set:myOrdTypeFlag=3 Str="检查"
+	.Set:myOrdTypeFlag=4 Str="治疗"
+	.Set myRecDR="",RecLocStr=""
+	.For  Set myRecDR=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR)) Quit:myRecDR=""  Do
+	..Set myPBORID="",OrdStr=""
+	..For  Set myPBORID=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR,myPBORID)) Quit:myPBORID=""  Do
+	...Set Bill=+myPBORID
+	...Set PBO=$p(myPBORID,"||",2)
+	...Set OrdTotSum=$fn($p(^DHCPB(Bill,"O",PBO),"^",8),"",2)
+	...Set OEORIDR=$p(^DHCPB(Bill,"O",PBO),"^",4)							;医嘱表Rowid
+	...Set ARCIMDR=$p(^DHCPB(Bill,"O",PBO),"^",3)							;医嘱项Rowid DHC_PatBillOrder->PBO_ARCIM_DR
+	...Set ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
+    ...Set PresNo=$p(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),1),"^",14)
+	...Set RecdepDR=$p($g(^OEORD(+OEORIDR,"I",+$p(OEORIDR,"||",2),3)),"^",6) ;接收科室Rowid
+    ...Set RecDepLoc=$p(^CTLOC(RecdepDR),"^",2)
+	...If RecDepLoc["-" Set RecDepLoc=$p(RecDepLoc,"-",2)					;接收科室
+	...Set RecDepLocPosition=$p($g(^CTLOC(RecdepDR,"ADDR","1")),"^",1)  	;接收科室的物理地址
+	...Set LabEpisodeDesc=..GetlabEpisodeDesc(OEORIDR)			;标本类型
+    ...Set LocType=$p(^CTLOC(RecdepDR),"^",13) 
+	...If LocType="" Set LocType="Z"	;放在最后?
+	...Set ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	...Set OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+	...Set PackUOMRowid=$p($g(^ARCIM(+ARCIMDR,1,8)),"^",14) ;整包装单位
+	...Set OEPrice=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",25)		;;取出P   价格 OE_OrdItem->OEORI_Price
+	...Set PackUOM=""
+	...If PackUOMRowid'=""  Do
+	....Set PackUOM=$p($g(^CT("UOM",PackUOMRowid)),"^",2)
+	...Set Price=$p(^DHCPB(Bill,"O",PBO),"^",7)	
+	...Set INCI=$o(^INCI(0,"ARCIM_DR",+ARCIMDR,""))		;INC_Itm->RowID
+	...If INCI'="" Do 
+	....Set INCIUOM=$p(^INCI(INCI,1),"^",10)   ;INC_Itm->INCI_CTUOM_DR
+	....Set ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+	....If ConFacDr="" Set ConFac=1
+	....Else  Set ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	...Else  Set ConFac=1
+	...Set PackQty=$p(^DHCPB(Bill,"O",PBO),"^",5)
+	...Set Refundqty=$p(^DHCPB(Bill,"O",PBO),"^",6)			;;OE_OrdItem->OEORI_RefundQty
+	...If Refundqty="" Do
+	....Set Refundqty=0
+	...Set PackQty=+PackQty+Refundqty
+	...Set Price=$fn(Price*ConFac,"",3)
+	...If (OrderType="R")&(PackQty="") s PackQty=1
+	...If ((OrderType="R")&(PackQty'="")) d
+	....Set PackQty=PackQty/ConFac
+    ...;
+    ...If OrderType="R" Do
+    ....If (ArcItmCatDR="132")!(ArcItmCatDR="137")!(ArcItmCatDR="142") Do
+    .....;针剂
+    .....If +FCHerIndex=0 Do
+    ......Set ^TMP($ZN,$j,"D")=$g(^TMP($ZN,$j,"D"))+1
+    ......Set ind=$g(^TMP($ZN,$j,"D"))
+    ......Set ^TMP($ZN,$j,"D",ind)="针剂"_"^"_""_"^"_""_"^"_"急诊药房"
+    ......Set FCHerIndex=FCHerIndex+1
+    ....Else  If (ArcItmCatDR="135") Do
+    .....;草药
+    .....If +ZJFlagIndex=0 Do
+    ......Set ^TMP($ZN,$j,"D")=$g(^TMP($ZN,$j,"D"))+1
+    ......Set ind=$g(^TMP($ZN,$j,"D"))
+    ......Set ^TMP($ZN,$j,"D",ind)="中草药"_"^"_""_"^"_""_"^"_"门诊中药房"
+    ......Set ZJFlagIndex=ZJFlagIndex+1
+    ....Else  Do
+    .....;西药 
+    .....Set ^TMP($ZN,$j,"D")=$g(^TMP($ZN,$j,"D"))+1
+    .....Set ind=$g(^TMP($ZN,$j,"D"))
+    .....Set ^TMP($ZN,$j,"D",ind)=ArcimDesc_"^"_PackQty_PackUOM_"^"_""_"^"_"门诊西药房"
+    ...Else  Do
+    ....;非药品
+    ....Set ^TMP($ZN,$j,"D")=$g(^TMP($ZN,$j,"D"))+1
+    ....Set ind=$g(^TMP($ZN,$j,"D"))
+    ....Set ^TMP($ZN,$j,"D",ind)=ArcimDesc_"^"_PackQty_PackUOM_"^"_LabEpisodeDesc_"^"_"门诊西药房"
+    Set List="医嘱项目^数量^标本^接受科室"
+    Set Index=""
+    For  Set Index=$o(^TMP($ZN,$j,"D",Index)) Quit:Index=""  Do
+    .Set ArcimDesc=$p(^TMP($ZN,$j,"D",Index),"^",1)
+    .Set ArcimDesc=$e(ArcimDesc,1,12)
+    .Set Qty=$p(^TMP($ZN,$j,"D",Index),"^",2)
+    .Set LabEpisodeDesc=$p(^TMP($ZN,$j,"D",Index),"^",3)
+    .Set ReLoc=$p(^TMP($ZN,$j,"D",Index),"^",4)
+    .If List="" Do
+    ..Set List=ArcimDesc_"^"_Qty_"^"_LabEpisodeDesc_"^"_ReLoc
+    .Else  Do
+    ..Set List=List_$c(2)_ArcimDesc_"^"_Qty_"^"_LabEpisodeDesc_"^"_ReLoc
+    ;
+    Kill ^TMP($ZN,$j,"PBID")
+    Kill ^TMP($ZN,$j,"D")
+    ;
+    Set rtn=BaseInfo_$c(3)_List
+    ;
+    Quit rtn
+]]></Implementation>
+</Method>
+
+<Method name="GetDirectListByPrtRowidLDEY">
+<Description>
+Creator:Lid
+CreatDate:2011-08-26
+Description:获取导诊单数据(兰大二院)
+Table:DHC_InvPrt,DHC_PatientBill,DHC_BillConInv,OE_OrdItem,ARC_ItmMast,ARC_ItemCat
+Input:PrtRowid:发票表RowID
+Output:
+Return:
+Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidLDEY("178217")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowid:%String</FormalSpec>
+<Implementation><![CDATA[
+	n (PrtRowid)
+	k ^TMP($ZN,$j,"PBID")
+	;
+	q:+PrtRowid=0 ""
+    ;病人基本信息
+    s paperDr=$p(^DHCINVPRT(PrtRowid),"^",15)
+	i $d(^PAPER(paperDr,"PAT",1)) d
+	.s patNo=$p(^PAPER(paperDr,"PAT",1),"^",1)   ;登记号
+	.s medicare=$p(^PAPER(paperDr,"PAT",1),"^",22)   ;病案号
+	s CardInfo=##class(web.UDHCJFBaseCommon).GetCardNOByPAPMI("",paperDr,"")
+	s CardNO=$p(CardInfo,"^",1)
+	i $d(^PAPER(paperDr,"ALL")) d
+	.s patName=$p(^PAPER(paperDr,"ALL"),"^",1)   ;姓名
+	.s patmiId=$p(^PAPER(paperDr,"ALL"),"^",9)   ;身份证
+	.s sex=$p(^PAPER(paperDr,"ALL"),"^",7)       ;性别
+	.i sex'="" s sex=$p(^CT("SEX",sex),"^",2)
+	.s (patdob,patageyr,patagemth,patageday,age)=""
+	.&sql(select paper_dob,paper_ageyr,paper_agemth,paper_ageday into :patdob,:patageyr,:patagemth,:patageday 
+	      from pa_person where paper_rowid=:paperDr)
+	.;i patdob'="" s age=..GetAge($zd(+$h,3), $zd(patdob,3))  ;计算年龄
+	.;i +age>120 s age=""   ;控制年龄上限
+	.;+2015-3-19 hujunbin 使用年龄统一接口
+	.Set age=##Class(web.DHCBillInterface).GetPapmiAge(paperDr,"")
+	;
+	;获取中草药配制
+	s HerbConfig=##class(web.DHCOPConfig).GetHerbalConfig()
+	s rtn=$p(HerbConfig,$c(2))
+	q:rtn 104   ;配置错误
+	s FCHerbFlag=$p(HerbConfig,$c(2),2)		;OPFC_HerbalFlag
+	s FCHerbDesc=$p(HerbConfig,$c(2),3)
+	s FCHerbNum=$p(HerbConfig,$c(2),4)
+	s FCHerbRange=$p(HerbConfig,$c(2),5)
+	;
+	s PrtDate=$p(^DHCINVPRT(PrtRowid),"^",5)
+	s PrtTime=$p(^DHCINVPRT(PrtRowid),"^",20)
+	s PrtDateDesc=$zd(PrtDate,3)
+	s PrtTimeDesc=$zt(PrtTime,1)
+	s PrtUser=$p(^DHCINVPRT(PrtRowid),"^",21)
+	s PrtUserDesc=$p(^SSU("SSUSR",PrtUser),"^",2)
+	s BaseInfo=CardNO_"^"_patName_"^"_sex_"^"_age_"^"_PrtUserDesc_"^"_PrtDateDesc_" "_PrtTimeDesc
+	
+	s BCIDR=""
+    f  s BCIDR=$o(^DHCBCI(0,"INV",PrtRowid,BCIDR)) Quit:BCIDR=""  d
+	.s Bill=$p(^DHCBCI(BCIDR),"^",2)
+	.s Adm=$p(^DHCBCI(BCIDR),"^",3)   ;就诊Rowid
+	.Quit:'$D(^DHCPB(Bill))
+	.Set PBO=0 
+	.f  Set PBO=$o(^DHCPB(Bill,"O",PBO)) Quit:PBO=""  Do
+	..q:($d(^DHCPB(Bill,"O",PBO))=10)
+	..s OEORIDR=$p(^DHCPB(Bill,"O",PBO),"^",4)							;医嘱表Rowid
+	..s ARCIMDR=$p(^DHCPB(Bill,"O",PBO),"^",3)							;医嘱项Rowid DHC_PatBillOrder->PBO_ARCIM_DR
+    ..s PresNo=$p(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),1),"^",14)
+	..s RecdepDR=$p($g(^OEORD(+OEORIDR,"I",+$p(OEORIDR,"||",2),3)),"^",6) ;接收科室Rowid
+    ..s LocType=$p(^CTLOC(RecdepDR),"^",13) 
+	..i LocType="" s LocType="Z"	;放在最后?
+	..s ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	..s OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+	..i OrderType="R" d
+	...;药品
+	...s OrdTypeFlag=1
+	..e  i OrderType="L" d
+	...;检验
+	...s OrdTypeFlag=2
+	..e  d
+	...s Flag=##class(web.DHCDocHardCoded).IsExamSubCat(ARCIMDR)
+	...i +Flag=1 d
+	....;检查
+	....s OrdTypeFlag=3
+	...e  d
+	....;治疗
+	....s OrdTypeFlag=4
+	..s ^TMP($ZN,$j,"PBID",OrdTypeFlag,RecdepDR,Bill_"||"_PBO)=""	;按医嘱分类(顺序:药品->检验->检查->治疗)及接收科室重新建立索引
+    ;
+    s myOrdTypeFlag="",rtn=""
+	f  s myOrdTypeFlag=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag)) q:myOrdTypeFlag=""  d
+	.s:myOrdTypeFlag=1 Str="药品"
+	.s:myOrdTypeFlag=2 Str="化验"
+	.s:myOrdTypeFlag=3 Str="检查"
+	.s:myOrdTypeFlag=4 Str="治疗"
+	.s myRecDR="",RecLocStr=""
+	.f  s myRecDR=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR)) q:myRecDR=""  d
+	..s RecDepLoc=$p(^CTLOC(myRecDR),"^",2)
+	..i RecDepLoc["-" s RecDepLoc=$p(RecDepLoc,"-",2)					;接收科室
+	..s RecDepLocPosition=$p($g(^CTLOC(myRecDR,"ADDR","1")),"^",1)  	;接收科室的物理地址
+	..s RecLocPrompt="血常规、尿常规 抽取标本后15分钟现场取结果，其他项目在一楼门诊导诊台取结果。" ;科室注意事项提示
+	..s myPBORID="",OrdStr=""
+	..f  s myPBORID=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR,myPBORID)) q:myPBORID=""  d
+	...s Bill=+myPBORID
+	...s Ord=$p(myPBORID,"||",2)
+	...s OEORIDR=$p(^DHCPB(Bill,"O",Ord),"^",4)
+	...s ARCIMDR=$p(^DHCPB(Bill,"O",Ord),"^",3)
+    ...s ProcessingNotes=$p($g(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),9)),"^",14) 	;ARCIM_ProcessingNotes草药备注
+    ...s RBNotes="",RBIndex="0"
+    ...f  s RBIndex=$o(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),"RB",RBIndex)) q:RBIndex=""  d
+    ....s RBNote=$g(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),"RB",RBIndex))
+    ....s RBNotes=RBNotes_RBNote
+	...s OrdTotSum=$fn($p(^DHCPB(Bill,"O",Ord),"^",8),"",2)
+	...s ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
+	...s ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	...s OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+    ...s PackUOMRowid=$p($g(^ARCIM(+ARCIMDR,1,8)),"^",14) ;整包装单位
+	...s OEPrice=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",25)		;;取出P   价格 OE_OrdItem->OEORI_Price
+	...s PackUOM=""
+	...i PackUOMRowid'=""  d
+	....s PackUOM=$p($g(^CT("UOM",PackUOMRowid)),"^",2)
+	...s Price=$p(^DHCPB(Bill,"O",Ord),"^",7)	
+	...s INCI=$o(^INCI(0,"ARCIM_DR",+ARCIMDR,""))		;INC_Itm->RowID
+	...If INCI'="" Do 
+	....Set INCIUOM=$p(^INCI(INCI,1),"^",10)   ;INC_Itm->INCI_CTUOM_DR
+	....Set ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+	....If ConFacDr="" Set ConFac=1
+	....Else  Set ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	...Else  Set ConFac=1
+	...s PackQty=$p(^DHCPB(Bill,"O",Ord),"^",5)
+	...s Refundqty=$p(^DHCPB(Bill,"O",Ord),"^",6)			;;OE_OrdItem->OEORI_RefundQty
+	...i Refundqty="" d
+	....s Refundqty=0
+	...s PackQty=+PackQty+Refundqty
+	...s Price=$fn(Price*ConFac,"",3)
+	...i (OrderType="R")&(PackQty="") s PackQty=1
+	...i ((OrderType="R")&(PackQty'="")) d
+	....s PackQty=PackQty/ConFac
+	...i myOrdTypeFlag=1 d
+	....;药品
+    ....i ((+$g(FCHerbFlag)=1)&&(FCHerbRange[("^"_ArcItmCatDR_"^"))) d
+    .....;草药
+    .....i +$g(FCHerIndex)=0 d
+    ......i OrdStr="" s OrdStr=FCHerbDesc_"^^^^"
+    ......e  s OrdStr=OrdStr_"!"_FCHerbDesc_"^^^^"
+    .....s FCHerIndex=+$g(FCHerIndex)+1
+    ....e  d
+    .....;西药、中成药
+    .....i OrdStr="" s OrdStr=ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum
+    .....e  s OrdStr=OrdStr_"!"_ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum
+    ...i myOrdTypeFlag=2 d
+    ....;检验
+    ....s PrintBarPosition="" ;打印条码位置
+    ....s ReportDate=""			;取报告时间
+    ....s ReportPosition=""		;取报告地点
+    ....s Prompt=""				;温馨提示
+    ....i OrdStr="" s OrdStr=ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_"采血地点:"_PrintBarPosition_"^"_"取报告时间:"_ReportDate_"^"_"取报告地点:"_ReportPosition_"^"_"科室:"_RecDepLoc_"  位置:"_RecDepLocPosition
+    ....e  s OrdStr=OrdStr_"!"_ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_"采血地点:"_PrintBarPosition_"^"_"取报告时间:"_ReportDate_"^"_"取报告地点:"_ReportPosition_"^"_"位置:"_RecDepLoc
+    ...i myOrdTypeFlag=3 d
+    ....;检查
+    ....i OrdStr="" s OrdStr=ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_RBNotes_"^"_"科室:"_RecDepLoc_"  位置:"_RecDepLocPosition
+    ....e  s OrdStr=OrdStr_"!"_ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_RBNotes_"^"_"科室:"_RecDepLoc_"  位置:"_RecDepLocPosition
+    ...i myOrdTypeFlag=4 d
+    ....;治疗
+    ....i OrdStr="" s OrdStr=ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_"科室:"_RecDepLoc_"  位置:"_RecDepLocPosition
+    ....e  s OrdStr=OrdStr_"!"_ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_"科室:"_RecDepLoc_"  位置:"_RecDepLocPosition
+    ..i RecLocStr="" s RecLocStr=RecDepLoc_"^"_RecDepLocPosition_"^"_RecLocPrompt_$c(5)_OrdStr
+    ..e  s RecLocStr=RecLocStr_$c(4)_RecDepLoc_"^"_RecDepLocPosition_"^"_RecLocPrompt_$c(5)_OrdStr
+    .i rtn="" s rtn=Str_$c(3)_RecLocStr
+    .e  s rtn=rtn_$c(2)_Str_$c(3)_RecLocStr
+
+    s rtn=BaseInfo_$c(1)_rtn
+    k ^TMP($ZN,$j,"PBID")
+    ;w rtn
+    q rtn
+]]></Implementation>
+</Method>
+
+<Method name="GetDirectListByPrtRowidXHOLD">
+<Description>
+Creator:Lid
+CreatDate:2011-08-26
+Description:获取导诊单数据(北京协和)
+Table:DHC_InvPrt,DHC_PatientBill,DHC_BillConInv,OE_OrdItem,ARC_ItmMast,ARC_ItemCat
+Input:PrtRowid:发票表RowID
+Output:
+Return:
+Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXHOLD("349369")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowid:%String,ExpStr:%String=""</FormalSpec>
+<Implementation><![CDATA[
+	s ^tmp("mn777")=PrtRowid_"^"_ExpStr
+	n (PrtRowid,ExpStr)
+	k ^TMP($ZN,$j,"PBID")
+	k ^TMP("DirectList","LabSortIndex",$j)
+	k ^TMP("myWinInfo",$j)
+	;
+	s Group=$p($g(ExpStr),"^",1)
+	;s:Group="" Group=$G(%session.Data("LOGON.GROUPID"))
+	;
+	q:+PrtRowid=0 ""
+    ;病人基本信息
+    s paperDr=$p($get(^DHCINVPRT(PrtRowid)),"^",15)
+    q:paperDr="" ""
+	i $d(^PAPER(paperDr,"PAT",1)) d
+	.s patNo=$p(^PAPER(paperDr,"PAT",1),"^",1)   ;登记号
+	.s medicare=$p(^PAPER(paperDr,"PAT",1),"^",22)   ;病案号
+	s SocialStatus=$p($g(^PAPER(paperDr,"PER",1)),"^",10)  ;PAPER_SocialStatus_dr
+	s SocialStatusDesc=""
+	s:SocialStatus'="" SocialStatusDesc=$p(^CT("SS",SocialStatus),"^",2)
+	i $d(^PAPER(paperDr,"ALL")) d
+	.s patName=$p(^PAPER(paperDr,"ALL"),"^",1)   ;姓名
+	.s patmiId=$p(^PAPER(paperDr,"ALL"),"^",9)   ;身份证
+	.s sex=$p(^PAPER(paperDr,"ALL"),"^",7)       ;性别
+	.i sex'="" s sex=$p(^CT("SEX",sex),"^",2)
+	.s (patdob,patageyr,patagemth,patageday,age)=""
+	.&sql(select paper_dob,paper_ageyr,paper_agemth,paper_ageday into :patdob,:patageyr,:patagemth,:patageday 
+	      from pa_person where paper_rowid=:paperDr)
+	.;i patdob'="" s age=..GetAge($zd(+$h,3), $zd(patdob,3))  ;计算年龄
+	.;i +age>120 s age=""   ;控制年龄上限
+	.;+2015-3-19 hujunbin 使用年龄统一接口
+	.Set age=##Class(web.DHCBillInterface).GetPapmiAge(paperDr,"")
+	s age=age_" "_SocialStatusDesc
+	;
+	;获取中草药配制
+	s HerbConfig=##class(web.DHCOPConfig).GetHerbalConfig()
+	s rtn=$p(HerbConfig,$c(2))
+	q:rtn 104   ;配置错误
+	s FCHerbFlag=$p(HerbConfig,$c(2),2)		;OPFC_HerbalFlag
+	s FCHerbDesc=$p(HerbConfig,$c(2),3)
+	s FCHerbNum=$p(HerbConfig,$c(2),4)
+	s FCHerbRange=$p(HerbConfig,$c(2),5)
+	;
+	s PrtDate=$p(^DHCINVPRT(PrtRowid),"^",5)
+	s PrtTime=$p(^DHCINVPRT(PrtRowid),"^",20)
+	s PrtDateDesc=$zd(PrtDate,3)
+	s PrtTimeDesc=$zt(PrtTime,1)
+	s PrtUser=$p(^DHCINVPRT(PrtRowid),"^",21)
+	s PrtUserDesc=$p(^SSU("SSUSR",PrtUser),"^",1)
+	s BaseInfo=patNo_"^"_patName_"^"_sex_"^"_age_"^"_PrtUserDesc_"^"_PrtDateDesc_" "_PrtTimeDesc_"^"_SocialStatusDesc
+	;b ;
+	s BCIDR=""
+    f  s BCIDR=$o(^DHCBCI(0,"INV",PrtRowid,BCIDR)) Quit:BCIDR=""  d
+	.s Bill=$p(^DHCBCI(BCIDR),"^",2)
+	.s Adm=$p(^DHCBCI(BCIDR),"^",3)   ;就诊Rowid
+	.Quit:'$D(^DHCPB(Bill))
+	.Set PBO=0 
+	.f  Set PBO=$o(^DHCPB(Bill,"O",PBO)) Quit:PBO=""  Do
+	..q:($d(^DHCPB(Bill,"O",PBO))=10)
+	..s OEORIDR=$p(^DHCPB(Bill,"O",PBO),"^",4)							;医嘱表Rowid
+	..s ARCIMDR=$p(^DHCPB(Bill,"O",PBO),"^",3)							;医嘱项Rowid DHC_PatBillOrder->PBO_ARCIM_DR
+    ..s PresNo=$p(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),1),"^",14)
+	..s RecdepDR=$p($g(^OEORD(+OEORIDR,"I",+$p(OEORIDR,"||",2),3)),"^",6) ;接收科室Rowid
+    ..s LocType=$p(^CTLOC(RecdepDR),"^",13) 
+	..i LocType="" s LocType="Z"	;放在最后?
+	..s ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	..s OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+	..;Start Lid 2011-09-03 判断该医嘱的主医嘱是否为药品，如果是药品则不在导诊单上大印
+	..s OrdItmType=""
+	..s OEORIOEORIDR=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),11)),"^",39) ;OEORI_OEORI_DR(主医嘱指针)
+	..i ((OrderType'="R")&(OEORIOEORIDR'="")) d
+	...s OEORIOEORIDRArcimDR=$p($g(^OEORD(+OEORIOEORIDR,"I",$p(OEORIOEORIDR,"||",2),1)),"^",2)
+	...s ItmCatDR=$p(^ARCIM(+OEORIOEORIDRArcimDR,$p(OEORIOEORIDRArcimDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	...s OrdItmType=$p(^ARC("IC",ItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+	..q:OrdItmType="R"
+	..;End
+	..q:(Group="183")&(OrderType'="R")	;体检安全组导诊单上只打印药品
+	..s LisFlag=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",22)	
+	..q:LisFlag'="" 	;过滤检验绑定的医嘱.
+	..i OrderType="R" d
+	...;药品
+	...;判断是否为基数药，如果是则取基数药使用位置(科室)
+	...s JSYDepDR=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",36)
+	...s JSYFlag="" ;##class(web.DHCSTINTERFACE).ChkOrdBaseMedFlag(PresNo)	;1是基数药，非1不是
+	...i JSYFlag=1 s RecdepDR=JSYDepDR
+	...;取发药窗口
+	...s WinInfo=##class(web.DHCMZYFXTYW02).GetPrtPrescWin(PrtRowid,PresNo)
+	...i WinInfo'="" s ^TMP("myWinInfo",$j,RecdepDR)=WinInfo
+	...s OrdTypeFlag=1
+	..e  i OrderType="L" d
+	...;检验
+	...s OrdTypeFlag=2
+	..e  d
+	...s Flag=##class(web.DHCBillHardCoded).IsExamSubCat(ARCIMDR)
+	...i +Flag=1 d
+	....;检查
+	....s OrdTypeFlag=4
+	...e  d
+	....;治疗
+	....s OrdTypeFlag=3
+	..s ^TMP($ZN,$j,"PBID",OrdTypeFlag,RecdepDR,Bill_"||"_PBO)=""	;按医嘱分类(顺序:药品->检验->治疗->检查)及接收科室重新建立索引
+    .;协和医院 根据Adm取需划价的检查医嘱
+    .Set PrescPriceStr=##class(web.DHCOPBILLOrdDirectList).GetPrescPriceOrditem(Adm)
+    .For i=1:1:$l(PrescPriceStr,"^") Do
+    ..Set PrescPriceOrdItm=$p(PrescPriceStr,"^",i)
+    ..Quit:PrescPriceOrdItm="" 
+    ..Set ItemStatDR=$p($g(^OEORD(+PrescPriceOrdItm,"I",+$p(PrescPriceOrdItm,"||",2),1)),"^",13)	;OEORI_ItemStat_DR
+    ..Set OSTATCode=$p(^OEC("OSTAT",ItemStatDR),"^",1)
+    ..Quit:OSTATCode="D"	;过滤停止医嘱
+    ..Set RecdepDR=$p($g(^OEORD(+PrescPriceOrdItm,"I",+$p(PrescPriceOrdItm,"||",2),3)),"^",6) ;接收科室Rowid
+    ..;只有检查有划价医嘱
+    ..Set ^TMP($ZN,$j,"PBID",4,RecdepDR,"PrescPrice",PrescPriceOrdItm)=""
+    ;
+    s myOrdTypeFlag="",rtn=""
+	f  s myOrdTypeFlag=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag)) q:myOrdTypeFlag=""  d
+	.s:myOrdTypeFlag=1 Str="药品"
+	.s:myOrdTypeFlag=2 Str="化验"
+	.s:myOrdTypeFlag=3 Str="治疗"
+	.s:myOrdTypeFlag=4 Str="检查"
+	.s myRecDR="",RecLocStr=""
+	.f  s myRecDR=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR)) q:myRecDR=""  d
+	..s RecDepLoc=$p(^CTLOC(myRecDR),"^",2)
+	..s RecDepLocDesc=RecDepLoc
+	..i RecDepLoc["-" s RecDepLoc=$p(RecDepLoc,"-",2)					;接收科室
+	..s RecDepLocPosition=$p($g(^CTLOC(myRecDR,"ADDR","1")),"^",1)  	;接收科室的物理地址
+	..s RecLocPrompt=""													;科室注意事项提示
+	..s ReportPosition=""
+	..s JSYFlag=0												;取报告地点
+	..s myPBORID="",OrdStr=""
+	..f  s myPBORID=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR,myPBORID)) q:myPBORID=""  d
+	...Set PPOrdItm=""
+	...For  Set PPOrdItm=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR,myPBORID,PPOrdItm)) Quit:PPOrdItm=""  Do
+	....;划价医嘱
+	....Set ARCIMDR=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),1)),"^",2)
+	....s ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
+	....s ArcimAbbrev=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",3) ;简写 ARCIM_Abbrev
+	....s UserDepartment=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),7)),"^",2) ;开单科室DR
+	....s UserDepDesc=""
+	....i UserDepartment'="" s UserDepDesc=$p(^CTLOC(UserDepartment),"^",2)
+	....i UserDepDesc["-" s UserDepDesc=$p(UserDepDesc,"-",2)
+	....s OEORIDate=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),3)),"^",7) ;OEORI_Date
+	....s OEORITime=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),3)),"^",15) ;OEORI_Time
+	....s OEORIDateDisplay="",OEORITimeDisplay=""
+	....s:OEORIDate'="" OEORIDateDisplay=$zd(OEORIDate,3)
+	....s:OEORITime'="" OEORITimeDisplay=$zt(OEORITime,1)
+	....s Adm=$p(^OEORD(+PPOrdItm),"^",1)
+	....s AdmDepDR=$p(^PAADM(Adm),"^",4)
+	....s AdmDepDesc=$p(^CTLOC(AdmDepDR),"^",2)
+	....i AdmDepDesc["-" s AdmDepDesc=$p(AdmDepDesc,"-",2)
+	....i myOrdTypeFlag=4 d
+    .....;检查
+    .....;(BookType^flag^资源Code^资源描述^预约日期^预约时间^预约日期时间的描述$预约地点$检查地点^检查须知^划价地点^设备地点) flag-0:自动预约失败，1 自动预约成功   
+	...../// BookType: 1 自动预约  ,2 服务台预约 ,3 无需预约
+    .....s ret=##class(web.DHCRisBookParam).AutoBooked(PPOrdItm,PrtDate,PrtTime,"HIS01")
+    .....Set PrescPriceFlag="" ;##class(web.UDHCJFBILL).GetPrescPriceOrdItemFlag(PPOrdItm,"")
+    .....Set OEPflag=$p(PrescPriceFlag,"^",1)
+    .....Set OEPInputFlag=$p(PrescPriceFlag,"^",2)
+    .....If (OEPflag="Y")&(OEPInputFlag="Y") Do
+    ......s PrescPricePosition=$p($p(ret,"^",7),"$",2)	;预约位置
+    ......Set ^PrescPriceOrdItemSend(Adm,PPOrdItm)=PrescPriceFlag	;记录已发放的的医嘱ID
+    .....Else  Do
+    ......Set PrescPricePosition=$p(ret,"^",9)	;划价位置
+    .....s Prompt=$p($p(ret,"^",7),"$",1)
+    .....s BookedNote=""	;$p(ret,"^",8)	;检查须知
+    .....;
+    .....i AdmDepDesc["国际医疗" d
+    ......s BookedNote=""
+    ......s Prompt=""
+    ......s PrescPricePosition="请咨询就诊楼层护士站"
+    .....s NewArcimDesc=##class(web.DHCRisApplicationBill).GetAppItemName(PPOrdItm) 
+    .....s tmp1=NewArcimDesc_"^"_""_"^"_""_"^"_""_"^"_""_"^"_AdmDepDesc_"^"_PrescPricePosition_"^"_Prompt_"^"_BookedNote_"^"_OEORIDateDisplay_" "_OEORITimeDisplay
+    .....i OrdStr="" s OrdStr=tmp1
+    .....e  s OrdStr=OrdStr_"!"_tmp1
+	...;
+	...Quit:myPBORID="PrescPrice"
+	...s Bill=+myPBORID
+	...s Ord=$p(myPBORID,"||",2)
+	...s OEORIDR=$p(^DHCPB(Bill,"O",Ord),"^",4)
+	...s ARCIMDR=$p(^DHCPB(Bill,"O",Ord),"^",3)
+	...s UserDepartment=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),7)),"^",2) ;开单科室DR
+	...s OEORIDate=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",7) ;OEORI_Date
+	...s OEORITime=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",15) ;OEORI_Time
+	...s OEORIDateDisplay="",OEORITimeDisplay=""
+	...s:OEORIDate'="" OEORIDateDisplay=$zd(OEORIDate,3)
+	...s:OEORITime'="" OEORITimeDisplay=$zt(OEORITime,1)
+	...s UserDepDesc=""
+	...i UserDepartment'="" s UserDepDesc=$p(^CTLOC(UserDepartment),"^",2)
+	...i UserDepDesc["-" s UserDepDesc=$p(UserDepDesc,"-",2)
+	...s Adm=$p(^OEORD(+OEORIDR),"^",1)
+	...s AdmDepDR=$p(^PAADM(Adm),"^",4)
+	...s AdmDepDesc=$p(^CTLOC(AdmDepDR),"^",2)
+	...i AdmDepDesc["-" s AdmDepDesc=$p(AdmDepDesc,"-",2)
+	...;Start Lid 2011-09-03 判断该医嘱的主医嘱是否为药品，如果是药品则不在导诊单上大印
+	...s OrdItmType=""
+	...s OEORIOEORIDR=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),11)),"^",39) ;OEORI_OEORI_DR(主医嘱指针)
+	...i ((myOrdTypeFlag'=1)&(OEORIOEORIDR'="")) d
+	....s OEORIOEORIDRArcimDR=$p($g(^OEORD(+OEORIOEORIDR,"I",$p(OEORIOEORIDR,"||",2),1)),"^",2)
+	....s ItmCatDR=$p(^ARCIM(+OEORIOEORIDRArcimDR,$p(OEORIOEORIDRArcimDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	....s OrdItmType=$p(^ARC("IC",ItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+	...q:OrdItmType="R"
+	...;End
+	...s LisFlag=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",22)	
+	...q:LisFlag'="" 	;过滤检验绑定的医嘱.
+	...s PresNo=$p(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),1),"^",14)
+	...;s JSYFlag=0
+	...i OrdItmType="R" d
+	....s JSYFlag="" ;##class(web.DHCSTINTERFACE).ChkOrdBaseMedFlag(PresNo)	;1是基数药，非1不是
+	...s OrdTotSum=$fn($p(^DHCPB(Bill,"O",Ord),"^",8),"",2)
+	...s ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
+	...s ArcimAbbrev=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",3) ;简写 ARCIM_Abbrev
+	...s ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	...s OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+    ...s PackUOMRowid=$p($g(^ARCIM(+ARCIMDR,1,8)),"^",14) ;整包装单位
+	...s OEPrice=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",25)		;;取出P   价格 OE_OrdItem->OEORI_Price
+	...s PackUOM=""
+	...i PackUOMRowid'=""  d
+	....s PackUOM=$p($g(^CT("UOM",PackUOMRowid)),"^",2)
+	...s Price=$p(^DHCPB(Bill,"O",Ord),"^",7)	
+	...s INCI=$o(^INCI(0,"ARCIM_DR",+ARCIMDR,""))		;INC_Itm->RowID
+	...If INCI'="" Do 
+	....Set INCIUOM=$p(^INCI(INCI,1),"^",10)   ;INC_Itm->INCI_CTUOM_DR
+	....Set ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+	....If ConFacDr="" Set ConFac=1
+	....Else  Set ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	...Else  Set ConFac=1
+	...s PackQty=$p(^DHCPB(Bill,"O",Ord),"^",5)
+	...s Refundqty=$p(^DHCPB(Bill,"O",Ord),"^",6)			;;OE_OrdItem->OEORI_RefundQty
+	...i Refundqty="" d
+	....s Refundqty=0
+	...s PackQty=+PackQty+Refundqty
+	...s Price=$fn(Price*ConFac,"",3)
+	...i (OrderType="R")&(PackQty="") s PackQty=1
+	...i ((OrderType="R")&(PackQty'="")) d
+	....s PackQty=PackQty/ConFac
+	...i myOrdTypeFlag=1 d
+	....;b ;药品
+    ....i ((+$g(FCHerbFlag)=1)&&(FCHerbRange[("^"_ArcItmCatDR_"^"))) d
+    .....b ;草药
+    .....i +$g(FCHerIndex)=0 d
+    ......i OrdStr="" s OrdStr=FCHerbDesc_"^^^^"
+    ......e  s OrdStr=OrdStr_"!"_FCHerbDesc_"^^^^"
+    .....s FCHerIndex=+$g(FCHerIndex)+1
+    ....e  d
+    .....;西药、中成药
+    .....i OrdStr="" s OrdStr=ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum
+    .....e  s OrdStr=OrdStr_"!"_ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum
+    ...i myOrdTypeFlag=2 d
+    ....;检验
+    ....;s  
+    ....i UserDepartment'="" s PrintBarPosition=##class(web.DHCOPBillHDDC).findLOCBloodDis(OEORIDR) 	;打印条码位置
+    ....s LabEpisodeDesc=..GetlabEpisodeDesc(OEORIDR)			;标本类型
+    ....s SortIndex=LabEpisodeDesc
+    ....i LabEpisodeDesc["血" s SortIndex="a"_LabEpisodeDesc 	;标本类型带血的排在最前边
+    ....i LabEpisodeDesc="" s SortIndex="左左左左"				;标本类型为空排到最后
+    ....s ReportDate=..GetlabReportDate(OEORIDR)		;取报告时间
+    ....s ReportPosition=""			;取报告地点
+    ....s Prompt=$p($g(^ARCIM(+ARCIMDR,1,9)),"^",32)				;温馨提示
+    ....i Prompt'="" s Prompt="温馨提示:"_Prompt
+    ....i ArcimAbbrev'="" s ArcimDesc=ArcimAbbrev	;简写不为空时，打印简写
+    ....s LabOrdStr=ArcimDesc_"^"_LabEpisodeDesc_"^"_Price_"^"_""_"^"_OrdTotSum_"^"_"采集说明:"_PrintBarPosition_"^"_"报告时间:"_ReportDate_"^"_"报告地点:"_ReportPosition_"^"_Prompt
+    ....;i OrdStr="" s OrdStr=LabOrdStr
+    ....;e  s OrdStr=OrdStr_"!"_LabOrdStr
+    ....;建立一个索引，用于排序
+    ....s ^TMP("DirectList","LabSortIndex",$j,SortIndex,myRecDR,ArcimDesc)=LabOrdStr
+    ...i myOrdTypeFlag=4 d
+    ....;检查
+    ....;(BookType^flag^资源Code^资源描述^预约日期^预约时间^预约日期时间的描述$预约地点$检查地点^检查须知^划价地点^设备位置) flag-0:自动预约失败，1 自动预约成功   
+	..../// BookType: 1 自动预约  ,2 服务台预约 ,3 无需预约
+    ....s ret=##class(web.DHCRisBookParam).AutoBooked(OEORIDR,PrtDate,PrtTime,"HIS01")
+    ....s BookType=$p(ret,"^",1)
+    ....s Prompt=$p($p(ret,"^",7),"$",1)
+    ....s BookedNote=$p(ret,"^",8)	;检查须知
+    ....s PrescPricePosition=""
+    ....i (BookType=1)!(BookType=3) d
+    .....s PrescPricePosition=$p($p(ret,"^",7),"$",3)
+    .....s EquipmentPosition=$p(ret,"^",10)
+    .....i EquipmentPosition'="" d
+    ......s PrescPricePosition=EquipmentPosition	;设备地点不为空时，显示设备地点
+    .....;s Prompt="请您去 "_PrescPricePosition_" 做检查."
+    ....i BookType=2 d
+    .....s PrescPricePosition=$p($p(ret,"^",7),"$",2)
+    .....s BookedNote=""
+    .....;s Prompt="请您去 "_PrescPricePosition_" 预约."
+    ....i (BookType=2) s BookedNote=""	;检查须知
+    ....i AdmDepDesc["国际医疗" d
+    .....s Prompt=""
+    .....s BookedNote=""
+    .....s PrescPricePosition="请咨询就诊楼层护士站"
+    ....s NewArcimDesc=##class(web.DHCRisApplicationBill).GetAppItemName(OEORIDR) 
+    ....s tmp3=NewArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_AdmDepDesc_"^"_PrescPricePosition_"^"_Prompt_"^"_BookedNote_"^"_OEORIDateDisplay_" "_OEORITimeDisplay
+    ....i OrdStr="" s OrdStr=tmp3
+    ....e  s OrdStr=OrdStr_"!"_tmp3
+    ...i myOrdTypeFlag=3 d
+    ....;治疗
+    ....s Position=""
+    ....i AdmDepDesc["国际医疗" s Position="地点:"_"请咨询就诊楼层护士站"
+    ....;(after the consultation,if there is any examination or therapy,please go to the nurser station)
+    ....i OrdStr="" s OrdStr=ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_Position
+    ....e  s OrdStr=OrdStr_"!"_ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_Position
+    ..i myOrdTypeFlag=2 d
+    ...s Ind=""
+    ...f  s Ind=$o(^TMP("DirectList","LabSortIndex",$j,Ind)) q:Ind=""  d
+    ....s LabArcimDesc=""
+    ....f  s LabArcimDesc=$o(^TMP("DirectList","LabSortIndex",$j,Ind,myRecDR,LabArcimDesc)) q:LabArcimDesc=""  d
+    .....s tmp5=$g(^TMP("DirectList","LabSortIndex",$j,Ind,myRecDR,LabArcimDesc))
+    .....i OrdStr="" s OrdStr=tmp5
+    .....e  s OrdStr=OrdStr_"!"_tmp5
+    ..i OrdStr'="" d
+    ...s PresWin=$g(^TMP("myWinInfo",$j,myRecDR))	;发药窗口
+    ...;i $g(JSYFlag)=1 s JSYFlag="基数药"
+    ...i PresWin["基数" s JSYFlag="基数药"
+    ...i PresWin'["基数" s PresWin=PresWin_"号窗口"  
+    ...;i RecDepLocDesc["6.2100" s PresWin="先打处方后"
+    ...s PrtWinFlag=0
+    ...i (RecDepLocDesc["1.2100")!(RecDepLocDesc["1.2400") s PrtWinFlag=1
+    ...i RecLocStr="" s RecLocStr=RecDepLoc_"^"_RecDepLocPosition_"^"_RecLocPrompt_"^"_ReportPosition_"^"_PresWin_"^"_$g(JSYFlag)_"^"_$g(PrtWinFlag)_$c(5)_OrdStr
+    ...e  s RecLocStr=RecLocStr_$c(4)_RecDepLoc_"^"_RecDepLocPosition_"^"_RecLocPrompt_"^"_ReportPosition_"^"_PresWin_"^"_$g(JSYFlag)_"^"_$g(PrtWinFlag)_$c(5)_OrdStr 
+    .i rtn="" s rtn=Str_$c(3)_RecLocStr
+    .e  s rtn=rtn_$c(2)_Str_$c(3)_RecLocStr  
+    k ^TMP("DirectList","LabSortIndex",$j)
+    s rtn=BaseInfo_$c(1)_rtn
+    ;b ;111
+    k ^TMP($ZN,$j,"PBID")
+    ;w rtn
+    q rtn
+]]></Implementation>
+</Method>
+
+<Method name="GetDirectListByPrtRowidXH">
+<Description>
+Creator:Lid
+CreatDate:2012-12-12
+Description:获取导诊单数据(北京协和)
+Table:DHC_InvPrt,DHC_PatientBill,DHC_BillConInv,OE_OrdItem,ARC_ItmMast,ARC_ItemCat
+Input:PrtRowid:发票表RowID,ExpStr:(安全组^科室^收费员^^)
+Output:
+Return:
+Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","238^^^")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowid:%String,ExpStr:%String=""</FormalSpec>
+<Implementation><![CDATA[
+	s ^tempwml("GetDirectListByPrtRowidXH")=$lb(PrtRowid,ExpStr)
+	New (PrtRowid,ExpStr)
+	Kill ^TMP($ZN,$j,"PBID")
+	Kill ^MaxLabReportDate($j)
+	Kill ^TMP("myWinInfo",$j)
+	Kill ^LabOrdItem($j)
+	Kill ^TMPLabSortIndex("LabSort",$j)
+	;s ^zhang("GetDirectListByPrtRowidXH")=PrtRowid _","_ExpStr 
+	Set Group=$p($g(ExpStr),"^",1)
+	Set CTLocDR=$p($g(ExpStr),"^",2)
+	Set UserDR=$p($g(ExpStr),"^",3)
+	;s:Group="" Group=$G(%session.Data("LOGON.GROUPID"))
+	;
+	Quit:+PrtRowid=0 ""
+    ;病人基本信息
+    Set paperDr=$p($get(^DHCINVPRT(PrtRowid)),"^",15)
+    Quit:paperDr="" ""
+    //账户余额 wml
+    s myAccRowID=$o(^DHCACDi("AccM",0,"PAPMI",paperDr,""))
+    s myAccLeftSum=$p($g(^DHCACD("AccM",myAccRowID)),"^",8)	;AccM_Balance
+	s myAccLeftSum=$fn(myAccLeftSum,"",2)
+    //账户余额  wml
+	If $d(^PAPER(paperDr,"PAT",1)) Do
+	.Set patNo=$p(^PAPER(paperDr,"PAT",1),"^",1)   ;登记号
+	.Set medicare=$p(^PAPER(paperDr,"PAT",1),"^",22)   ;病案号
+	Set SocialStatus=$p($g(^PAPER(paperDr,"PER",1)),"^",10)  ;PAPER_SocialStatus_dr
+	Set SocialStatusDesc=""
+	Set:SocialStatus'="" SocialStatusDesc=$p(^CT("SS",SocialStatus),"^",2)
+	If $d(^PAPER(paperDr,"ALL")) Do
+	.Set patName=$p(^PAPER(paperDr,"ALL"),"^",1)   ;姓名
+	.Set patmiId=$p(^PAPER(paperDr,"ALL"),"^",9)   ;身份证
+	.Set sex=$p(^PAPER(paperDr,"ALL"),"^",7)       ;性别
+	.If sex'="" Set sex=$p(^CT("SEX",sex),"^",2)
+	.Set (patdob,patageyr,patagemth,patageday,age)=""
+	.&sql(select paper_dob,paper_ageyr,paper_agemth,paper_ageday into :patdob,:patageyr,:patagemth,:patageday 
+	      from pa_person where paper_rowid=:paperDr)
+	.;If patdob'="" s age=..GetAge($zd(+$h,3), $zd(patdob,3))  ;计算年龄
+	.;If +age>130 Set age=""   ;控制年龄上限
+	.;+2015-3-19 hujunbin 使用年龄统一接口
+	.Set age=##Class(web.DHCBillInterface).GetPapmiAge(paperDr,"")
+	Set age=age_" "_SocialStatusDesc
+	;
+	;获取中草药配制
+	Set HerbConfig=##class(web.DHCOPConfig).GetHerbalConfig()
+	Set rtn=$p(HerbConfig,$c(2))
+	Quit:rtn 104   ;配置错误
+	Set FCHerbFlag=$p(HerbConfig,$c(2),2)		;OPFC_HerbalFlag
+	Set FCHerbDesc=$p(HerbConfig,$c(2),3)
+	Set FCHerbNum=$p(HerbConfig,$c(2),4)
+	Set FCHerbRange=$p(HerbConfig,$c(2),5)
+	;
+	Set PrtDate=$p(^DHCINVPRT(PrtRowid),"^",5)
+	Set PrtTime=$p(^DHCINVPRT(PrtRowid),"^",20)
+	Set PrtDateDesc=$zd(PrtDate,3)
+	Set PrtTimeDesc=$zt(PrtTime,1)
+	Set PrtUser=$p(^DHCINVPRT(PrtRowid),"^",21)
+	Set PrtUserDesc=$p(^SSU("SSUSR",PrtUser),"^",2)
+	//add by xhm 增加就诊科室显示
+	Set BCIId=$o(^DHCBCI(0,"INV",PrtRowid,0))
+	Set AdmId=$p(^DHCBCI(BCIId),"^",3) 
+	Set AdmLoc=$p(^PAADM(AdmId),"^",4)
+	Set AdmLocdesc=$p($g(^CTLOC(AdmLoc)),"^",2)
+	Set BaseInfo=patNo_"^"_patName_"^"_sex_"^"_age_"^"_PrtUserDesc_"^"_PrtDateDesc_"^"_SocialStatusDesc_"^"_$zd(patdob,3)_"^"_AdmLocdesc_"^"_myAccLeftSum    //添加myAccLeftSum账户余额 wml
+	Set BCIDR=""
+	set PhyAcount=0
+    For  Set BCIDR=$o(^DHCBCI(0,"INV",PrtRowid,BCIDR)) Quit:BCIDR=""  Do
+	.Set Bill=$p(^DHCBCI(BCIDR),"^",2)
+	.Set Adm=$p(^DHCBCI(BCIDR),"^",3)   ;就诊Rowid
+	.Quit:'$D(^DHCPB(Bill))
+	.Set PBO=0 
+	.For  Set PBO=$o(^DHCPB(Bill,"O",PBO)) Quit:PBO=""  Do
+	..Quit:($d(^DHCPB(Bill,"O",PBO))=10)
+	..Set OEORIDR=$p(^DHCPB(Bill,"O",PBO),"^",4)							;医嘱表Rowid
+	..Set ARCIMDR=$p(^DHCPB(Bill,"O",PBO),"^",3)							;医嘱项Rowid DHC_PatBillOrder->PBO_ARCIM_DR
+    ..;Quit:(PrtRowid="4754520")&(ARCIMDR="19024||1")
+    ..Set PresNo=$p(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),1),"^",14)
+	..Set RecdepDR=$p($g(^OEORD(+OEORIDR,"I",+$p(OEORIDR,"||",2),3)),"^",6) ;接收科室Rowid
+    ..Set LocType=$p(^CTLOC(RecdepDR),"^",13) 
+	..If LocType="" Set LocType="Z"	;放在最后?
+	..Set ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	..Set OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+	..;Start Lid 2011-09-03 判断该医嘱的主医嘱是否为药品，如果是药品则不在导诊单上大印
+	..Set OrdItmType=""
+	..Set OEORIOEORIDR=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),11)),"^",39) ;OEORI_OEORI_DR(主医嘱指针)
+	..If ((OrderType'="R")&(OEORIOEORIDR'="")) d
+	...Set OEORIOEORIDRArcimDR=$p($g(^OEORD(+OEORIOEORIDR,"I",$p(OEORIOEORIDR,"||",2),1)),"^",2)
+	...Set ItmCatDR=$p(^ARCIM(+OEORIOEORIDRArcimDR,$p(OEORIOEORIDRArcimDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	...Set OrdItmType=$p(^ARC("IC",ItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+	..Quit:OrdItmType="R"
+	..;End
+	..Set LisFlag=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",22)	
+	..Quit:LisFlag'="" 	;过滤检验绑定的医嘱.
+	..Quit:(Group="183")&(OrderType'="R")	;体检安全组导诊单上只打印药品
+	..Set LisFlag=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",22)	
+	..Quit:LisFlag'="" 	;过滤检验绑定的医嘱.
+	..If OrderType="R" d
+	...;药品
+	...;判断是否为基数药，如果是则取基数药使用位置(科室)
+	...Set JSYDepDR=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",36)
+	...Set JSYFlag=""	;##class(web.DHCSTINTERFACE).ChkOrdBaseMedFlag(PresNo)	;1是基数药，非1不是
+	...If JSYFlag=1 d
+	....If JSYDepDR'="" Set RecdepDR=JSYDepDR
+	...;取发药窗口
+	...Set WinInfo=##class(web.DHCMZYFXTYW02).GetPrtPrescWin(PrtRowid,PresNo)
+	...If WinInfo'="" Set ^TMP("myWinInfo",$j,RecdepDR)=WinInfo
+	...Set OrdTypeFlag=1
+	..Else  If OrderType="L" Do
+	...;检验
+	...Set OrdTypeFlag=2
+	..Else  Do
+	...Set Flag=##class(web.DHCBillHardCoded).IsExamSubCat(ARCIMDR)
+	...If +Flag=1 d
+	....;检查
+	....Set OrdTypeFlag=4
+	...Else  Do
+	....;治疗
+	....Set OrdTypeFlag=3
+	..Set ^TMP($ZN,$j,"PBID",OrdTypeFlag,RecdepDR,Bill_"||"_PBO)=""	;按医嘱分类(顺序:药品->检验->治疗->检查)及接收科室重新建立索引
+	..;s ^tmpxhm($ZN,$j,"PBID")=OrdTypeFlag_"^"_RecdepDR_"^"_Bill_"||"_PBO
+    .;协和医院 根据Adm取需划价的检查医嘱
+    .Set PrescPriceStr=##class(web.DHCOPBILLOrdDirectList).GetPrescPriceOrditem(Adm)
+    .For i=1:1:$l(PrescPriceStr,"^") Do
+    ..Set PrescPriceOrdItm=$p(PrescPriceStr,"^",i)
+    ..Quit:PrescPriceOrdItm="" 
+    ..Set ItemStatDR=$p($g(^OEORD(+PrescPriceOrdItm,"I",+$p(PrescPriceOrdItm,"||",2),1)),"^",13)	;OEORI_ItemStat_DR
+    ..Set OSTATCode=$p(^OEC("OSTAT",ItemStatDR),"^",1)
+    ..Quit:OSTATCode="D"	;过滤停止医嘱
+    ..Set RecdepDR=$p($g(^OEORD(+PrescPriceOrdItm,"I",+$p(PrescPriceOrdItm,"||",2),3)),"^",6) ;接收科室Rowid
+    ..;只有检查有划价医嘱
+    ..Set ^TMP($ZN,$j,"PBID",4,RecdepDR,"PrescPrice",PrescPriceOrdItm)=""
+    Set myOrdTypeFlag="",rtn=""
+	For  Set myOrdTypeFlag=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag)) Quit:myOrdTypeFlag=""  Do
+	.Set:myOrdTypeFlag=1 Str="药品"
+	.Set:myOrdTypeFlag=2 Str="化验"
+	.Set:myOrdTypeFlag=3 Str="治疗"
+	.Set:myOrdTypeFlag=4 Str="检查"
+	.Set myRecDR="",RecLocStr=""
+	.For  Set myRecDR=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR)) Quit:myRecDR=""  Do
+	..set JYAcount=0   //检验医嘱序号 add by wangminglong 2018-11-1
+	..set JCAcount=0   //检查医嘱序号 add by wangminglong 2018-11-1
+	..set ZLAcount=0   //治疗医嘱序号 add by wangminglong 2018-11-1
+	..Set RecDepLoc=$p(^CTLOC(myRecDR),"^",2)
+	..Set RecDepLocDesc=RecDepLoc
+	..If RecDepLoc["-" s RecDepLoc=$p(RecDepLoc,"-",2)					;接收科室
+	..set RecLocFloor=$p($g(^CTLOC(myRecDR)),"^",16)
+	..if RecDepLoc["心电图" s RecLocFloor="心电图检查地点请咨询护士"   //心电检查地点请咨询护士 add by wangminglong 2019-1-18
+	..Set RecDepLocPosition=$p($g(^CTLOC(myRecDR,"ADDR","1")),"^",1)  	;接收科室的物理地址
+	..Set RecLocPrompt=""												;科室注意事项提示
+	..Set ReportPosition=""												;取报告地点
+	..Set JSYFlag=0												
+	..Set myPBORID="",OrdStr=""
+	..For  Set myPBORID=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR,myPBORID)) Quit:myPBORID=""  Do
+	...Set PPOrdItm=""
+	...For  Set PPOrdItm=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR,myPBORID,PPOrdItm)) Quit:PPOrdItm=""  Do
+	....;划价医嘱
+	....Set ARCIMDR=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),1)),"^",2)
+	....Set ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
+	....Set ArcimAbbrev=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",3) ;简写 ARCIM_Abbrev
+	
+	....b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start
+	....Set Reporttime=""   //报告时间
+	....set ReportPrompt="" 
+	....set Reportfrist=""
+	....set DepFlag=2
+	....if AdmDepDesc["门诊"  set DepFlag=2
+	....if AdmDepDesc["急诊"  set DepFlag=3
+	....Set CodeID=$p($g(^ARCIM(+ARCIMDR,1,"EXT",1)),"^",4) ;  //检验项目对应的外部codeid
+	....set TestSetDR=$o(^dbo.BTTestSetI("IndexCode",1," "_CodeID,""))  //检验项目的id
+	....s FestivalWeek=" "_$zd($h,10)
+	....i TestSetDR'="" d
+	.....s InspectingId=$o(^dbo.BTTestSetReceiptI("IndexTestSetDR",TestSetDR,FestivalWeek,DepFlag,""))
+	.....i InspectingId'="" d
+	......s Reportfrist=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),4)  //报告优先级
+	......s Reporttime=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),7)     //报告时间
+	......s ReportPrompt="  "_$list($g(^dbo.BTTestSetReceiptD(InspectingId)),10)  //报告提示
+	....b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end
+	
+		
+	....Set UserDepartment=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),7)),"^",2) ;开单科室DR
+	....Set UserDepDesc=""
+	....If UserDepartment'=""  Do
+	.....Set UserDepDesc=$p(^CTLOC(UserDepartment),"^",2)
+	....If UserDepDesc["-" s UserDepDesc=$p(UserDepDesc,"-",2)
+	....Set OEORIDate=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),3)),"^",7) ;OEORI_Date
+	....Set OEORITime=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),3)),"^",15) ;OEORI_Time
+	....Set OEORIDateDisplay="",OEORITimeDisplay=""
+	....Set:OEORIDate'="" OEORIDateDisplay=$zd(OEORIDate,3)
+	....Set:OEORITime'="" OEORITimeDisplay=$zt(OEORITime,1)
+	....Set Adm=$p(^OEORD(+PPOrdItm),"^",1)
+	....Set AdmDepDR=$p(^PAADM(Adm),"^",4)
+	....Set AdmDepDesc=$p(^CTLOC(AdmDepDR),"^",2)
+	....If AdmDepDesc["-" Set AdmDepDesc=$p(AdmDepDesc,"-",2)
+	....If myOrdTypeFlag=4 d
+    .....;检查
+    .....;(BookType^flag^资源Code^资源描述^预约日期^预约时间^预约日期时间的描述$预约地点$检查地点^检查须知^划价地点^设备地点) flag-0:自动预约失败，1 自动预约成功   
+	...../// BookType: 1 自动预约  ,2 服务台预约 ,3 无需预约
+    .....Set ret=##class(web.DHCRisBookParam).AutoBooked(PPOrdItm,PrtDate,PrtTime,"HIS01")
+    .....Set PrescPriceFlag="" ;##class(web.UDHCJFBILL).GetPrescPriceOrdItemFlag(PPOrdItm,"")
+    .....Set OEPflag=$p(PrescPriceFlag,"^",1)
+    .....Set OEPInputFlag=$p(PrescPriceFlag,"^",2)
+    .....If (OEPflag="Y")&(OEPInputFlag="Y") Do
+    ......Set PrescPricePosition=$p($p(ret,"^",7),"$",2)	;预约位置
+    ......Set ^PrescPriceOrdItemSend(Adm,PPOrdItm)=PrescPriceFlag	;记录已发放的的医嘱ID
+    .....Else  Do
+    ......Set PrescPricePosition=$p(ret,"^",9)	;划价位置
+    .....Set Prompt=$p($p(ret,"^",7),"$",1)
+    .....Set BookedNote=""	;$p(ret,"^",8)	;检查须知
+    .....;
+    .....If AdmDepDesc["国际医疗" d
+    ......Set BookedNote=""
+    ......Set Prompt=""
+    ......Set PrescPricePosition="请咨询就诊楼层护士站"
+    .....Set NewArcimDesc=##class(web.DHCRisApplicationBill).GetAppItemName(PPOrdItm) 
+    .....Set tmp1=NewArcimDesc_"^"_""_"^"_""_"^"_""_"^"_""_"^"_AdmDepDesc_"^"_PrescPricePosition_"^"_Prompt_"^"_BookedNote_"^"_OEORIDateDisplay_" "_OEORITimeDisplay
+    .....;测试导诊单医嘱项名字过长时分行  目前规则小于15字时不分行,超过15字时分行 add  by wangminglong 2018-09-17  start
+	.....set len=$l(NewArcimDesc)
+	.....if len>25 do
+	......set halflen=len\2     ;$fn(len/20,"",0)
+	......set NewArcimDesc1=$e(NewArcimDesc,1,25)
+	......set tmp1=NewArcimDesc1_"^"_""_"^"_""_"^"_""_"^"_""_"^"_AdmDepDesc_"^"_PrescPricePosition_"^"_Prompt_"^"_BookedNote_"^"_OEORIDateDisplay_" "_OEORITimeDisplay
+	......if OrdStr="" Set OrdStr=tmp1
+	......else  Set OrdStr=OrdStr_"!"_tmp1
+	......for i=1:1:halflen d
+	.......set NewArcimDesc2=$e(NewArcimDesc,25*i+1,25*(i+1))
+	.......set tmp11=NewArcimDesc2_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""_" "_""
+	.......Set OrdStr=OrdStr_"!"_tmp11
+	.....else  do
+	......if OrdStr="" Set OrdStr=tmp1 
+	......else  Set OrdStr=OrdStr_"!"_tmp1
+	.....;If OrdStr="" Set OrdStr=tmp1
+    .....;Else  Set OrdStr=OrdStr_"!"_tmp1	;
+   	.....;测试导诊单医嘱项名字过长时分行  目前规则小于15字时不分行,超过15字时分行 add  by wangminglong 2018-09-17  end
+	...Quit:myPBORID="PrescPrice"
+	...;
+	...Set Bill=+myPBORID
+	...Set Ord=$p(myPBORID,"||",2)
+	...Set OEORIDR=$p(^DHCPB(Bill,"O",Ord),"^",4)
+	...Set ARCIMDR=$p(^DHCPB(Bill,"O",Ord),"^",3)
+	...Set UserDepartment=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),7)),"^",2) ;开单科室DR
+	...Set OEORIDate=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",7) ;OEORI_Date
+	...set OEORITime=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",15) ;OEORI_Time
+	...Set OEORIDateDisplay="",OEORITimeDisplay=""
+	...Set:OEORIDate'="" OEORIDateDisplay=$zd(OEORIDate,3)
+	...Set:OEORITime'="" OEORITimeDisplay=$zt(OEORITime,1)
+	...Set UserDepDesc=""
+	...If UserDepartment'="" Set UserDepDesc=$p(^CTLOC(UserDepartment),"^",2)
+	...If UserDepDesc["-" s UserDepDesc=$p(UserDepDesc,"-",2)
+	...Set Adm=$p(^OEORD(+OEORIDR),"^",1)
+	...Set AdmDepDR=$p(^PAADM(Adm),"^",4)
+	...Set AdmDepDesc=$p(^CTLOC(AdmDepDR),"^",2)
+	...If AdmDepDesc["-" Set AdmDepDesc=$p(AdmDepDesc,"-",2)
+	...Set PresNo=$p(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),1),"^",14)
+	...Set OrdTotSum=$fn($p(^DHCPB(Bill,"O",Ord),"^",8),"",2)
+	...Set ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
+	...Set ArcimAbbrev=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",3) ;简写 ARCIM_Abbrev
+	
+	
+	...b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start
+	...Set Reporttime=""   //报告时间
+	...set ReportPrompt="" 
+	...set Reportfrist=""
+	...set DepFlag=2
+	...if AdmDepDesc["门诊"  set DepFlag=2
+	...if AdmDepDesc["急诊"  set DepFlag=3
+	...Set CodeID=$p($g(^ARCIM(+ARCIMDR,1,"EXT",1)),"^",4) ;  //检验项目对应的外部codeid
+	...set TestSetDR=$o(^dbo.BTTestSetI("IndexCode",1," "_CodeID,""))  //检验项目的id
+	...s FestivalWeek=" "_$zd($h,10)
+	...i TestSetDR'="" d
+	....s InspectingId=$o(^dbo.BTTestSetReceiptI("IndexTestSetDR",TestSetDR,FestivalWeek,DepFlag,""))
+	....i InspectingId'="" d
+	.....s Reportfrist=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),4)  //报告优先级
+	.....s Reporttime=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),7)     //报告时间
+	.....s ReportPrompt="  "_$list($g(^dbo.BTTestSetReceiptD(InspectingId)),10)  //报告提示
+	...b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end
+	
+	
+	
+	...Set ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	...Set OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+    ...If OrderType="R" d
+	....Set JSYFlag="" ;##class(web.DHCSTINTERFACE).ChkOrdBaseMedFlag(PresNo)	;1是基数药，非1不是
+    ...Set PackUOMRowid=$p($g(^ARCIM(+ARCIMDR,1,8)),"^",14) ;整包装单位
+	...Set OEPrice=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",25)		;;取出P   价格 OE_OrdItem->OEORI_Price
+	...Set PackUOM=""
+	...If PackUOMRowid'=""  Do
+	....Set PackUOM=$p($g(^CT("UOM",PackUOMRowid)),"^",2)
+	....if PackUOM["(" set PackUOM=$p(PackUOM,"(",1)	;盒(30)这种单位改为盒显示
+	...Set Price=$p(^DHCPB(Bill,"O",Ord),"^",7)	
+	...Set INCI=$o(^INCI(0,"ARCIM_DR",+ARCIMDR,""))		;INC_Itm->RowID
+	...If INCI'="" Do 
+	....Set INCIUOM=$p(^INCI(INCI,1),"^",10)   ;INC_Itm->INCI_CTUOM_DR
+	....Set ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+	....If ConFacDr="" Set ConFac=1
+	....Else  Set ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	...Else  Set ConFac=1
+	...Set PackQty=$p(^DHCPB(Bill,"O",Ord),"^",5)
+	...Set Refundqty=$p(^DHCPB(Bill,"O",Ord),"^",6)			;;OE_OrdItem->OEORI_RefundQty
+	...If Refundqty="" Do
+	....Set Refundqty=0
+	...Set PackQty=+PackQty+Refundqty
+	...Set Price=$fn(Price*ConFac,"",2)
+	...If (OrderType="R")&(PackQty="") Set PackQty=1
+	...If ((OrderType="R")&(PackQty'="")) Do
+	....s PackQty=PackQty/ConFac
+	...If myOrdTypeFlag=1 Do
+	....;b ;药品
+    ....If ((+$g(FCHerbFlag)=1)&&(FCHerbRange[("^"_ArcItmCatDR_"^"))) Do
+    .....;b ;草药
+    .....If +$g(FCHerIndex)=0 Do
+    ......If OrdStr="" Set OrdStr=FCHerbDesc_"^^^^"
+    ......Else  Set OrdStr=OrdStr_"!"_FCHerbDesc_"^^^^"
+    .....Set FCHerIndex=+$g(FCHerIndex)+1
+    ....Else  Do
+    .....;西药、中成药	导诊单拼串药品名称
+    .....set PhyAcount=PhyAcount+1
+    .....set ArcimDesc=ArcimDesc_" "_PackQty_PackUOM_" "_OrdTotSum_"元"
+    .....set len=$l(ArcimDesc)
+    .....set ArcimDesc1=$e(ArcimDesc,1,25)   
+    .....set tmp3=ArcimDesc1_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_PhyAcount_"."    
+	.....if len>25 do
+	......set halflen=len\25 ;$fn(len/30,"",0)
+	......;set ArcimDesc1=$e(ArcimDesc,1,15)     
+	......set tmp3=ArcimDesc1_"^"_""_"^"_""_"^"_""_"^"_""_"^"_PhyAcount_"."  
+	......if OrdStr="" Set OrdStr=tmp3      
+	......else  Set OrdStr=OrdStr_"!"_tmp3   
+	......for i=1:1:halflen d
+	.......set ArcimDesc2=$e(ArcimDesc,25*i+1,25*(i+1))
+	.......set ArcimDesc2="  "_ArcimDesc2   //wml
+	.......if i=halflen set tmp33=ArcimDesc2_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_""
+	.......else  set tmp33=ArcimDesc2_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""  
+	.......b ;3333333
+	.......Set OrdStr=OrdStr_"!"_tmp33
+	.....else  do
+	......if OrdStr="" Set OrdStr=tmp3 
+	......else  Set OrdStr=OrdStr_"!"_tmp3
+    .....;If OrdStr="" s OrdStr=ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum
+    .....;Else  Set OrdStr=OrdStr_"!"_ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum
+    ...If myOrdTypeFlag=2 Do
+    ....b ;检验开始
+    ....s specSub=$o(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),"SPEC",""),-1)
+    ....s specCode=""
+    ....s:specSub'="" specCode=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),"SPEC",specSub)),"^",1) ;标本代码表的Code
+    ....;If UserDepartment'="" Set PrintBarPosition=##class(web.DHCOPBillHDDC).findLOCBloodDisNew(OEORIDR,specCode) 	;打印条码位置  注释 add by wangminglong 2019-1-7 start
+    ....If UserDepartment'="" Set PrintBarPosition=##class(web.DHCOPBillHDDC).findDEPBloodDis(UserDepartment,specCode) 	;取维护的科室采血地点 add by wangminglong 2019-1-7 start
+    ....Set LabEpisodeDesc=..GetlabEpisodeDesc(OEORIDR)			;标本类型
+    ....Set SortIndex=LabEpisodeDesc
+    ....Set ReportDate=..GetlabReportDate(OEORIDR)		;取报告时间
+    ....Set ReportPosition=""			;取报告地点
+    ....Set Prompt=$p($g(^ARCIM(+ARCIMDR,1,9)),"^",32)				;温馨提示
+    ....If ArcimAbbrev'="" s ArcimDesc=ArcimAbbrev	;简写不为空时，打印简写
+    ....;Set LabOrdStr=ArcimDesc_"^"_LabEpisodeDesc_"^"_Price_"元"_"^"_""_"^"_OrdTotSum_"^"_PrintBarPosition_"^"_ReportDate_"^"_ReportPosition_"^"_Prompt     //wangminglong
+    ....Set LabOrdStr=ArcimDesc_"^"_LabEpisodeDesc_"^"_Price_"元"_"^"_PackQty_"^"_OrdTotSum_"^"_PrintBarPosition_"^"_ReportDate_"^"_ReportPosition_"^"_Prompt_"^"_RecDepLocDesc_"^"_RecLocFloor_"^"_Reporttime_"^"_ReportPrompt_"^"_Reportfrist  //添加Reporttime报告时间 add by wangminglong 2019-1-11 
+    ....Set LabEpisodeNo=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",20)	;检验条码号 OEORI_LabEpisodeNo
+    ....Set:LabEpisodeNo="" LabEpisodeNo="Z"
+    ....;Set ^LabOrdItem($j,LabEpisodeNo,OEORIDR)=Bill_"||"_Ord_"^"_LabOrdStr    //wangminglong 注释  2018-11-2
+    ....Set ^LabOrdItem($j,RecDepLocDesc,OEORIDR)=Bill_"||"_Ord_"^"_LabOrdStr    //根据科室区分 wangminglong 2018-11-2
+    ....b ;检验结束	
+    ...If myOrdTypeFlag=4 Do
+    ....;检查开始
+    ....;(BookType^flag^资源Code^资源描述^预约日期^预约时间^预约日期时间的描述$预约地点$检查地点^检查须知^划价地点^设备位置) flag-0:自动预约失败，1 自动预约成功   
+	....;BookType: 1 自动预约  ,2 服务台预约 ,3 无需预约
+    ....Set ret=##class(web.DHCRisBookParam).AutoBooked(OEORIDR,PrtDate,PrtTime,"HIS01")
+    ....Set BookType=$p(ret,"^",1)
+    ....Set Prompt=$p($p(ret,"^",7),"$",1)
+    ....Set BookedNote=$p(ret,"^",8)	;检查须知
+    ....Set PrescPricePosition=""
+    ....If (BookType=1)!(BookType=3) Do
+    .....Set PrescPricePosition=$p($p(ret,"^",7),"$",3)
+    .....Set EquipmentPosition=$p(ret,"^",10)
+    .....If EquipmentPosition'="" Do
+    ......Set PrescPricePosition=EquipmentPosition	;设备地点不为空时，显示设备地点
+    .....;s Prompt="请您去 "_PrescPricePosition_" 做检查."
+    ....If BookType=2 Do
+    .....Set PrescPricePosition=$p($p(ret,"^",7),"$",2)
+    .....Set BookedNote=""
+    .....;s Prompt="请您去 "_PrescPricePosition_" 预约."
+    ....If (BookType=2) s BookedNote=""	;检查须知
+    ....If AdmDepDesc["国际医疗" d
+    .....Set Prompt=""
+    .....Set BookedNote=""
+    .....Set PrescPricePosition="请咨询就诊楼层护士站"
+    ....Set NewArcimDesc=##class(web.DHCRisApplicationBill).GetAppItemName(OEORIDR) 
+    ....s JCAcount=JCAcount+1  //检查医嘱序号 add by wangminglong 2018-11-1
+    ....set NewArcimDesc=NewArcimDesc_" "_PackQty_PackUOM_"  "_OrdTotSum_"元"   //医嘱后面加单位单价数量 add by wangminglong 2018-10-19 start
+    ....Set tmp3=NewArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_AdmDepDesc_"^"_PrescPricePosition_"^"_Prompt_"^"_BookedNote_"^"_OEORIDateDisplay_" "_OEORITimeDisplay_"^"_JCAcount_"."   //add _"^"_JCAcount_"." by wangminglong 2018-11-1
+   
+  	....;测试导诊单医嘱项名字过长时分行  目前规则小于15字时不分行,超过15字时分行 add  by wangminglong 2018-09-17  start
+    ....set len=$l(NewArcimDesc)
+	....if len>22 do
+	.....;set halflen=halflen=len\25	;$fn(len/25,"",0)
+	.....set halflen=len\22	;
+	.....set NewArcimDesc1=$e(NewArcimDesc,1,22)
+	.....set tmp3=NewArcimDesc1_"^"_""_"^"_""_"^"_""_"^"_""_"^"_AdmDepDesc_"^"_PrescPricePosition_"^"_Prompt_"^"_BookedNote_"^"_OEORIDateDisplay_" "_OEORITimeDisplay_"^"_JCAcount_"."   //add _"^"_JCAcount_"." by wangminglong 2018-11-1
+	.....if OrdStr="" Set OrdStr=tmp3
+	.....else  Set OrdStr=OrdStr_"!"_tmp3
+	.....for i=1:1:halflen d
+	......set NewArcimDesc2=$e(NewArcimDesc,22*i+1,22*(i+1))
+	......set NewArcimDesc2="  "_NewArcimDesc2   ;add by wangminglong 2018-11-1
+	......set tmp33=NewArcimDesc2_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""_" "_""_"^"
+	......Set OrdStr=OrdStr_"!"_tmp33
+	....else  do
+	.....if OrdStr="" Set OrdStr=tmp3 
+	.....else  Set OrdStr=OrdStr_"!"_tmp3
+	
+    ....;If OrdStr="" Set OrdStr=tmp3
+    ....;Else  Set OrdStr=OrdStr_"!"_tmp3	;
+    ....;测试导诊单医嘱项名字过长时分行  目前规则小于15字时不分行,超过15字时分行 add  by wangminglong 2018-09-17  end
+  
+    ...If myOrdTypeFlag=3 Do
+    ....b ;治疗
+    ....Set Position=""
+    ....If UserDepartment'="" Set Position=##class(web.DHCOPBillHDDC).findLOCBloodDis(OEORIDR,"N") 	;打印条码位置
+    ....b ;111
+    ....If (AdmDepDesc["国际医疗") s Position="地点:"_"请咨询就诊楼层护士站"
+    ....Else  Set Position="地点:"_Position
+    ....set ZLAcount=ZLAcount+1   //治疗医嘱序号 add by wangminglong 2018-11-1
+    ....set NewArcimDesc1=$e(ArcimDesc,1,40)  
+    ....set NewArcimDesc1=NewArcimDesc1_"  "_PackQty_PackUOM_" "_OrdTotSum_"元"    ////医嘱后面加单位单价数量 add by wangminglong 2018-10-19 start
+    ....set tmp3=NewArcimDesc1_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_Position_"^"_ZLAcount_"."  // _"^"_ZLAcount_"." add by wangminglong 2018-11-1 
+	....set len=$l(NewArcimDesc1)
+	....if len>19 do
+	.....set halflen=len\19   ;$fn(len/25,"",0) 
+	.....set NewArcimDesc2=$e(NewArcimDesc1,1,19)
+	.....set tmp3=NewArcimDesc2_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_Position_"^"_ZLAcount_"." 
+	.....if OrdStr="" Set OrdStr=tmp3
+	.....else  Set OrdStr=OrdStr_"!"_tmp3
+	.....for i=1:1:halflen d
+	......set NewArcimDesc3=$e(NewArcimDesc1,19*i+1,19*(i+1))
+	......set NewArcimDesc3="  "_NewArcimDesc3  //换行医嘱加空格 add by wangminlong  2018-11-1
+	......set tmp33=NewArcimDesc3_"^"_"^"_"^"_"^"_"^"_"^"
+	......Set OrdStr=OrdStr_"!"_tmp33
+	....else  do
+	.....if OrdStr="" Set OrdStr=tmp3 
+	.....else  Set OrdStr=OrdStr_"!"_tmp3
+    ....;If OrdStr="" s OrdStr=ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_Position
+    ....;Else  Set OrdStr=OrdStr_"!"_ArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_Position
+   	....;
+   	..b ;321
+    ..If (OrdStr'="")&(myOrdTypeFlag=1) Do
+    ...Set AutoRFlag=$p(^CTLOC(myRecDR),"^",35)	;摆药机发药标志
+    ...Set PresWin=$g(^TMP("myWinInfo",$j,myRecDR))	;发药窗口
+    ...s PresWin=$tr(PresWin,"号窗口","")
+    ...If PresWin["基数" Do
+    ....Set JSYFlag="基数药"
+    ....Set JSYFlagDesc="以下药品请到 "_RecDepLocPosition_" "_RecDepLoc_" ,诊间使用,不需要到药房取."
+    ...Set PrtWinFlag=0
+    ...b ;3
+    ...If AutoRFlag="Y" Do
+    ....Set PrtWinFlag=1	;1：摆药机发药，0：人工发药
+    ....;Set Dispensary="请到 "_RecDepLocPosition_" "_PresWin_" 号窗口"
+    ....Set Dispensary="请到 "_RecDepLocPosition
+   	....Set HosptialNote="待屏幕上方出现您的姓名后,刷卡取药."
+    ...Else  Do
+    ....Set Dispensary="请到 "_RecDepLocPosition
+    ....Set HosptialNote="请先到收方窗口交卡打印处方,再取药."
+    ...If RecDepLocDesc["同仁堂" Do
+    ....Set HerbFlag=1	;根据接收科室判断是否为草药
+    ....;Set Dispensary=" 请到 "_RecDepLocPosition_" 中草药房取药."
+    ....Set Dispensary="东院就诊:请到东院北区七层中医科取药|西院就诊:请到西院门诊楼三层中医科取药"
+    ....If AdmDepDesc["国际医疗" Do
+    .....Set Dispensary="国际医疗就诊:请到国际医疗部二层取药.|"
+   	...Else  Do
+   	....Set HerbFlag=0
+   	..;
+   	..If (OrdStr'="") Do
+    ...If RecLocStr="" Set RecLocStr=RecDepLoc_"^"_RecDepLocPosition_"^"_RecLocPrompt_"^"_ReportPosition_"^"_$g(PresWin)_"^"_$g(JSYFlag)_"^"_$g(PrtWinFlag)_"^"_$g(JSYFlagDesc)_"^"_$g(HerbFlag)_"^"_$g(Dispensary)_"^"_$g(HosptialNote)_"^"_RecLocFloor_$c(5)_OrdStr
+    ...Else  Set RecLocStr=RecLocStr_$c(4)_RecDepLoc_"^"_RecDepLocPosition_"^"_RecLocPrompt_"^"_ReportPosition_"^"_$g(PresWin)_"^"_$g(JSYFlag)_"^"_$g(PrtWinFlag)_"^"_$g(JSYFlagDesc)_"^"_$g(HerbFlag)_"^"_$g(Dispensary)_"^"_$g(HosptialNote)_"^"_RecLocFloor_$c(5)_OrdStr
+    ...b ;检查结束
+    
+    
+    .If myOrdTypeFlag=2 Do
+   	..b ;检验输出开始
+   	..Set LabNO="",LabOrdStr=""
+   	..For  Set LabNO=$o(^LabOrdItem($j,LabNO)) Quit:LabNO=""  Do
+   	...Set LabNODesc="",LabEpisodeDesc="",LabPrtBarPosition="",LabReportPosition=""
+   	...Set LabReportDate="",LabPrompt=""
+   	...Set LabOEORI=""
+   	...set JYAcount=0   //检验医嘱序号  add by wangminglong 2018-11-1
+   	...set OrdStr=""    //add by wangminglong 2018-11-1
+   	...For  Set LabOEORI=$o(^LabOrdItem($j,LabNO,LabOEORI)) Quit:LabOEORI=""  Do
+   	....set JYAcount=JYAcount+1    //检验医嘱序号自增  add by wangminglong 2018-11-1
+   	....set LabPrompt="" //温馨提示默认为空 add by wangminglong 2018-11-1
+   	....Set LabInfo=^LabOrdItem($j,LabNO,LabOEORI)
+   	....Set myLabName=$p(LabInfo,"^",2)	;化验项目名称
+   	....Set myLabName=JYAcount_"."_myLabName   //化验医嘱排序  add by wangminglong 2018-11-1
+   	....Set myLabEpisodeDesc=$p(LabInfo,"^",3)	;标本
+   	....Set myPrintBarPosition=$p(LabInfo,"^",7)	;打印条码位置
+   	....Set myReportDate=$p(LabInfo,"^",8)		;取报告时间
+   	....Set myPrice=$p(LabInfo,"^",4)    ;项目价格  add by wangminglong 2018-10-31
+   	....Set myPackQty=$p(LabInfo,"^",5)    ;项目单位 add by wangminglong 2018-10-31
+   	....Set myOrdTotSum=$p(LabInfo,"^",6)    ;项目总价  add by wangminglong 2018-10-31
+   	....Set myRecDepLoc=$p(LabInfo,"^",11)  ;项目科室 add by wangminglong  2018-10-31
+   	....Set myRecLocFloor=$p(LabInfo,"^",12)  ;科室楼层 add by wangminglong 2018-10-31
+   	....set LabReportDate=$p(LabInfo,"^",13)  ;报告时间 add by wangminglong 2019-1-11
+   	....set ReportPrompt=$p(LabInfo,"^",14)  ;报告提示 add by wangminglong 2019-1-18
+   	....set Reportfirst=$p(LabInfo,"^",15)  ;报告优先级 add by wangminglong 2019-1-18
+   	....i LabReportDate="" d
+   	.....s LabReportDate=0
+   	....Do ##class(web.DHCOPBILLOrdDirectList).GetNumberForString(LabNO,myReportDate,$j)
+   	....Set myReportPosition=$p(LabInfo,"^",9)	;取报告地点
+   	....Set myLabPrompt=$p(LabInfo,"^",10)		;温馨提示
+   	....Set LabNODesc=myLabName_"  "_myPackQty_PackUOM_" "_myOrdTotSum_"元"    //添加单位数量总价价格
+   	....;If LabNODesc=""  Set LabNODesc=myLabName_" "_myPrice    //添加价格 add by wangminglong 2018-11-1
+   	....;Else  Set LabNODesc=LabNODesc_"+"_myLabName_" "_myPrice //添加价格 add by wangminglong 2018-11-1
+   	....If (LabEpisodeDesc="")&(myLabEpisodeDesc'="") Do
+   	.....Set LabEpisodeDesc=myLabEpisodeDesc		;默认条码号一样时，标本类型也一样，所以默认取任意一个
+   	....If (LabPrtBarPosition="")&(myPrintBarPosition'="") Do
+   	.....Set LabPrtBarPosition=myPrintBarPosition	;默认条码号一样时，条码打印位置也一样，所以默认取任意一个
+   	....If (LabReportPosition="")&(myReportPosition'="") Do
+   	.....Set LabReportPosition=myReportPosition	;默认条码号一样时，取报告地点也一样，所以默认取任意一个
+   	....If (LabPrompt="")&(myLabPrompt'="") Do
+   	.....Set LabPrompt=myLabPrompt					;默认条码号一样时，温馨提示默认取一个就行
+   	....Set RecDepLoc=myRecDepLoc_"^"_myRecLocFloor_"^"_LabPrtBarPosition_"^^^^^"     //add by wangminglong 2018-10-31
+   	
+   	....;检验医嘱分类输出add by wangminglong 2019-1-9 start
+   	....Set:myLabPrompt'="" LabPrompt="温馨提示:"_myLabPrompt   //温馨提示 add by wangminglong 2018-11-1
+   	....set tmp4=LabNODesc_"^"_LabEpisodeDesc_"^"_""_"^"_""_"^"_""_"^"_"采集说明:"_LabPrtBarPosition_"^"_"报告时间:"_LabReportDate_"^"_"取报告地点"_LabReportPosition_"^"_LabPrompt_"^"_RecLocFloor   
+   	....set len=$l(LabNODesc)
+   	....if len>22 do
+	.....set halflen=len\22 
+	.....set LabNODesc1=$e(LabNODesc,1,22)
+	.....set tmp4=LabNODesc1_"^"_LabEpisodeDesc_"^"_""_"^"_""_"^"_""_"^"_"采集说明:"_LabPrtBarPosition_"^"_"报告时间:"_LabReportDate_"^"_"取报告地点"_LabReportPosition_"^"_LabPrompt_"^"_RecLocFloor   
+	.....b ;6666666
+	.....if OrdStr="" Set OrdStr=tmp4
+	.....else  Set OrdStr=OrdStr_"!"_tmp4
+	.....for i=1:1:halflen d
+	......set LabNODesc2=$e(LabNODesc,22*i+1,22*(i+1))
+	......set LabNODesc2="  "_LabNODesc2  //换行医嘱加空格 add by wangminlong  2018-11-1
+	......set tmp44=LabNODesc2_"^"_"^"_"^"_"^"_"^"_"^"_"^"_"^"_"^"
+	......Set OrdStr=OrdStr_"!"_tmp44
+	....else  do
+	.....if OrdStr="" Set OrdStr=tmp4
+	.....else  Set OrdStr=OrdStr_"!"_tmp4
+	
+	....;取标本时间 add by wangminglong 2019-1-12 start
+	....if LabReportDate>0 d
+	.....if (0<LabReportDate)&(LabReportDate<60) d
+	......s temp42="  标本采集"_LabReportDate_"分钟后可查询报告"
+	.....if (60<=LabReportDate)&(LabReportDate<1440) d
+	......s LabReportDate=$fn(LabReportDate/60,"",1)
+	......s temp42="  标本采集"_LabReportDate_"小时后可查询报告"
+	.....if (1440<=LabReportDate) d
+	......s LabReportDate=$fn(LabReportDate/1440,"",1)
+	......s temp42="  标本采集"_LabReportDate_"工作日后可查询报告"
+	.....Set OrdStr=OrdStr_"!"_temp42
+	
+    ....;取报告提示 add by wangminglong 2019-1-18 start
+    ....if ReportPrompt'="" d
+    .....set len1=$l(ReportPrompt)
+    .....if len1>22 do
+	......set halflen=len1\22 
+	......set ReportPrompt1=$e(ReportPrompt,1,22)
+   	......set tmp43=ReportPrompt1
+    ......if OrdStr="" Set OrdStr=tmp43
+	......else  Set OrdStr=OrdStr_"!"_tmp43
+    ......for k=1:1:halflen d
+	.......set ReportPrompt2=$e(ReportPrompt,22*k+1,22*(k+1))
+   	.......Set OrdStr=OrdStr_"!"_ReportPrompt2
+   	.....else  do
+	......if OrdStr="" Set OrdStr=ReportPrompt
+	......else  Set OrdStr=OrdStr_"!"_ReportPrompt
+   
+   
+   
+   	....if myLabPrompt'="" d
+   	.....s temp43="  "_LabPrompt
+   	.....s OrdStr=OrdStr_"!"_temp43
+   	....;检验医嘱输出add by wangminglong 2019-1-9 end
+   	
+   	...Set MaxTime=$o(^MaxLabReportDate($j,LabNO,""),-1)
+    ...If MaxTime'="" Set LabReportDate=$g(^MaxLabReportDate($j,LabNO,MaxTime))
+    ...b ;ArcimDesc_"^"_LabEpisodeDesc_"^"_Price_"^"_""_"^"_OrdTotSum_"^"_PrintBarPosition_"^"_ReportDate_"^"_ReportPosition_"^"_Prompt
+    ...;Set:LabPrompt'="" LabPrompt="温馨提示:"_LabPrompt   //wangminglong 注释 2018-11-1
+    ...;Set tmp5=LabNODesc_"^"_LabEpisodeDesc_"^"_""_"^"_""_"^"_""_"^"_"采集说明:"_LabPrtBarPosition_"^"_"报告时间:"_LabReportDate_"^"_"取报告地点"_LabReportPosition_"^"_LabPrompt_"^"_RecLocFloor  //wangminglong 注释 2018-11-1
+    ...Set tmp5=RecDepLoc_$c(5)_OrdStr  //检验医嘱输出 add by wangminglong 2018-11-1
+    ...Set:LabPrtBarPosition="" LabPrtBarPosition="左左左左左左左左左"
+    ...Set ^TMPLabSortIndex("LabSort",$j,LabNO,LabPrtBarPosition)=tmp5
+    ..Set LabNO=""
+    ..For  Set LabNO=$o(^TMPLabSortIndex("LabSort",$j,LabNO)) Quit:LabNO=""  Do
+    ...Set PrtBarP=""
+    ...For  Set PrtBarP=$o(^TMPLabSortIndex("LabSort",$j,LabNO,PrtBarP)) Quit:PrtBarP=""  Do
+    ....Set tmp6=$g(^TMPLabSortIndex("LabSort",$j,LabNO,PrtBarP))
+    ....set LabNODesc=$p(tmp6,"^",1)
+    ....set tmp6Str=$p(tmp6,LabNODesc,2)
+    ....set len=$l(LabNODesc)
+    ....b ;len
+	....if len>22 do
+	.....set halflen=len\22  ;$fn(len/25,"",0)
+	.....set NewArcimDesc1=$e(LabNODesc,1,22)
+	.....set tmp6=NewArcimDesc1_tmp6Str
+	.....if LabOrdStr="" Set LabOrdStr=tmp6 
+	.....;else  Set LabOrdStr=LabOrdStr_"!"_tmp6   
+	.....else  Set LabOrdStr=LabOrdStr_$c(4)_tmp6     //把!改为$c(4) add by wangminglong
+	.....for i=1:1:halflen d
+	......set NewArcimDesc2=$e(LabNODesc,22*i+1,22*(i+1))
+	......set NewArcimDesc2="   "_NewArcimDesc2    //add by wangminglong 2018-11-1
+	......set tmp66=NewArcimDesc2_tmp6Str
+	......Set LabOrdStr=LabOrdStr_"!"_tmp66
+	....else  do
+	.....if LabOrdStr="" Set LabOrdStr=tmp6  
+	.....;else  Set LabOrdStr=LabOrdStr_"!"_tmp6
+	.....else  Set LabOrdStr=LabOrdStr_$c(4)_tmp6 //把!改为$c(4) add by wangminglong
+	....b ;If LabOrdStr="" Set LabOrdStr=tmp6
+    ....;Else  Set LabOrdStr=LabOrdStr_"!"_tmp6
+    ....;b ;222
+    ..;Set RecLocStr=RecDepLoc_"^^^^^^"_$c(5)_LabOrdStr  //wml
+    ..Set RecLocStr=LabOrdStr   //wml
+  	.. ;检验输出结束
+    .If rtn="" Set rtn=Str_$c(3)_RecLocStr  
+    .Else  Set rtn=rtn_$c(2)_Str_$c(3)_RecLocStr 
+    b ;rtn
+    If rtn'="" Do
+    .Set rtn=BaseInfo_$c(1)_rtn
+    Kill ^LabOrdItem($j)
+    Kill ^MaxLabReportDate($j)
+    Kill ^TMP($ZN,$j,"PBID")
+    ;w rtn
+    Quit rtn
+    ;
+]]></Implementation>
+</Method>
+
+<Method name="GetDirectListByPrtRowidXHNew">
+<Description>
+第三方接口获取导诊单数据 add by wangminglong 2018-11-8
+Table:DHC_InvPrt,DHC_PatientBill,DHC_BillConInv,OE_OrdItem,ARC_ItmMast,ARC_ItemCat
+Input:PrtRowid:发票表RowID,ExpStr:(安全组^科室^收费员^^)
+Output:
+Return:
+Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXHNew("377416","238^^^")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowid:%String,ExpStr:%String=""</FormalSpec>
+<Implementation><![CDATA[
+	s ^tempwml("GetDirectListByPrtRowidXHNew")=$lb(PrtRowid,ExpStr)
+	New (PrtRowid,ExpStr)
+	Kill ^TMP($ZN,$j,"PBID")
+	Kill ^MaxLabReportDate($j)
+	Kill ^TMP("myWinInfo",$j)
+	Kill ^LabOrdItem($j)
+	Kill ^TMPLabSortIndex("LabSort",$j)
+	;s ^zhang("GetDirectListByPrtRowidXH")=PrtRowid _","_ExpStr 
+	Set Group=$p($g(ExpStr),"^",1)
+	Set CTLocDR=$p($g(ExpStr),"^",2)
+	Set UserDR=$p($g(ExpStr),"^",3)
+	;s:Group="" Group=$G(%session.Data("LOGON.GROUPID"))
+	;
+	Quit:+PrtRowid=0 ""
+    ;病人基本信息
+    Set paperDr=$p($get(^DHCINVPRT(PrtRowid)),"^",15)
+    Quit:paperDr="" ""
+    //账户余额 wml
+    s myAccRowID=$o(^DHCACDi("AccM",0,"PAPMI",paperDr,""))
+    s myAccLeftSum=$p($g(^DHCACD("AccM",myAccRowID)),"^",8)	;AccM_Balance
+	s myAccLeftSum=$fn(myAccLeftSum,"",2)
+    //账户余额  wml
+    b ;123
+	If $d(^PAPER(paperDr,"PAT",1)) Do
+	.Set patNo=$p(^PAPER(paperDr,"PAT",1),"^",1)   ;登记号
+	.Set medicare=$p(^PAPER(paperDr,"PAT",1),"^",22)   ;病案号
+	Set SocialStatus=$p($g(^PAPER(paperDr,"PER",1)),"^",10)  ;PAPER_SocialStatus_dr
+	Set SocialStatusDesc=""
+	Set:SocialStatus'="" SocialStatusDesc=$p(^CT("SS",SocialStatus),"^",2)
+	If $d(^PAPER(paperDr,"ALL")) Do
+	.Set patName=$p(^PAPER(paperDr,"ALL"),"^",1)   ;姓名
+	.Set patmiId=$p(^PAPER(paperDr,"ALL"),"^",9)   ;身份证
+	.Set sex=$p(^PAPER(paperDr,"ALL"),"^",7)       ;性别
+	.If sex'="" Set sex=$p(^CT("SEX",sex),"^",2)
+	.Set (patdob,patageyr,patagemth,patageday,age)=""
+	.&sql(select paper_dob,paper_ageyr,paper_agemth,paper_ageday into :patdob,:patageyr,:patagemth,:patageday 
+	      from pa_person where paper_rowid=:paperDr)
+	.;If patdob'="" s age=..GetAge($zd(+$h,3), $zd(patdob,3))  ;计算年龄
+	.;If +age>130 Set age=""   ;控制年龄上限
+	.;+2015-3-19 hujunbin 使用年龄统一接口
+	.Set age=##Class(web.DHCBillInterface).GetPapmiAge(paperDr,"")
+	Set age=age_" "_SocialStatusDesc
+	;
+	;获取中草药配制
+	Set HerbConfig=##class(web.DHCOPConfig).GetHerbalConfig()
+	Set rtn=$p(HerbConfig,$c(2))
+	Quit:rtn 104   ;配置错误
+	Set FCHerbFlag=$p(HerbConfig,$c(2),2)		;OPFC_HerbalFlag
+	Set FCHerbDesc=$p(HerbConfig,$c(2),3)
+	Set FCHerbNum=$p(HerbConfig,$c(2),4)
+	Set FCHerbRange=$p(HerbConfig,$c(2),5)
+	;
+	Set PrtDate=$p(^DHCINVPRT(PrtRowid),"^",5)
+	Set PrtTime=$p(^DHCINVPRT(PrtRowid),"^",20)
+	Set PrtDateDesc=$zd(PrtDate,3)
+	Set PrtTimeDesc=$zt(PrtTime,1)
+	Set PrtUser=$p(^DHCINVPRT(PrtRowid),"^",21)
+	Set PrtUserDesc=$p(^SSU("SSUSR",PrtUser),"^",2)
+	//add by xhm 增加就诊科室显示
+	Set BCIId=$o(^DHCBCI(0,"INV",PrtRowid,0))
+	Set AdmId=$p(^DHCBCI(BCIId),"^",3) 
+	Set AdmLoc=$p(^PAADM(AdmId),"^",4)
+	Set AdmLocdesc=$p($g(^CTLOC(AdmLoc)),"^",2)
+	Set BaseInfo=patNo_"^"_patName_"^"_sex_"^"_age_"^"_PrtUserDesc_"^"_PrtDateDesc_"^"_SocialStatusDesc_"^"_$zd(patdob,3)_"^"_AdmLocdesc_"^"_myAccLeftSum    //添加myAccLeftSum账户余额 wml
+	b ;11
+	Set BCIDR=""
+	set PhyAcount=0
+    For  Set BCIDR=$o(^DHCBCI(0,"INV",PrtRowid,BCIDR)) Quit:BCIDR=""  Do
+	.Set Bill=$p(^DHCBCI(BCIDR),"^",2)
+	.Set Adm=$p(^DHCBCI(BCIDR),"^",3)   ;就诊Rowid
+	.Quit:'$D(^DHCPB(Bill))
+	.Set PBO=0 
+	.For  Set PBO=$o(^DHCPB(Bill,"O",PBO)) Quit:PBO=""  Do
+	..Quit:($d(^DHCPB(Bill,"O",PBO))=10)
+	..Set OEORIDR=$p(^DHCPB(Bill,"O",PBO),"^",4)							;医嘱表Rowid
+	..Set ARCIMDR=$p(^DHCPB(Bill,"O",PBO),"^",3)							;医嘱项Rowid DHC_PatBillOrder->PBO_ARCIM_DR
+    ..;Quit:(PrtRowid="4754520")&(ARCIMDR="19024||1")
+    ..Set PresNo=$p(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),1),"^",14)
+	..Set RecdepDR=$p($g(^OEORD(+OEORIDR,"I",+$p(OEORIDR,"||",2),3)),"^",6) ;接收科室Rowid
+    ..Set LocType=$p(^CTLOC(RecdepDR),"^",13) 
+	..If LocType="" Set LocType="Z"	;放在最后?
+	..Set ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	..Set OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+	..;Start Lid 2011-09-03 判断该医嘱的主医嘱是否为药品，如果是药品则不在导诊单上大印
+	..Set OrdItmType=""
+	..Set OEORIOEORIDR=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),11)),"^",39) ;OEORI_OEORI_DR(主医嘱指针)
+	..If ((OrderType'="R")&(OEORIOEORIDR'="")) d
+	...Set OEORIOEORIDRArcimDR=$p($g(^OEORD(+OEORIOEORIDR,"I",$p(OEORIOEORIDR,"||",2),1)),"^",2)
+	...Set ItmCatDR=$p(^ARCIM(+OEORIOEORIDRArcimDR,$p(OEORIOEORIDRArcimDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	...Set OrdItmType=$p(^ARC("IC",ItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+	..Quit:OrdItmType="R"
+	..;End
+	..Set LisFlag=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",22)	
+	..Quit:LisFlag'="" 	;过滤检验绑定的医嘱.
+	..Quit:(Group="183")&(OrderType'="R")	;体检安全组导诊单上只打印药品
+	..Set LisFlag=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",22)	
+	..Quit:LisFlag'="" 	;过滤检验绑定的医嘱.
+	..If OrderType="R" d
+	...;药品
+	...;判断是否为基数药，如果是则取基数药使用位置(科室)
+	...Set JSYDepDR=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",36)
+	...Set JSYFlag=""	;##class(web.DHCSTINTERFACE).ChkOrdBaseMedFlag(PresNo)	;1是基数药，非1不是
+	...If JSYFlag=1 d
+	....If JSYDepDR'="" Set RecdepDR=JSYDepDR
+	...;取发药窗口
+	...Set WinInfo=##class(web.DHCMZYFXTYW02).GetPrtPrescWin(PrtRowid,PresNo)
+	...If WinInfo'="" Set ^TMP("myWinInfo",$j,RecdepDR)=WinInfo
+	...Set OrdTypeFlag=1
+	..Else  If OrderType="L" Do
+	...;检验
+	...Set OrdTypeFlag=2
+	..Else  Do
+	...Set Flag=##class(web.DHCBillHardCoded).IsExamSubCat(ARCIMDR)
+	...If +Flag=1 d
+	....;检查
+	....Set OrdTypeFlag=4
+	...Else  Do
+	....;治疗
+	....Set OrdTypeFlag=3
+	..Set ^TMP($ZN,$j,"PBID",OrdTypeFlag,RecdepDR,Bill_"||"_PBO)=""	;按医嘱分类(顺序:药品->检验->治疗->检查)及接收科室重新建立索引
+	..;s ^tmpxhm($ZN,$j,"PBID")=OrdTypeFlag_"^"_RecdepDR_"^"_Bill_"||"_PBO
+    .;协和医院 根据Adm取需划价的检查医嘱
+    .Set PrescPriceStr=##class(web.DHCOPBILLOrdDirectList).GetPrescPriceOrditem(Adm)
+    .For i=1:1:$l(PrescPriceStr,"^") Do
+    ..Set PrescPriceOrdItm=$p(PrescPriceStr,"^",i)
+    ..Quit:PrescPriceOrdItm="" 
+    ..Set ItemStatDR=$p($g(^OEORD(+PrescPriceOrdItm,"I",+$p(PrescPriceOrdItm,"||",2),1)),"^",13)	;OEORI_ItemStat_DR
+    ..Set OSTATCode=$p(^OEC("OSTAT",ItemStatDR),"^",1)
+    ..Quit:OSTATCode="D"	;过滤停止医嘱
+    ..Set RecdepDR=$p($g(^OEORD(+PrescPriceOrdItm,"I",+$p(PrescPriceOrdItm,"||",2),3)),"^",6) ;接收科室Rowid
+    ..;只有检查有划价医嘱
+    ..Set ^TMP($ZN,$j,"PBID",4,RecdepDR,"PrescPrice",PrescPriceOrdItm)=""
+    Set myOrdTypeFlag="",rtn=""
+	For  Set myOrdTypeFlag=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag)) Quit:myOrdTypeFlag=""  Do
+	.Set:myOrdTypeFlag=1 Str="药品"
+	.Set:myOrdTypeFlag=2 Str="化验"
+	.Set:myOrdTypeFlag=3 Str="治疗"
+	.Set:myOrdTypeFlag=4 Str="检查"
+	.Set myRecDR="",RecLocStr=""
+	.For  Set myRecDR=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR)) Quit:myRecDR=""  Do
+	..set JYAcount=0   //检验医嘱序号 add by wangminglong 2018-11-1
+	..set JCAcount=0   //检查医嘱序号 add by wangminglong 2018-11-1
+	..set ZLAcount=0   //治疗医嘱序号 add by wangminglong 2018-11-1
+	..Set RecDepLoc=$p(^CTLOC(myRecDR),"^",2)
+	..Set RecDepLocDesc=RecDepLoc
+	..If RecDepLoc["-" s RecDepLoc=$p(RecDepLoc,"-",2)					;接收科室
+	..set RecLocFloor=$p($g(^CTLOC(myRecDR)),"^",16)
+	..if RecDepLoc["心电图" s RecLocFloor="心电图检查地点请咨询护士"   //心电检查地点请咨询护士 add by wangminglong 2019-1-18
+	..Set RecDepLocPosition=$p($g(^CTLOC(myRecDR,"ADDR","1")),"^",1)  	;接收科室的物理地址
+	..Set RecLocPrompt=""												;科室注意事项提示
+	..Set ReportPosition=""												;取报告地点
+	..Set JSYFlag=0												
+	..Set myPBORID="",OrdStr=""
+	..For  Set myPBORID=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR,myPBORID)) Quit:myPBORID=""  Do
+	...Set PPOrdItm=""
+	...For  Set PPOrdItm=$o(^TMP($ZN,$j,"PBID",myOrdTypeFlag,myRecDR,myPBORID,PPOrdItm)) Quit:PPOrdItm=""  Do
+	....;划价医嘱
+	....Set ARCIMDR=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),1)),"^",2)
+	....Set ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
+	....Set ArcimAbbrev=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",3) ;简写 ARCIM_Abbrev
+	
+	....b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start   wml
+	....Set Reporttime=""   //报告时间
+	....set ReportPrompt="" 
+	....set Reportfrist=""
+	....set DepFlag=2
+	....if AdmDepDesc["门诊"  set DepFlag=2
+	....if AdmDepDesc["急诊"  set DepFlag=3
+	....Set CodeID=$p($g(^ARCIM(+ARCIMDR,1,"EXT",1)),"^",4) ;  //检验项目对应的外部codeid
+	....set TestSetDR=$o(^dbo.BTTestSetI("IndexCode",1," "_CodeID,""))  //检验项目的id
+	....s FestivalWeek=" "_$zd($h,10)
+	....i TestSetDR'="" d
+	.....s InspectingId=$o(^dbo.BTTestSetReceiptI("IndexTestSetDR",TestSetDR,FestivalWeek,DepFlag,""))
+	.....i InspectingId'="" d
+	......s Reportfrist=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),4)  //报告优先级
+	......s Reporttime=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),7)     //报告时间
+	......s ReportPrompt="  "_$list($g(^dbo.BTTestSetReceiptD(InspectingId)),10)  //报告提示
+	....b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end   wml
+	
+	....Set UserDepartment=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),7)),"^",2) ;开单科室DR
+	....Set UserDepDesc=""
+	....If UserDepartment'=""  Do
+	.....Set UserDepDesc=$p(^CTLOC(UserDepartment),"^",2)
+	....If UserDepDesc["-" s UserDepDesc=$p(UserDepDesc,"-",2)
+	....Set OEORIDate=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),3)),"^",7) ;OEORI_Date
+	....Set OEORITime=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),3)),"^",15) ;OEORI_Time
+	....Set OEORIDateDisplay="",OEORITimeDisplay=""
+	....Set:OEORIDate'="" OEORIDateDisplay=$zd(OEORIDate,3)
+	....Set:OEORITime'="" OEORITimeDisplay=$zt(OEORITime,1)
+	....Set Adm=$p(^OEORD(+PPOrdItm),"^",1)
+	....Set AdmDepDR=$p(^PAADM(Adm),"^",4)
+	....Set AdmDepDesc=$p(^CTLOC(AdmDepDR),"^",2)
+	....If AdmDepDesc["-" Set AdmDepDesc=$p(AdmDepDesc,"-",2)
+	....If myOrdTypeFlag=4 d
+    .....;检查
+    .....;(BookType^flag^资源Code^资源描述^预约日期^预约时间^预约日期时间的描述$预约地点$检查地点^检查须知^划价地点^设备地点) flag-0:自动预约失败，1 自动预约成功   
+	...../// BookType: 1 自动预约  ,2 服务台预约 ,3 无需预约
+    .....Set ret=##class(web.DHCRisBookParam).AutoBooked(PPOrdItm,PrtDate,PrtTime,"HIS01")
+    .....Set PrescPriceFlag="" ;##class(web.UDHCJFBILL).GetPrescPriceOrdItemFlag(PPOrdItm,"")
+    .....Set OEPflag=$p(PrescPriceFlag,"^",1)
+    .....Set OEPInputFlag=$p(PrescPriceFlag,"^",2)
+    .....If (OEPflag="Y")&(OEPInputFlag="Y") Do
+    ......Set PrescPricePosition=$p($p(ret,"^",7),"$",2)	;预约位置
+    ......Set ^PrescPriceOrdItemSend(Adm,PPOrdItm)=PrescPriceFlag	;记录已发放的的医嘱ID
+    .....Else  Do
+    ......Set PrescPricePosition=$p(ret,"^",9)	;划价位置
+    .....Set Prompt=$p($p(ret,"^",7),"$",1)
+    .....Set BookedNote=""	;$p(ret,"^",8)	;检查须知
+    .....;
+    .....If AdmDepDesc["国际医疗" d
+    ......Set BookedNote=""
+    ......Set Prompt=""
+    ......Set PrescPricePosition="请咨询就诊楼层护士站"
+    .....Set NewArcimDesc=##class(web.DHCRisApplicationBill).GetAppItemName(PPOrdItm) 
+    .....Set tmp1=NewArcimDesc_"^"_""_"^"_""_"^"_""_"^"_""_"^"_AdmDepDesc_"^"_PrescPricePosition_"^"_Prompt_"^"_BookedNote_"^"_OEORIDateDisplay_" "_OEORITimeDisplay
+	.....If OrdStr="" Set OrdStr=tmp1
+    .....Else  Set OrdStr=OrdStr_"!"_tmp1	;
+	...Quit:myPBORID="PrescPrice"
+	...;
+	...Set Bill=+myPBORID
+	...Set Ord=$p(myPBORID,"||",2)
+	...Set OEORIDR=$p(^DHCPB(Bill,"O",Ord),"^",4)
+	...Set ARCIMDR=$p(^DHCPB(Bill,"O",Ord),"^",3)
+	...Set UserDepartment=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),7)),"^",2) ;开单科室DR
+	...Set OEORIDate=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",7) ;OEORI_Date
+	...set OEORITime=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",15) ;OEORI_Time
+	...Set OEORIDateDisplay="",OEORITimeDisplay=""
+	...Set:OEORIDate'="" OEORIDateDisplay=$zd(OEORIDate,3)
+	...Set:OEORITime'="" OEORITimeDisplay=$zt(OEORITime,1)
+	...Set UserDepDesc=""
+	...If UserDepartment'="" Set UserDepDesc=$p(^CTLOC(UserDepartment),"^",2)
+	...If UserDepDesc["-" s UserDepDesc=$p(UserDepDesc,"-",2)
+	...Set Adm=$p(^OEORD(+OEORIDR),"^",1)
+	...Set AdmDepDR=$p(^PAADM(Adm),"^",4)
+	...Set AdmDepDesc=$p(^CTLOC(AdmDepDR),"^",2)
+	...If AdmDepDesc["-" Set AdmDepDesc=$p(AdmDepDesc,"-",2)
+	...Set PresNo=$p(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),1),"^",14)
+	...Set OrdTotSum=$fn($p(^DHCPB(Bill,"O",Ord),"^",8),"",2)
+	...Set ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
+	...Set ArcimAbbrev=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",3) ;简写 ARCIM_Abbrev
+	
+	...b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start  wml
+	...Set Reporttime=""   //报告时间
+	...set ReportPrompt="" 
+	...set Reportfrist=""
+	...set DepFlag=2
+	...if AdmDepDesc["门诊"  set DepFlag=2
+	...if AdmDepDesc["急诊"  set DepFlag=3
+	...Set CodeID=$p($g(^ARCIM(+ARCIMDR,1,"EXT",1)),"^",4) ;  //检验项目对应的外部codeid
+	...set TestSetDR=$o(^dbo.BTTestSetI("IndexCode",1," "_CodeID,""))  //检验项目的id
+	...s FestivalWeek=" "_$zd($h,10)
+	...i TestSetDR'="" d
+	....s InspectingId=$o(^dbo.BTTestSetReceiptI("IndexTestSetDR",TestSetDR,FestivalWeek,DepFlag,""))
+	....i InspectingId'="" d
+	.....s Reportfrist=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),4)  //报告优先级
+	.....s Reporttime=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),7)     //报告时间
+	.....s ReportPrompt="  "_$list($g(^dbo.BTTestSetReceiptD(InspectingId)),10)  //报告提示
+	...b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end wml
+	
+	
+	...Set ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
+	...Set OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+    ...If OrderType="R" d
+	....Set JSYFlag="" ;##class(web.DHCSTINTERFACE).ChkOrdBaseMedFlag(PresNo)	;1是基数药，非1不是
+    ...Set PackUOMRowid=$p($g(^ARCIM(+ARCIMDR,1,8)),"^",14) ;整包装单位
+	...Set OEPrice=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",25)		;;取出P   价格 OE_OrdItem->OEORI_Price
+	...Set PackUOM=""
+	...If PackUOMRowid'=""  Do
+	....Set PackUOM=$p($g(^CT("UOM",PackUOMRowid)),"^",2)
+	....if PackUOM["(" set PackUOM=$p(PackUOM,"(",1)	;盒(30)这种单位改为盒显示
+	...Set Price=$p(^DHCPB(Bill,"O",Ord),"^",7)	
+	...Set INCI=$o(^INCI(0,"ARCIM_DR",+ARCIMDR,""))		;INC_Itm->RowID
+	...If INCI'="" Do 
+	....Set INCIUOM=$p(^INCI(INCI,1),"^",10)   ;INC_Itm->INCI_CTUOM_DR
+	....Set ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+	....If ConFacDr="" Set ConFac=1
+	....Else  Set ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	...Else  Set ConFac=1
+	...Set PackQty=$p(^DHCPB(Bill,"O",Ord),"^",5)
+	...Set Refundqty=$p(^DHCPB(Bill,"O",Ord),"^",6)			;;OE_OrdItem->OEORI_RefundQty
+	...If Refundqty="" Do
+	....Set Refundqty=0
+	...Set PackQty=+PackQty+Refundqty
+	...Set Price=$fn(Price*ConFac,"",2)
+	...If (OrderType="R")&(PackQty="") Set PackQty=1
+	...If ((OrderType="R")&(PackQty'="")) Do
+	....s PackQty=PackQty/ConFac
+	...If myOrdTypeFlag=1 Do
+	....;b ;药品
+    ....If ((+$g(FCHerbFlag)=1)&&(FCHerbRange[("^"_ArcItmCatDR_"^"))) Do
+    .....;b ;草药
+    .....If +$g(FCHerIndex)=0 Do
+    ......If OrdStr="" Set OrdStr=FCHerbDesc_"^^^^"
+    ......Else  Set OrdStr=OrdStr_"!"_FCHerbDesc_"^^^^"
+    .....Set FCHerIndex=+$g(FCHerIndex)+1
+    ....Else  Do
+    .....;西药、中成药	导诊单拼串药品名称
+    .....set PhyAcount=PhyAcount+1
+    .....;set ArcimDesc=ArcimDesc_" "_PackQty_PackUOM_" "_Price_"元"
+    .....set ArcimDesc=ArcimDesc   //去掉数量单价 add by wangminglong
+    .....set len=$l(ArcimDesc)
+    .....set ArcimDesc1=$e(ArcimDesc,1,50)   
+    .....set tmp3=ArcimDesc1_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_PhyAcount_"."   
+    .....If OrdStr="" s OrdStr=ArcimDesc1_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_PhyAcount_"." 
+    .....Else  Set OrdStr=OrdStr_"!"_ArcimDesc1_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_PhyAcount_"." 
+    ...If myOrdTypeFlag=2 Do
+    ....b ;检验开始
+    ....s specSub=$o(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),"SPEC",""),-1)
+    ....s specCode=""
+    ....s:specSub'="" specCode=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),"SPEC",specSub)),"^",1) ;标本代码表的Code
+    ....;If UserDepartment'="" Set PrintBarPosition=##class(web.DHCOPBillHDDC).findLOCBloodDisNew(OEORIDR,specCode) 	;打印条码位置
+    ....If UserDepartment'="" Set PrintBarPosition=##class(web.DHCOPBillHDDC).findDEPBloodDis(UserDepartment,specCode) 	;取维护的科室采血地点 add by wangminglong 2019-1-7 start
+    ....Set LabEpisodeDesc=..GetlabEpisodeDesc(OEORIDR)			;标本类型
+    ....Set SortIndex=LabEpisodeDesc
+    ....Set ReportDate=..GetlabReportDate(OEORIDR)		;取报告时间
+    ....Set ReportPosition=""			;取报告地点
+    ....Set Prompt=$p($g(^ARCIM(+ARCIMDR,1,9)),"^",32)				;温馨提示
+    ....If ArcimAbbrev'="" s ArcimDesc=ArcimAbbrev	;简写不为空时，打印简写
+    ....;Set LabOrdStr=ArcimDesc_"^"_LabEpisodeDesc_"^"_Price_"元"_"^"_""_"^"_OrdTotSum_"^"_PrintBarPosition_"^"_ReportDate_"^"_ReportPosition_"^"_Prompt     //wangminglong
+    ....Set LabOrdStr=ArcimDesc_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_PrintBarPosition_"^"_ReportDate_"^"_ReportPosition_"^"_Prompt_"^"_RecDepLocDesc_"^"_RecLocFloor_"^"_Reporttime_"^"_ReportPrompt //在第二个位置把LabEpisodeDesc标本类型改为PackQty数量 add by wangminglong 2018-11-8
+    ....Set LabEpisodeNo=$p($g(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),3)),"^",20)	;检验条码号 OEORI_LabEpisodeNo
+    ....Set:LabEpisodeNo="" LabEpisodeNo="Z"
+    ....;Set ^LabOrdItem($j,LabEpisodeNo,OEORIDR)=Bill_"||"_Ord_"^"_LabOrdStr    //wangminglong 注释  2018-11-2
+    ....Set ^LabOrdItem($j,RecDepLocDesc,OEORIDR)=Bill_"||"_Ord_"^"_LabOrdStr    //根据科室区分 wangminglong 2018-11-2
+    ....b ;检验结束	
+    ...If myOrdTypeFlag=4 Do
+    ....;检查开始
+    ....;(BookType^flag^资源Code^资源描述^预约日期^预约时间^预约日期时间的描述$预约地点$检查地点^检查须知^划价地点^设备位置) flag-0:自动预约失败，1 自动预约成功   
+	....;BookType: 1 自动预约  ,2 服务台预约 ,3 无需预约
+    ....Set ret=##class(web.DHCRisBookParam).AutoBooked(OEORIDR,PrtDate,PrtTime,"HIS01")
+    ....Set BookType=$p(ret,"^",1)
+    ....Set Prompt=$p($p(ret,"^",7),"$",1)
+    ....Set BookedNote=$p(ret,"^",8)	;检查须知
+    ....Set PrescPricePosition=""
+    ....If (BookType=1)!(BookType=3) Do
+    .....Set PrescPricePosition=$p($p(ret,"^",7),"$",3)
+    .....Set EquipmentPosition=$p(ret,"^",10)
+    .....If EquipmentPosition'="" Do
+    ......Set PrescPricePosition=EquipmentPosition	;设备地点不为空时，显示设备地点
+    .....;s Prompt="请您去 "_PrescPricePosition_" 做检查."
+    ....If BookType=2 Do
+    .....Set PrescPricePosition=$p($p(ret,"^",7),"$",2)
+    .....Set BookedNote=""
+    .....;s Prompt="请您去 "_PrescPricePosition_" 预约."
+    ....If (BookType=2) s BookedNote=""	;检查须知
+    ....If AdmDepDesc["国际医疗" d
+    .....Set Prompt=""
+    .....Set BookedNote=""
+    .....Set PrescPricePosition="请咨询就诊楼层护士站"
+    ....Set NewArcimDesc=##class(web.DHCRisApplicationBill).GetAppItemName(OEORIDR)    //添加部位
+    ....s JCAcount=JCAcount+1  //检查医嘱序号 add by wangminglong 2018-11-1
+    ....;set NewArcimDesc=NewArcimDesc_" "_PackQty_PackUOM_"  "_Price_" 元"   //医嘱后面加单位单价数量 add by wangminglong 2018-10-19 start
+    ....set NewArcimDesc=NewArcimDesc   //去掉医嘱后面加单位单价数量 add by wangminglong 2018-10-19 start
+    ....Set tmp3=NewArcimDesc_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_AdmDepDesc_"^"_PrescPricePosition_"^"_Prompt_"^"_BookedNote_"^"_OEORIDateDisplay_" "_OEORITimeDisplay_"^"_JCAcount_"."   //add _"^"_JCAcount_"." by wangminglong 2018-11-1
+    ....If OrdStr="" Set OrdStr=tmp3
+    ....Else  Set OrdStr=OrdStr_"!"_tmp3	;
+    ...If myOrdTypeFlag=3 Do
+    ....b ;治疗
+    ....Set Position=""
+    ....If UserDepartment'="" Set Position=##class(web.DHCOPBillHDDC).findLOCBloodDis(OEORIDR,"N") 	;打印条码位置
+    ....b ;111
+    ....If (AdmDepDesc["国际医疗") s Position="地点:"_"请咨询就诊楼层护士站"
+    ....Else  Set Position="地点:"_Position
+    ....set ZLAcount=ZLAcount+1   //治疗医嘱序号 add by wangminglong 2018-11-1
+    ....set NewArcimDesc1=$e(ArcimDesc,1,40)  
+    ....;set NewArcimDesc1=NewArcimDesc1_"  "_PackQty_PackUOM_" "_Price_" 元"    ////医嘱后面加单位单价数量 add by wangminglong 2018-10-19 start
+    ....set tmp3=NewArcimDesc1_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_Position_"^"_ZLAcount_"."  // _"^"_ZLAcount_"." add by wangminglong 2018-11-1 
+    ....If OrdStr="" s OrdStr=tmp3
+    ....Else  Set OrdStr=OrdStr_"!"_tmp3
+   	....;
+   	..b ;321
+   	..Set PresWin=""   //清空PresWin add by wangminglong 2018-11-8
+    ..If (OrdStr'="")&(myOrdTypeFlag=1) Do
+    ...Set AutoRFlag=$p(^CTLOC(myRecDR),"^",35)	;摆药机发药标志
+    ...Set PresWin=$g(^TMP("myWinInfo",$j,myRecDR))	;发药窗口
+    ...s PresWin=$tr(PresWin,"号窗口","")
+    ...If PresWin["基数" Do
+    ....Set JSYFlag="基数药"
+    ....Set JSYFlagDesc="以下药品请到 "_RecDepLocPosition_" "_RecDepLoc_" ,诊间使用,不需要到药房取."
+    ...Set PrtWinFlag=0
+    ...b ;3
+    ...If AutoRFlag="Y" Do
+    ....Set PrtWinFlag=1	;1：摆药机发药，0：人工发药
+    ....;Set Dispensary="请到 "_RecDepLocPosition_" "_PresWin_" 号窗口"
+    ....Set Dispensary="请到 "_RecDepLocPosition
+   	....Set HosptialNote="待屏幕上方出现您的姓名后,刷卡取药."
+    ...Else  Do
+    ....Set Dispensary="请到 "_RecDepLocPosition
+    ....Set HosptialNote="请先到收方窗口交卡打印处方,再取药."
+    ...If RecDepLocDesc["同仁堂" Do
+    ....Set HerbFlag=1	;根据接收科室判断是否为草药
+    ....;Set Dispensary=" 请到 "_RecDepLocPosition_" 中草药房取药."
+    ....Set Dispensary="东院就诊:请到东院北区七层中医科取药|西院就诊:请到西院门诊楼三层中医科取药"
+    ....If AdmDepDesc["国际医疗" Do
+    .....Set Dispensary="国际医疗就诊:请到国际医疗部二层取药.|"
+   	...Else  Do
+   	....Set HerbFlag=0
+   	..;
+   	..If (OrdStr'="") Do
+    ...If RecLocStr="" Set RecLocStr=RecDepLoc_"^"_RecLocFloor_"^"_RecLocPrompt_"^"_ReportPosition_"^"_$g(PresWin)_"^"_$g(JSYFlag)_"^"_$g(PrtWinFlag)_"^"_$g(JSYFlagDesc)_"^"_$g(HerbFlag)_"^"_$g(Dispensary)_"^"_$g(HosptialNote)_"^"_RecLocFloor_$c(5)_OrdStr   //把第二个位置的RecDepLocPosition改为RecLocFloor add by wangminglong 2018-11-8
+    ...Else  Set RecLocStr=RecLocStr_$c(4)_RecDepLoc_"^"_RecLocFloor_"^"_RecLocPrompt_"^"_ReportPosition_"^"_$g(PresWin)_"^"_$g(JSYFlag)_"^"_$g(PrtWinFlag)_"^"_$g(JSYFlagDesc)_"^"_$g(HerbFlag)_"^"_$g(Dispensary)_"^"_$g(HosptialNote)_"^"_RecLocFloor_$c(5)_OrdStr  ////把第二个位置的RecDepLocPosition改为RecLocFloor add by wangminglong 2018-11-8
+    ...b ;检查结束
+    
+    
+    .If myOrdTypeFlag=2 Do
+   	..b ;检验输出开始
+   	..Set LabNO="",LabOrdStr=""
+   	..For  Set LabNO=$o(^LabOrdItem($j,LabNO)) Quit:LabNO=""  Do
+   	...Set LabNODesc="",LabEpisodeDesc="",LabPrtBarPosition="",LabReportPosition=""
+   	...Set LabReportDate="",LabPrompt=""
+   	...Set LabOEORI=""
+   	...set JYAcount=0   //检验医嘱序号  add by wangminglong 2018-11-1
+   	...set OrdStr=""    //add by wangminglong 2018-11-1
+   	...For  Set LabOEORI=$o(^LabOrdItem($j,LabNO,LabOEORI)) Quit:LabOEORI=""  Do
+   	....set JYAcount=JYAcount+1    //检验医嘱序号自增  add by wangminglong 2018-11-1
+   	....set LabPrompt="" //温馨提示默认为空 add by wangminglong 2018-11-1
+   	....Set LabInfo=^LabOrdItem($j,LabNO,LabOEORI)
+   	....Set myLabName=$p(LabInfo,"^",2)	;化验项目名称
+   	....;Set myLabName=JYAcount_"."_myLabName   //化验医嘱排序  add by wangminglong 2018-11-1
+   	....Set myLabEpisodeDesc=$p(LabInfo,"^",3)	;
+   	....Set myPrintBarPosition=$p(LabInfo,"^",7)	;打印条码位置
+   	....Set myReportDate=$p(LabInfo,"^",8)		;取报告时间
+   	....Set myPrice=$p(LabInfo,"^",4)    ;项目价格  add by wangminglong 2018-10-31
+   	....Set myPackUOM=$p(LabInfo,"^",5)    ;项目单位  add by wangminglong 2018-10-31
+   	....Set myOrdTotSum=$p(LabInfo,"^",6)    ;项目总价格  add by wangminglong 2018-10-31
+   	....Set myRecDepLoc=$p(LabInfo,"^",11)  ;项目科室 add by wangminglong  2018-10-31
+   	....Set myRecLocFloor=$p(LabInfo,"^",12)  ;科室楼层 add by wangminglong 2018-10-31
+   	....Set LabReportDate=$p(LabInfo,"^",13)  ;报告时间 add by wangminglong 2019-1-11
+   	....set ReportPrompt=$p(LabInfo,"^",14)   ;报告提示 add by wangminglong 2019-1-18
+   	....i LabReportDate="" d
+   	.....s LabReportDate=0
+   	
+   	....//标本采集多少时间后查询报告 add by wangminglong 2019-1-16 start
+   	....s LabReportDesc=""
+   	....if LabReportDate>0 d
+	.....if (0<LabReportDate)&(LabReportDate<60) d
+	......s LabReportDesc="标本采集"_LabReportDate_"分钟后可查询报告"
+	.....if (60<=LabReportDate)&(LabReportDate<1440) d
+	......s LabReportDate=$fn(LabReportDate/60,"",1)
+	......s LabReportDesc="标本采集"_LabReportDate_"小时后可查询报告"
+	.....if (1440<=LabReportDate) d
+	......s LabReportDate=$fn(LabReportDate/1440,"",1)
+	......s LabReportDesc="标本采集"_LabReportDate_"工作日后可查询报告"
+   	....//标本采集多少时间后查询报告 add by wangminglong 2019-1-16 end
+   	
+   	....Do ##class(web.DHCOPBILLOrdDirectList).GetNumberForString(LabNO,myReportDate,$j)
+   	....Set myReportPosition=$p(LabInfo,"^",9)	;取报告地点
+   	....Set myLabPrompt=$p(LabInfo,"^",10)		;温馨提示
+   	....;Set LabNODesc=myLabName_" "_myPrice    //添加价格
+   	....Set LabNODesc=myLabName   //去掉价格 add by wangminglong 2018-11-8
+   	....;If LabNODesc=""  Set LabNODesc=myLabName_" "_myPrice    //添加价格 add by wangminglong 2018-11-1
+   	....;Else  Set LabNODesc=LabNODesc_"+"_myLabName_" "_myPrice //添加价格 add by wangminglong 2018-11-1
+   	....If (LabEpisodeDesc="")&(myLabEpisodeDesc'="") Do
+   	.....Set LabEpisodeDesc=myLabEpisodeDesc		;默认条码号一样时，标本类型也一样，所以默认取任意一个
+   	....If (LabPrtBarPosition="")&(myPrintBarPosition'="") Do
+   	.....Set LabPrtBarPosition=myPrintBarPosition	;默认条码号一样时，条码打印位置也一样，所以默认取任意一个
+   	....If (LabReportPosition="")&(myReportPosition'="") Do
+   	.....Set LabReportPosition=myReportPosition	;默认条码号一样时，取报告地点也一样，所以默认取任意一个
+   	....If (LabPrompt="")&(myLabPrompt'="") Do
+   	.....Set LabPrompt=myLabPrompt					;默认条码号一样时，温馨提示默认取一个就行
+   	....if (LabPrtBarPosition'="") do
+   	.....Set RecDepLoc=myRecDepLoc_"^"_LabPrtBarPosition_"^^^^^^"     //add by wangminglong 2018-10-31
+   	....else  do
+   	.....Set RecDepLoc=myRecDepLoc_"^"_myRecLocFloor_"^^^^^^"     //add by wangminglong 2018-10-31
+   	
+   	....;检验医嘱分类输出add by wangminglong 2018-11-1 start
+   	....Set:myLabPrompt'="" LabPrompt="温馨提示:"_myLabPrompt   //温馨提示 add by wangminglong 2018-11-1
+   	....;set tmp4=LabNODesc_"^"_LabEpisodeDesc_"^"_myPrice_"^"_myPackUOM_"^"_myOrdTotSum_"^"_"采集说明:"_LabPrtBarPosition_"^"_"报告时间:"_LabReportDate_"^"_"取报告地点"_LabReportPosition_"^"_LabPrompt_"^"_RecLocFloor   
+	....set tmp4=LabNODesc_"^"_LabEpisodeDesc_"^"_myPrice_"^"_myPackUOM_"^"_myOrdTotSum_"^"_"采集说明:"_ReportPrompt_"^"_LabReportDesc_"^"_"取报告地点"_LabReportPosition_"^"_LabPrompt_"^"_RecLocFloor  //把报告时间：改为LabReportDesc add by wangminglong 2019-1-16
+	....if OrdStr="" Set OrdStr=tmp4
+	....else  Set OrdStr=OrdStr_"!"_tmp4
+   	....;检验医嘱输出add by wangminglong 2018-11-1 end
+   	
+   	
+   	
+   	...Set MaxTime=$o(^MaxLabReportDate($j,LabNO,""),-1)
+    ...If MaxTime'="" Set LabReportDate=$g(^MaxLabReportDate($j,LabNO,MaxTime))
+    ...b ;ArcimDesc_"^"_LabEpisodeDesc_"^"_Price_"^"_""_"^"_OrdTotSum_"^"_PrintBarPosition_"^"_ReportDate_"^"_ReportPosition_"^"_Prompt
+    ...;Set:LabPrompt'="" LabPrompt="温馨提示:"_LabPrompt   //wangminglong 注释 2018-11-1
+    ...;Set tmp5=LabNODesc_"^"_LabEpisodeDesc_"^"_""_"^"_""_"^"_""_"^"_"采集说明:"_LabPrtBarPosition_"^"_"报告时间:"_LabReportDate_"^"_"取报告地点"_LabReportPosition_"^"_LabPrompt_"^"_RecLocFloor  //wangminglong 注释 2018-11-1
+    ...Set tmp5=RecDepLoc_$c(5)_OrdStr  //检验医嘱输出 add by wangminglong 2018-11-1
+    ...Set:LabPrtBarPosition="" LabPrtBarPosition="左左左左左左左左左"
+    ...Set ^TMPLabSortIndex("LabSort",$j,LabNO,LabPrtBarPosition)=tmp5
+    ..Set LabNO=""
+    ..For  Set LabNO=$o(^TMPLabSortIndex("LabSort",$j,LabNO)) Quit:LabNO=""  Do
+    ...Set PrtBarP=""
+    ...For  Set PrtBarP=$o(^TMPLabSortIndex("LabSort",$j,LabNO,PrtBarP)) Quit:PrtBarP=""  Do
+    ....Set tmp6=$g(^TMPLabSortIndex("LabSort",$j,LabNO,PrtBarP))
+    ....set LabNODesc=$p(tmp6,"^",1)
+    ....set tmp6Str=$p(tmp6,LabNODesc,2)
+	....if LabOrdStr="" Set LabOrdStr=tmp6  
+	....else  Set LabOrdStr=LabOrdStr_$c(4)_tmp6
+	....b ;If LabOrdStr="" Set LabOrdStr=tmp6
+    ..;Set RecLocStr=RecDepLoc_"^^^^^^"_$c(5)_LabOrdStr  //wml
+    
+    ..Set RecLocStr=LabOrdStr   //wml
+  	.. ;检验输出结束
+    .If rtn="" Set rtn=Str_$c(3)_RecLocStr  
+    .Else  Set rtn=rtn_$c(2)_Str_$c(3)_RecLocStr 
+    b ;rtn
+    If rtn'="" Do
+    .Set rtn=BaseInfo_$c(1)_rtn
+    Kill ^LabOrdItem($j)
+    Kill ^MaxLabReportDate($j)
+    Kill ^TMP($ZN,$j,"PBID")
+    ;w rtn
+    Quit rtn
+    ;
+]]></Implementation>
+</Method>
+
+<Method name="GetNumberForString">
+<Description>
+Debug:w ##class(web.DHCOPBILLOrdDirectList).GetNumberForString(111111,"",22222)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>LabNO,String,Job</FormalSpec>
+<Implementation><![CDATA[
+	New (LabNO,String,Job)
+	;
+	;Set String="今天是14号"
+	;Set String=String_",请与4-11天后取报告"
+	For n=1:1:$l(String) Do
+	.Set TMPStr=$e(String,n,$l(String))
+	.Set Number=+TMPStr
+	.If +Number>0 Do
+	..Set ^MaxLabReportDate(Job,LabNO,Number)=String
+	..If $l(Number)>1 Set n=n+$l(Number)
+	;
+	Quit 0
+]]></Implementation>
+</Method>
+
+<Method name="SetOrdDetailsByPrtRowid">
+<Description>
+Lid
+2010-05-31
+根据发票号生成医嘱明细
+w ##class(web.DHCOPBILLOrdDirectList).GetOrdDetailsByPrtRowid(19)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>prtRowid:%String,ordList:%String="",sFlag,job</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	;申请医嘱的判断方式
+	;在RIS下面有一个 web.DHCRisOutInterface，这样一个方法 QueryPaidPatientInfo
+    ;s ServerMaterial=$p($g(^ARCIM($p(arcimid,"||",1),$p(arcimid,"||",2),7)),"^",6)
+    ;q:(billed'="P")!(ServerMaterial'="S")
+    
+    if sFlag="PRT" d
+    .d SetDate(prtRowid,ordList,job)  
+    /*;卡消费
+    i sFlag="API" d
+    .s myACPRowID=0
+	.f  s myACPRowID=$o(^DHCINVPRTCAPi(0,"APINVDR",prtRowid,myACPRowID)) q:(myACPRowID="")  d
+	..s myINVRowID=$p($g(^DHCINVPRTCAP(myACPRowID)),"^",1)
+	..q:(myINVRowID="")
+	..d SetDate(myINVRowID,ordList,job)
+    */
+SetDate(prtRowid,ordList,job) 
+    s invLinkDr=""
+    f  s invLinkDr=$o(^DHCBCI(0,"INV",prtRowid,invLinkDr)) Quit:invLinkDr=""  Do
+	.s bill=$p(^DHCBCI(invLinkDr),"^",2)
+	.s adm=$p(^DHCBCI(invLinkDr),"^",3)   ;就诊Rowid
+	.Quit:'$D(^DHCPB(bill))
+	.Set ord=0 
+	.f  Set ord=$o(^DHCPB(bill,"O",ord)) Quit:ord=""  Do
+	..q:($d(^DHCPB(bill,"O",ord))=10)
+	..s oeitDr=$p(^DHCPB(bill,"O",ord),"^",4)  ;医嘱表Rowid
+	..q:(+ordList'=0)&&(("^"_ordList_"^")'[("^"_oeitDr_"^"))  ;过滤医嘱
+	..s arcimDr=$p(^DHCPB(bill,"O",ord),"^",3) ;医嘱项Rowid DHC_PatBillOrder->PBO_ARCIM_DR
+    ..s arcItmCatDr=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",10) ;医嘱子类()
+	..s orderType=$p(^ARC("IC",arcItmCatDr),"^",7)                   ;医嘱类型
+	..s serverMaterial=$p($g(^ARCIM($p(arcimDr,"||",1),$p(arcimDr,"||",2),7)),"^",6) ;申请医嘱判断标志
+	..s billed=$p(^OEORD(+oeitDr,"I",$p(oeitDr,"||",2),3),"^",5)   ;医嘱账单标志
+	..q:(billed'="P")  ;过滤未结算医嘱
+	..s myPresNo=$p(^OEORD(+oeitDr,"I",$p(oeitDr,"||",2),1),"^",14)
+	..s recdepDR=$p($g(^OEORD(+oeitDr,"I",+$p(oeitDr,"||",2),3)),"^",6) ;接收科室
+	..s loctype=$p(^CTLOC(recdepDR),"^",13)   ;Ward||W Execute||E Drug Injection||DI Dispensing||D_
+	..i loctype="" s loctype="Z"	;放在最后?
+	..s ordRowid=bill_"||"_ord  ;生成DHC_PatbillOrder表Rowid
+	..i $d(^DHCOPBillReqLinkOrd(oeitDr)) s flag=^DHCOPBillReqLinkOrd(oeitDr)  ;F2切换标志
+	..e  s flag="-1"
+	..i serverMaterial="S" d
+	...s ^TMP("DHCOPBILL","OrdDirectList","Server",job,adm,recdepDR,flag,ordRowid)=ordRowid
+	..e  d
+	...s ^TMP("DHCOPBILL","OrdDirectList","NoServer",job,adm,recdepDR,flag,ordRowid)=ordRowid
+]]></Implementation>
+</Method>
+
+<Method name="GetPrintInfoByPrtRowid">
+<Description>
+Lid
+2010-06-01
+获取医嘱导引单打印信息</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>prtRowid,ordList:%String="",sFlag</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	;w ##class(web.DHCOPBILLOrdDirectList).GetPrintInfoByPrtRowid(236171,"35781||6")
+	;w ##class(web.DHCOPBILLOrdDirectList).GetPrintInfoByPrtRowid(19,"")
+	s job=$j
+	 ;清楚临时数据
+    k ^TMP("DHCOPBILL","OrdDirectList","NoServer",job)
+    k ^TMP("DHCOPBILL","OrdDirectList","Server",job)
+    k ^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job)
+    
+    s ^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job)=sFlag_"^"_prtRowid
+	d ..SetOrdDetailsByPrtRowid(prtRowid,ordList,sFlag,job)  ;生成导引单数据
+
+	s printInfo=..SetPrintInfo(job)
+    
+    ;清楚临时数据
+    ;k ^TMP("DHCOPBILL","OrdDirectList","NoServer",job)
+    ;k ^TMP("DHCOPBILL","OrdDirectList","Server",job)
+    k ^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job)
+    
+	q printInfo
+]]></Implementation>
+</Method>
+
+<Method name="SetPrintInfo">
+<Description>
+Lid
+2010-06-01
+生成打印信息
+^TMP("DHCOPBILL","OrdDirectList","NoServer",job,adm,recdepDR)=ordRowid
+^TMP("DHCOPBILL","OrdDirectList","Server",job,adm,recdepDR)=ordRowid</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>job</FormalSpec>
+<Implementation><![CDATA[
+	s rtn=""
+	;1.普通医嘱信息
+	s noServerPrtInfo=..GetNoServerPrtInfo(job)
+	
+	b ;1
+	;2.申请医嘱信息
+	s serverPrtInfo=..GetServerPrtInfo(job)
+	b ;2
+	;3.特殊医嘱信息
+	b ;3
+	s rtn=$g(noServerPrtInfo)_$c(6)_$g(serverPrtInfo)_$c(6)_""
+	b ;4
+	q rtn
+]]></Implementation>
+</Method>
+
+<Method name="GetServerPrtInfo">
+<Description>
+获取申请类医嘱导引单打印数据</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>job</FormalSpec>
+<Implementation><![CDATA[
+	s adm="",ServerStr=""
+	f  s adm=$o(^TMP("DHCOPBILL","OrdDirectList","Server",job,adm)) q:adm=""  d
+    .s patInfo=..GetPatInfoByAdm(adm)
+    .s baseInfo=$p(patInfo,$c(2),1)
+    .s admInfo=$p(patInfo,$c(2),2)
+    .s prtStr=$g(^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job))
+	.s prtInfo=..GetInvInfoByPrtRowid("",$p(prtStr,"^",2),$p(prtStr,"^",1))
+	.s invNO=$p(prtInfo,"^",2) ;发票号
+	.s prtUsrCode=$p(prtInfo,"^",11) ;收款员
+	.s recDepLocInfo="",recdepDr="" 
+	.f  s recdepDr=$o(^TMP("DHCOPBILL","OrdDirectList","Server",job,adm,recdepDr)) q:recdepDr=""  d
+    ..s flag=""
+    ..f  s flag=$o(^TMP("DHCOPBILL","OrdDirectList","Server",job,adm,recdepDr,flag)) q:flag=""  d
+    ...s recDepLoc=$p(^CTLOC(recdepDr),"^",2)
+	...i recDepLoc["-" s recDepLoc=$p(recDepLoc,"-",2)
+	...;$p($g(^CTLOC(RoomDr,"ADDR","1")),"^",1)    
+    ...;s RoomFloor=$p($g(^CTLOC(RoomDr)),"^",16)
+	...s recDepLocPosition=$p($g(^CTLOC(recdepDr,"ADDR","1")),"^",1)  ;科室的物理地址
+	...;申请医嘱特有信息
+	...s diagDesc="" ;诊断信息
+	...s lisInfo=""  ;临床诊断及实验室检查
+	...s totalAmtSum=0
+	...s ordDetial=..GetOrdDetails("Server",job, adm, recdepDr,flag,.totalAmtSum)
+	...i recDepLocInfo="" d
+	....s recDepLocInfo=recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_"^"_invNO_"^"_prtUsrCode_"^"_lisInfo_"^"_diagDesc_$c(3)_ordDetial
+	...e  s recDepLocInfo=recDepLocInfo_$c(4)_recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_"^"_invNO_"^"_prtUsrCode_"^"_lisInfo_"^"_diagDesc_$c(3)_ordDetial
+	.i ServerStr="" s ServerStr=recDepLocInfo
+	.e  s ServerStr=ServerStr_$c(5)_recDepLocInfo
+	
+	q ServerStr
+]]></Implementation>
+</Method>
+
+<Method name="GetNoServerPrtInfo">
+<Description>
+获取非申请类医嘱导引单打印数据</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>job</FormalSpec>
+<Implementation><![CDATA[
+	s adm="",noServerStr=""
+	f  s adm=$o(^TMP("DHCOPBILL","OrdDirectList","NoServer",job,adm)) q:adm=""  d
+    .s patInfo=..GetPatInfoByAdm(adm)
+    .s baseInfo=$p(patInfo,$c(2),1)
+    .s admInfo=$p(patInfo,$c(2),2)
+    .s prtStr=$g(^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job))
+	.s prtInfo=..GetInvInfoByPrtRowid("",$p(prtStr,"^",2),$p(prtStr,"^",1))
+	.s invNO=$p(prtInfo,"^",2) ;发票号
+	.s prtUsrCode=$p(prtInfo,"^",11) ;收款员
+	.s recDepLocInfo="",recdepDr="" 
+	.f  s recdepDr=$o(^TMP("DHCOPBILL","OrdDirectList","NoServer",job,adm,recdepDr)) q:recdepDr=""  d
+    ..s flag=""
+    ..f  s flag=$o(^TMP("DHCOPBILL","OrdDirectList","NoServer",job,adm,recdepDr,flag)) q:flag=""  d
+    ...s recDepLoc=$p(^CTLOC(recdepDr),"^",2)
+	...i recDepLoc["-" s recDepLoc=$p(recDepLoc,"-",2)
+	...;$p($g(^CTLOC(RoomDr,"ADDR","1")),"^",1)    
+    ...;s RoomFloor=$p($g(^CTLOC(RoomDr)),"^",16)
+	...s recDepLocPosition=$p($g(^CTLOC(recdepDr,"ADDR","1")),"^",1)  ;科室的物理地址
+	...s totalAmtSum=0
+	...s ordDetial=..GetOrdDetails("NoServer",job, adm, recdepDr,flag,.totalAmtSum)
+	...i recDepLocInfo="" d
+	....s recDepLocInfo=recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_"^"_invNO_"^"_prtUsrCode_$c(3)_ordDetial
+	...e  s recDepLocInfo=recDepLocInfo_$c(4)_recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_"^"_invNO_"^"_prtUsrCode_$c(3)_ordDetial
+	.i noServerStr="" s noServerStr=recDepLocInfo
+	.e  s noServerStr=noServerStr_$c(5)_recDepLocInfo
+	
+	q noServerStr
+]]></Implementation>
+</Method>
+
+<Method name="GetOrdDetails">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>flag,job,adm,recdepDr,flag2,totalAmtSum</FormalSpec>
+<Implementation><![CDATA[
+	s ordInfo="",totalAmtSum=0 ,ordDr=""
+	f  s ordDr=$o(^TMP("DHCOPBILL","OrdDirectList",flag,job,adm,recdepDr,flag2,ordDr)) q:ordDr=""  d
+	.s ordStr=$g(^DHCPB(+ordDr,"O",$p(ordDr,"||",2)))
+	.q:ordStr=""
+	.s arcmiDr=$p(ordStr,"^",3) ;医嘱项指针
+	.s arcmiDesc=$p(^ARCIM(+arcmiDr,$p(arcmiDr,"||",2),1),"^",2) 
+	.s oeoriDr=$p(ordStr,"^",4) ;医嘱指针
+	.s prescNo=$p( ^OEORD(+oeoriDr,"I",$p(oeoriDr,"||",2),1),"^",15)      ;处方号
+	.s labEpisodeNo=$p( ^OEORD(+oeoriDr,"I",$p(oeoriDr,"||",2),3),"^",20) ;检验条码号
+	.s qty=+$p(ordStr,"^",5),refundQty=+$p(ordStr,"^",6)
+	.s factQty=qty+refundQty
+	.s unitPrice=$j($p(ordStr,"^",7),3,2)
+	.s totalAmt=+$p(ordStr,"^",8)
+	.s totalAmtSum=$j((totalAmtSum+totalAmt),3,2)
+	.i ordInfo="" d
+	..s ordInfo=arcmiDesc_"^"_factQty_"^"_unitPrice_"^"_$g(labEpisodeNo)
+	.e  d
+	..s ordInfo=ordInfo_"!"_arcmiDesc_"^"_factQty_"^"_unitPrice_"^"_$g(labEpisodeNo)
+	
+	q ordInfo
+]]></Implementation>
+</Method>
+
+<Method name="GetPatInfoByAdm">
+<Description>
+Lid
+2010-06-01
+根据就诊号去病人信息
+w ##class(web.DHCOPBILLOrdDirectList).GetPatInfoByAdm(36046)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>adm</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	 ;取病人基本信息，就诊信息
+     s adm=$g(adm)
+     q:adm="" ""
+     s patType=$p(^PAADM(adm),"^",2) 
+
+     q:(patType'="O")&&(patType'="E") ;过滤非门诊病人
+
+	 s paperDr=$p(^PAADM(adm),"^",1)
+	 ;病人基本信息
+	 s baseInfo=""
+	 i $d(^PAPER(paperDr,"PAT",1)) d
+	 .s patNo=$p(^PAPER(paperDr,"PAT",1),"^",1)   ;登记号
+	 .s medicare=$p(^PAPER(paperDr,"PAT",1),"^",22)   ;病案号
+	 i $d(^PAPER(paperDr,"ALL")) d
+	 .s patName=$p(^PAPER(paperDr,"ALL"),"^",1)   ;姓名
+	 .s patmiId=$p(^PAPER(paperDr,"ALL"),"^",9)   ;身份证
+	 .s sex=$p(^PAPER(paperDr,"ALL"),"^",7)       ;性别
+	 .i sex'="" s sex=$p(^CT("SEX",sex),"^",2)
+	 .s (patdob,patageyr,patagemth,patageday,age)=""
+	 .&sql(select paper_dob,paper_ageyr,paper_agemth,paper_ageday into :patdob,:patageyr,:patagemth,:patageday 
+	       from pa_person where paper_rowid=:paperDr)
+	 .;i patdob'="" s age=..GetAge($zd(+$h,3), $zd(patdob,3))  ;计算年龄
+	 .;i +age>120 s age=""   ;控制年龄上限
+	 .;+2015-3-19 hujunbin 使用年龄统一接口
+	 .Set age=##Class(web.DHCBillInterface).GetPapmiAge(paperDr,"")
+	 s baseInfo=patNo_"^"_medicare_"^"_patName_"^"_sex_"^"_age
+	 
+	 ;病人就诊信息
+	 s admInfo=""
+	 s admDate=$p(^PAADM(adm),"^",6) ;就诊时间
+	 s admLoc=$p(^PAADM(adm),"^",4)  ;就诊科室
+	 i admLoc'="" s admLoc=$p(^CTLOC(admLoc),"^",2) 
+	 i admLoc["-" s admLoc=$p(admLoc,"-",2)
+	 s admInfo=$zd(admDate,3)_"^"_admLoc
+	 
+	 q baseInfo_$c(2)_admInfo
+]]></Implementation>
+</Method>
+
+<Method name="GetPatientByPapmi">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PapmiRowid:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+ ;获得病人个人信息
+ q:PapmiRowid=""
+ s PapmiOPNo=$p($g(^PAPER(PapmiRowid,"PAT",1)),"^",2)
+ s PapmiIPNo=$p($g(^PAPER(PapmiRowid,"PAT",1)),"^",1)
+ ;s PapmiNo=$$CO2^at84(PapmiIPNo,PapmiOPNo)
+ s PapmiNo=##Class(web.PAPatMas).GetRegistration(PapmiRowid)
+ s PatientName=$P($G(^PAPER(PapmiRowid,"ALL")),"^",1)
+ s PatientDOB=$P($G(^PAPER(PapmiRowid,"ALL")),"^",6)
+ s PatientBirthday=$ZD($G(PatientDOB),3)
+ ;
+ s PatientSexDr=$P($G(^PAPER(PapmiRowid,"ALL")),"^",7)
+ if PatientSexDr'="" s PatientSex=$P($G(^CT("SEX",PatientSexDr)),"^",2)
+ else  s PatientSex=""
+ ;
+ s Pattype=""
+ s PatientSocialStausDR=$p($g(^PAPER(PapmiRowid,"PER",1)),"^",10)
+ i PatientSocialStausDR'=""  d
+ .s Pattype=$p(^CT("SS",PatientSocialStausDR),"^",2)
+ ;
+ s PatientCompany=$g(^PAPER(PapmiRowid,"PER","ADD",1))
+ s PatientComAdd=$p($g(^PAPER(PapmiRowid,"PER",4)),"^",18)
+ s EmployeeNO=$P($G(^PAPER(PapmiRowid,"EMP")),"^",5)
+ s PatientMaritalDr=$p($g(^PAPER(PapmiRowid,"PER",2)),"^",3)
+ if PatientMaritalDr'="" s PatientMarital= $P($G(^CT("MAR",PatientMaritalDr)),"^",2)
+ e  s PatientMarital="未知"
+ s PatCategoryRowid=$p($g(^PAPER(PapmiRowid,"PAT",1)),"^",8)
+ s Medcare=$p($g(^PAPER(PapmiRowid,"PAT",1)),"^",22)
+ s Tel=$p($g(^PAPER(PapmiRowid,"PER",1)),"^",11)
+ s PapmiName3=$P($G(^PAPER(PapmiRowid,"ALL")),"^",19)  //医保(卡/手册)号
+ ;
+ s Age=$$CalAge^at182(PatientDOB,+$H,"","","")
+ s AgeYear=$P(Age,"|",12)
+ s AgeMonth=$P(Age,"|",13)
+ s AgeDay=$P(Age,"|",14)
+ s AgeDesc=##class(web.DHCDocOrderEntry).FormatAge(AgeYear,AgeMonth,AgeDay)
+
+ s ALLERGY=""
+ s ALLERGY=$G(^PAPER(PapmiRowid,"ALLERGY",1))
+ S NationDR=""
+ s NationDR=$p($g(^PAPER(PapmiRowid,"PER",2)),"^",1)
+ s Nation=""
+ if NationDR'="" s Nation=$p($g(^CT("NAT",NationDR)),"^",2)
+ s Nation=$p(Nation,"-",2)
+ s OccupationDR="",Occupation=""
+ s OccupationDR=$p($g(^PAPER(PapmiRowid,"PER",2)),"^",6)
+ if OccupationDR'="" s Occupation=$p($g(^CT("OCC",OccupationDR)),"^",2)
+ s Occupation=$p(Occupation,"-",2)
+
+ ;RealName_"^"_RealCard_"^"_SupplyName_"^"_SupplyCard
+ s RealName=$P($G(^PAPER(PapmiRowid,"ALL")),"^",21)
+ s RealCard=$P($G(^PAPER(PapmiRowid,"ALL")),"^",22)
+ s SupplyName=$P($G(^PAPER(PapmiRowid,"ALL")),"^",23)
+ s SupplyCard=$P($G(^PAPER(PapmiRowid,"ALL")),"^",24)
+ s GovernCardNo=$p($g(^PAPER(PapmiRowid,"PER",4)),"^",4)
+ s PersonID=""
+ s PersonID=$P($G(^PAPER(PapmiRowid,"ALL")),"^",9)   ;身份证
+ s CFRowId="",CardNo="",find=0
+ for {
+	s CFRowId=$o(^DHCCARDi("CF",0,"PAPMIDR",PapmiRowid,CFRowId),-1)
+	q:((CFRowId="")!(find=1))
+	s CardNo=$p($g(^DHCCARD("CF",CFRowId)),"^",2)
+	s CardActived=$p($g(^DHCCARD("CF",CFRowId)),"^",10)
+	i CardActived="N" s find=1
+ }
+ 
+
+
+ s ret= PapmiRowid_"^"_PapmiNo_"^"_PatientName_"^"_PatientSex_"^"_AgeDesc_"^"_PatientBirthday_"^"_Pattype_"^"_PatientSocialStausDR_"^"_PatientSexDr_"^"_PatientDOB_"^"_PatientCompany_"^"_AgeYear_"^"_AgeMonth_"^"_AgeDay_"^"_PatientComAdd_"^"_EmployeeNO_"^"_PatientMarital_"^"_PatCategoryRowid_"^"_Medcare_"^"_RealName_"^"_RealCard_"^"_SupplyName_"^"_SupplyCard_"^"_GovernCardNo
+ s ret=ret_"^"_$g(Tel)_"^"_$G(ALLERGY)_"^"_$g(Nation)_"^"_$g(Occupation)_"^"_PapmiName3_"^"_$g(CardNo)_"^"_$g(PersonID)
+ Q ret
+]]></Implementation>
+</Method>
+
+<Method name="GetAge">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>curDate,dob</FormalSpec>
+<Implementation><![CDATA[
+  ;根据时间和出生时间计算年龄?不满1岁显示月数?不满1月的显示日数?
+  q:dob="" ""
+  i curDate="" q ""
+  s age=curDate-dob
+  s months=$p(curDate,"-",2)-$p(dob,"-",2)
+  s days=$p(curDate,"-",3)-$p(dob,"-",3)
+  i months*100+days<0 s age=age-1
+
+  i age>0 q age
+  i age<0 q ""
+  i days<0 s months=months-1
+  i (curDate-dob=1)&(months<0) s months=months+12
+  i months>0 q months_"月"
+  i months<0 q ""
+  s days= $zdh(curDate,3)-$zdh(dob,3)
+  i days>0 q days_"日"
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryAdmOrderClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>QueryAdmOrderExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="QueryAdmOrderExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,ReceipID:%String="",sFlag:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    Set repid=$I(^CacheTemp)
+	s ind=1
+	d ResetVariables
+	;sFlag="PRT"
+	;sFlag="API"
+	;"%178222%PRT"
+	;d ##class(%ResultSet).RunQuery("web.DHCOPBILLOrdDirectList","QueryAdmOrder",178222,"PRT")
+
+	i (ReceipID="") Set qHandle=$lb(0,repid,0) Quit $$$OK
+	if sFlag="PRT" d
+	.s myINVRowID=ReceipID
+	.d BuildData
+	
+	i sFlag="API" d
+	.;^DHCINVPRTCAPi(0,"APINVDR",{ACP_APINV_DR}
+	.s myACPRowID=0
+	.f  s myACPRowID=$o(^DHCINVPRTCAPi(0,"APINVDR",ReceipID,myACPRowID)) q:(myACPRowID="")  d
+	..s myINVRowID=$p($g(^DHCINVPRTCAP(myACPRowID)),"^",1)
+	..q:(myINVRowID="")
+	..d BuildData
+	
+	Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+	
+BuildData
+	;在此编写算法计算必须要退的医嘱项目selflag=1
+	;Executflag  应该表示为?执行医嘱标志?(只要医嘱被执行过?药品和费用项目等)
+	;
+	i myINVRowID="" Set qHandle=$lb(0,repid,0)	Quit $$$OK
+	
+	s conRowid=0 f  s conRowid=$o(^DHCBCI(0,"INV",myINVRowID,conRowid)) q:conRowid=""  d
+	.s bill=$p($g(^DHCBCI(conRowid)),"^",2)
+	.s selflag=1
+	.s confac=""
+	.s PBOChildsub=0  f  s PBOChildsub=$o(^DHCPB(bill,"O",PBOChildsub)) q:PBOChildsub=""  d
+	..s Arcim=$p(^DHCPB(bill,"O",PBOChildsub),"^",3) ;DHC_PatBillOrder->PBO_ARCIM_DR
+	..s ArcimDesc=$p($g(^ARCIM(+Arcim,$p(Arcim,"||",2),1)),"^",2) ;名称
+	..;Quit:(myINVRowID="4754520")&(Arcim="19024||1")
+	..s OEORI=$p(^DHCPB(bill,"O",PBOChildsub),"^",4) ;DHC_PatBillOrder->PBO_OEORI_DR
+	..s Executflag=0
+	..s OrderUnitPrice=$p(^DHCPB(bill,"O",PBOChildsub),"^",7)	;PBO_UnitPrice
+	..s Billreturnqty=+$p(^DHCPB(bill,"O",PBOChildsub),"^",6)		;PBO_RefundQty
+	..s OrderBillQty=$p(^DHCPB(bill,"O",PBOChildsub),"^",5)		;PBO_BillQty
+	..s returnqty=0
+	..s confac=##class(web.DHCOPCashier).GetUomConvFactor(Arcim)
+	..i +confac=0  s confac=1
+	..s OrderBillQty=(OrderBillQty+Billreturnqty)/confac
+	..;
+	..;s PatSum=OrderUnitPrice*OrderBillQty
+	..s PatSum=$p(^DHCPB(bill,"O",PBOChildsub),"^",11)
+	..s PatSum=$fn(PatSum,"",2)
+	..s myRefSum=PatSum		;;
+	..s recdepcode=$p($g(^OEORD(+OEORI,"I",+$p(OEORI,"||",2),3)),"^",6) ;接收科室
+	..s recdepdesc=$p($g(^CTLOC(recdepcode)),"^",2)
+	..i $l(recdepdesc,"-")>1 d  s recdepdesc=$p(recdepdesc,"-",2)
+	..s ARCCATRowid=$p(^ARCIM(+Arcim,$p(Arcim,"||",2),1),"^",10)
+	..s ARCOrdType=$p(^ARC("IC",ARCCATRowid),"^",7)
+	..i ARCOrdType="R"  d
+	...s Executflag=##class(web.udhcOPRefund).CheckPhDispRet(OEORI)
+	...;此处的部分退药?有个小Bug
+	...s returnqty=+$p(^DHCPB(bill,"O",PBOChildsub),"^",6)		;PBO_RefundQty
+	...s returnqty=+$p($g(^OEORD(+OEORI,"I",+$p(OEORI,"||",2),3)),"^",23) ;医嘱退药数量
+	...;在门诊药房
+	...;DHC_PHRetItm		;;
+	...;^DHCPHRETi("NEWPRT",{PHRET_NEWPRT_DR},{PHRET_PHL_DR},{PHRET_ROWID})
+	...;
+	...s returnqty=##class(web.udhcOPPHARWIN).ReadRefundQty(myINVRowID,OEORI)
+	...s confac=##class(web.DHCOPCashier).GetUomConvFactor(Arcim)
+	...i +confac=0  s confac=1
+	...s returnqty=returnqty/confac
+	...i Executflag=0 d  
+	....;药物医嘱?没有发药的
+	....s selflag=0
+	...e  d
+	....;药物医嘱?已经发药的?Executflag=1
+	....s selflag=0
+	....;已经退药的
+	....i +returnqty'=0 d  
+	.....i OrderBillQty=returnqty d
+	......s selflag=1		;;全部退
+	.....e  d
+	......s selflag=1		;;部分退
+	.....;s selflag=1
+	.....s myRefSum=$fn($fn((myRefSum/OrderBillQty),"",6)*returnqty,"",2)
+	..e  d
+	...s OrdStat=$p(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1),"^",13)
+	...s OrdStatdesc=$p(^OEC("OSTAT",OrdStat),"^",2)
+	...i ($p(^OEC("OSTAT",OrdStat),"^",1)="E") d
+	....;被执行的非药物医嘱?
+	....s Executflag=1
+	....s selflag=0
+	...e  d
+	....;没有被执行的非药物医嘱?
+	....s Executflag=0
+	....s selflag=0
+	...;i OrdStat="6"  s Executflag=1 
+	..s select=1  ;选中标志，默认全部选中
+	..Do OutputRow
+	quit
+OutputRow
+	set Data=$lb(select,ArcimDesc,PatSum,OrderBillQty,recdepdesc,returnqty,OEORI,Executflag,myRefSum)
+	Set ^CacheTemp(repid,ind)=Data
+	Set ind=ind+1
+	quit
+ResetVariables
+	s (selflag,ArcimDesc,PatSum,OrderBillQty,recdepdesc,returnqty,OEORI,Executflag,myRefSum)=""
+	s selflag=0
+	
+	quit
+]]></Implementation>
+</Method>
+
+<Method name="QueryAdmOrderFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>QueryAdmOrderExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ Set repid=$LIST(qHandle,2)
+ Set ind=$LIST(qHandle,3)
+ Set ind=$o(^CacheTemp(repid,ind))
+ If ind="" {				// if there are no more rows, finish fetching
+ Set AtEnd=1
+ Set Row=""
+ }
+ Else      {			
+ Set Row=^CacheTemp(repid,ind)
+ }
+ s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="QueryAdmOrder">
+<Type>%Query</Type>
+<FormalSpec>ReceipID:%String="",sFlag:%String</FormalSpec>
+<Parameter name="ROWSPEC" value="Tselect:%String,TOrder:%String,TOrderSum:%String,TOrderQty:%String,TRecloc:%String,TReturnQty:%String,TOrderRowid:%String,TExcuteflag:%String,RefSum:%String"/>
+</Query>
+
+<Method name="GetRepROWID">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ReceipNO:%String</FormalSpec>
+<Implementation><![CDATA[
+	;w ##class(web.DHCOPBILLOrdDirectList).GetRepROWID("0013")
+	s ret=0,sFlag=""
+	s ReceipNO=ReceipNO
+	s ReceipNO=$ZConvert(ReceipNO, "U")
+	i ($d(^DHCINVPRT(0,"INV",ReceipNO))=0)&($d(^DHCINVPRTAPi(0,"INVNo",ReceipNO))=0)  s ret=-1    
+	i $d(^DHCINVPRT(0,"INV",ReceipNO)) d
+	.s INVPRTRowid="" 
+	.s sFlag="PRT" 
+	.f  s INVPRTRowid=$o(^DHCINVPRT(0,"INV",ReceipNO,INVPRTRowid)) q:INVPRTRowid=""  d
+	..s ret=INVPRTRowid
+	
+	q:ret'=0 ret_"^"_sFlag
+	
+	i $d(^DHCINVPRTAPi(0,"INVNo",ReceipNO)) d
+	.s sFlag="API"
+	.s INVPRTRowid=""  
+	.f  s INVPRTRowid=$o(^DHCINVPRTAPi(0,"INVNo",ReceipNO,INVPRTRowid)) q:INVPRTRowid=""  d
+	..s ret=INVPRTRowid
+	
+	q ret_"^"_sFlag
+]]></Implementation>
+</Method>
+
+<Method name="GetInvInfoByPrtRowid">
+<Description>
+根据发票号或发票rowid获取发票信息
+w ##class(web.DHCOPBILLOrdDirectList).GetInvInfoByPrtRowid("","13")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>invNO:%String="",prtRowid:%String="",sFlag:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	q:(invNO="")&&(prtRowid="") ""
+	i prtRowid="" d
+	.s invInfo=..GetRepROWID(invNO)
+	.s prtRowid=$p(invInfo,"^",1)
+	.s sFlag=$p(invInfo,"^",2)
+
+	q:(prtRowid=-1)!(prtRowid=-2)!(sFlag="") ""
+	s rtn=""
+	i sFlag="PRT" d
+	.s flag=$p($g(^DHCINVPRT(prtRowid)),"^",8)         ;状态
+	.s PRTAcount=$p($g(^DHCINVPRT(prtRowid)),"^",1)    ;总金额
+	.s prtInvNO=$p($g(^DHCINVPRT(prtRowid)),"^",14)    ;发票号
+	.s PRTPatPay=$p($g(^DHCINVPRT(prtRowid)),"^",16)   ;病人支付金额
+	.s PRTUsr=$p($g(^DHCINVPRT(prtRowid)),"^",21)      ;收款人
+	.s UserNo=$p($g(^SSU("SSUSR",PRTUsr)),"^",1)       ;收款人Code
+	.s PrtPapmiDR=$p($g(^DHCINVPRT(prtRowid)),"^",15)  ;
+	.s PapmiNo=$P($G(^PAPER(PrtPapmiDR,"PAT",1)),"^",2) ;登记号
+	.s PapmiName=$P($G(^PAPER(PrtPapmiDR,"ALL")),"^",1) ;病人姓名
+	.s PapmiSex=$P($G(^PAPER(PrtPapmiDR,"ALL")),"^",7)  ;病人性别
+	.s PaSex=$p(^CT("SEX",PapmiSex),"^",2)
+	;
+	;卡消费
+	i sFlag="API" d
+	.s flag=$p($g(^DHCINVPRTAP(prtRowid)),"^",2)         ;状态
+	.s PRTAcount=$p($g(^DHCINVPRTAP(prtRowid)),"^",1)    ;总金额
+	.s prtInvNO=$p($g(^DHCINVPRTAP(prtRowid)),"^",6)    ;发票号
+	.s PRTPatPay=$p($g(^DHCINVPRTAP(prtRowid)),"^",13)   ;病人支付金额
+	.s PRTUsr=$p($g(^DHCINVPRTAP(prtRowid)),"^",5)      ;收款人
+	.s UserNo=$p($g(^SSU("SSUSR",PRTUsr)),"^",1)       ;收款人Code
+	.s PrtPapmiDR=$p($g(^DHCINVPRTAP(prtRowid)),"^",11)  ;
+	.s PapmiNo=$P($G(^PAPER(PrtPapmiDR,"PAT",1)),"^",2) ;登记号
+	.s PapmiName=$P($G(^PAPER(PrtPapmiDR,"ALL")),"^",1) ;病人姓名
+	.s PapmiSex=$P($G(^PAPER(PrtPapmiDR,"ALL")),"^",7)  ;病人性别
+	.s PaSex=$p(^CT("SEX",PapmiSex),"^",2)
+	
+	s rtn=sFlag_"^"_prtInvNO_"^"_prtRowid_"^"_PapmiNo_"^"_PapmiName_"^"_PapmiSex_"^"_PRTUsr_"^"_PRTAcount_"^"_PRTPatPay_"^"_flag_"^"_UserNo
+	q rtn
+]]></Implementation>
+</Method>
+
+<Method name="CheckISCareProvByOeoriDr">
+<Description>
+Lid
+2010-06-10
+通过医嘱Rowid判断医嘱录入人是否为医护人员
+是:0,否:1</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>oeoridr</FormalSpec>
+<Implementation><![CDATA[
+	;^OEORD({OE_Order.OEORD_RowId},"I",{OEORI_Childsub})
+	s rtn=1
+	s ordAddUser=$p(^OEORD(+oeoridr,"I",$p(oeoridr,"||",2),7),"^",1) ;医嘱录入人
+	;判断录入人身份
+	s careProvDr=$p(^SSU("SSUSR",ordAddUser),"^",14) ;医护人员表CT_CareProv
+	q:$g(careProvDr)="" rtn
+	
+	s carPrvTpDr=$p(^CTPCP(careProvDr,1),"^",4)	     ;医护人员类型表CT_CarPrvTp
+	s internalType=$p(^CT("CPT",carPrvTpDr),"^",4)   ;医护人员类型
+	i (internalType="DOCTOR")!(internalType="NURSE") s rtn=0
+	q rtn
+]]></Implementation>
+</Method>
+
+<Method name="GetOrdDirectInfo">
+<Description>
+Lid
+2010-11-11
+导诊单打印</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>prtRowid,ordList:%String="",sFlag</FormalSpec>
+<Implementation><![CDATA[
+	;w ##class(web.DHCOPBILLOrdDirectList).GetOrdDirectInfo(176525,"","PRT")
+
+	s job=$j
+	 ;清楚临时数据
+	k ^TMP("DHCOPBILL","OrdDirectList",job)
+    k ^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job)
+    
+    s ^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job)=sFlag_"^"_prtRowid ;用于区分集中打印发票和直接打印发票
+	d ..SetDataByPrtRowid(prtRowid,ordList,sFlag,job)  ;生成导引单数据
+
+	s printInfo=..GetDataInfo(job)
+    
+    ;清楚临时数据
+    k ^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job)
+
+	q printInfo
+]]></Implementation>
+</Method>
+
+<Method name="SetDataByPrtRowid">
+<Description>
+Lid
+2010-11-11
+生成导诊单数据</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>prtRowid,ordList,sFlag,job</FormalSpec>
+<Implementation><![CDATA[
+	 if sFlag="PRT" d
+    .d SetPBOData(prtRowid,ordList,job)
+    
+    ;卡消费
+    i sFlag="API" d
+    .s myACPRowID=0
+	.f  s myACPRowID=$o(^DHCINVPRTCAPi(0,"APINVDR",prtRowid,myACPRowID)) q:(myACPRowID="")  d
+	..s myINVRowID=$p($g(^DHCINVPRTCAP(myACPRowID)),"^",1)
+	..q:(myINVRowID="")
+	..d SetPBOData(myINVRowID,ordList,job)
+    
+SetPBOData(prtRowid,ordList,job) 
+    s invLinkDr=""
+    f  s invLinkDr=$o(^DHCBCI(0,"INV",prtRowid,invLinkDr)) Quit:invLinkDr=""  Do
+	.s bill=$p(^DHCBCI(invLinkDr),"^",2)
+	.s adm=$p(^DHCBCI(invLinkDr),"^",3)   ;就诊Rowid
+	.Quit:'$D(^DHCPB(bill))
+	.Set ord=0 
+	.f  Set ord=$o(^DHCPB(bill,"O",ord)) Quit:ord=""  Do
+	..q:($d(^DHCPB(bill,"O",ord))=10)
+	..s oeitDr=$p(^DHCPB(bill,"O",ord),"^",4)  ;医嘱表Rowid
+	..q:(+ordList'=0)&&(("^"_ordList_"^")'[("^"_oeitDr_"^"))  ;过滤医嘱
+	..s arcimDr=$p(^DHCPB(bill,"O",ord),"^",3) ;医嘱项Rowid DHC_PatBillOrder->PBO_ARCIM_DR
+        ..s arcItmCatDr=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",10) ;医嘱子类()
+	..s orderType=$p(^ARC("IC",arcItmCatDr),"^",7)                   ;医嘱类型
+	..s serverMaterial=$p($g(^ARCIM($p(arcimDr,"||",1),$p(arcimDr,"||",2),7)),"^",6) ;申请医嘱判断标志
+	..s billed=$p(^OEORD(+oeitDr,"I",$p(oeitDr,"||",2),3),"^",5)   ;医嘱账单标志
+	..q:(billed'="P")  ;过滤未结算医嘱
+	..s myPresNo=$p(^OEORD(+oeitDr,"I",$p(oeitDr,"||",2),1),"^",14)
+	..s recdepDR=$p($g(^OEORD(+oeitDr,"I",+$p(oeitDr,"||",2),3)),"^",6) ;接收科室
+	..s loctype=$p(^CTLOC(recdepDR),"^",13)   ;Ward||W Execute||E Drug Injection||DI Dispensing||D_
+	..i loctype="" s loctype="Z"	;放在最后?
+	..s ordRowid=bill_"||"_ord  ;生成DHC_PatbillOrder表Rowid
+	..s ^TMP("DHCOPBILL","OrdDirectList",job,adm,recdepDR,ordRowid)=ordRowid
+]]></Implementation>
+</Method>
+
+<Method name="GetDataInfo">
+<Description>
+Lid
+2010-11-11
+获取导诊单打印数据信息</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>job</FormalSpec>
+<Implementation><![CDATA[
+	s adm="",Str="",del="^",recDepLocInfo=""
+	f  s adm=$o(^TMP("DHCOPBILL","OrdDirectList",job,adm)) q:adm=""  d
+	.s PAPMI=$p($g(^PAADM(adm)),"^",1)
+	.s retPatInfo=..GetPatientByPapmi(PAPMI)
+    .;登记号^卡号^姓名^年龄^性别
+    .s patInfo=$p(retPatInfo,"^",2)_del_$p(retPatInfo,"^",30)_del_$p(retPatInfo,"^",3)_del_$p(retPatInfo,"^",5)_del_$p(retPatInfo,"^",4)
+    .;s patInfo=..GetPatInfoByAdm(adm)
+    .;s baseInfo=$p(patInfo,$c(2),1)
+    .;s admInfo=$p(patInfo,$c(2),2)
+    .;s prtStr=$g(^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job))
+	.;s prtInfo=..GetInvInfoByPrtRowid("",$p(prtStr,"^",2),$p(prtStr,"^",1))
+	.;s invNO=$p(prtInfo,"^",2) ;发票号
+	.;s prtUsrCode=$p(prtInfo,"^",11) ;收款员
+	.s recDepLocInfo="",recdepDr="" 
+	.f  s recdepDr=$o(^TMP("DHCOPBILL","OrdDirectList",job,adm,recdepDr)) q:recdepDr=""  d
+    ..s recDepLoc=$p(^CTLOC(recdepDr),"^",2)
+	..i recDepLoc["-" s recDepLoc=$p(recDepLoc,"-",2)
+	..;$p($g(^CTLOC(RoomDr,"ADDR","1")),"^",1)    
+    ..;s RoomFloor=$p($g(^CTLOC(RoomDr)),"^",16)
+	..s recDepLocPosition=$p($g(^CTLOC(recdepDr,"ADDR","1")),"^",1)  ;科室的物理地址
+	..s totalAmtSum=0,ordList=""
+	..s ordDr=""
+	..f  s ordDr=$o(^TMP("DHCOPBILL","OrdDirectList",job,adm,recdepDr,ordDr)) q:ordDr=""  d
+	...s ordStr=$g(^DHCPB(+ordDr,"O",$p(ordDr,"||",2)))
+	...q:ordStr=""
+	...s arcmiDr=$p(ordStr,"^",3) ;医嘱项指针
+	...s arcmiDesc=$p(^ARCIM(+arcmiDr,$p(arcmiDr,"||",2),1),"^",2) 
+	...s oeoriDr=$p(ordStr,"^",4) ;医嘱指针
+	...s prescNo=$p( ^OEORD(+oeoriDr,"I",$p(oeoriDr,"||",2),1),"^",15)      ;处方号
+	...s labEpisodeNo=$p( ^OEORD(+oeoriDr,"I",$p(oeoriDr,"||",2),3),"^",20) ;检验条码号
+	...s qty=+$p(ordStr,"^",5),refundQty=+$p(ordStr,"^",6)
+	...s factQty=qty+refundQty
+	...s unitPrice=$j($p(ordStr,"^",7),3,2)
+	...s totalAmt=+$p(ordStr,"^",8)
+	...s totalAmtSum=$j((totalAmtSum+totalAmt),3,2)
+	...s tmpList=##class(web.DHCDocService).GetOrdByOrdId(oeoriDr) ;调用医生站接口获取医嘱列表信息
+	...i ordList="" s ordList=tmpList
+	...e  s ordList=ordList_$c(3)_tmpList
+	..s tmpStr=patInfo_del_recDepLoc_del_recDepLocPosition_del_$zd($h,3)_"  "_$zt($h,1)_del_"合计:"_$fn(totalAmtSum,"",2)_"  已收:"_$fn(totalAmtSum,"",2)_"  未收:"_$fn(0,"",2)_$c(2)_ordList
+	..i recDepLocInfo="" d
+	...s recDepLocInfo=tmpStr
+	..e  d
+	...s recDepLocInfo=recDepLocInfo_$c(1)_tmpStr
+	
+	q recDepLocInfo
+]]></Implementation>
+</Method>
+
+<Method name="GetlabEpisodeDesc">
+<Description>
+Lid
+2010-07-29
+根据医嘱Rowid，获取检验标本
+oe_orditem,oe_ordspecimen(oe_orditem的子表)
+ct_specimen(标本代码表)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>oeoridr</FormalSpec>
+<Implementation><![CDATA[
+	;w ##class(web.DHCOPBILLOrdDirectList).GetlabEpisodeDesc("35787||3")
+	;^OEORD({OE_Order.OEORD_RowId},"I",{OE_OrdItem.OEORI_Childsub},"SPEC",{SPEC_Childsub})
+	s specSub=$o(^OEORD(+oeoridr,"I",$p(oeoridr,"||",2),"SPEC",""),-1)
+	q:+specSub=0 ""
+	q:'$d(^OEORD(+oeoridr,"I",$p(oeoridr,"||",2),"SPEC",specSub)) ""
+	s specCode=$p(^OEORD(+oeoridr,"I",$p(oeoridr,"||",2),"SPEC",specSub),"^",1) ;标本代码表的Code 
+	;s info=$g(^TTAB("SPEC",specCode))  
+	;s specDesc=$p(info,"\",1)
+	s specDesc=$p(##Class(DHCLIS.DHCCommon).GetSpecimen(specCode,""),$c(2),2)
+	//^TTAB("TS","L004") = "凝血功能筛查\凝血功能筛查\\\\\\\\\\Y\\\\\\\\\\\\\\\\\\\\\采样后1.5小时\\\\\\\N\\100\;\\\\N\\\\\\\\\\\\\\\" 
+    //^TTAB("TS","L005") = "DIC筛查\DIC筛查\\\\\\\\\\Y\\\\\\\\\\\\\\\\\\\\\采样后1.5小时\\\\\\\N\\101\;\\\\N\\\\\\\\\\\\\\\" 
+    //^TTAB("TS","L006") = "尿液分析\尿液分析\\\\\\\\\\Y\\\\\\\\\\\\\\\\\\\\\采样后30分钟\\\\\\\N\\102\;\\\\N\\\\\\\\\\\\\\\" 
+	q specDesc
+]]></Implementation>
+</Method>
+
+<Method name="GetlabReportDate">
+<Description>
+Lid
+2010-08-11
+获取取报告时间
+oe_orditem,ARC_ItmMast,ARC_ItemExternalCodes
+w ##class(web.DHCOPBILLOrdDirectList).GetlabReportDate("8352||16")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>oeoridr</FormalSpec>
+<Implementation><![CDATA[
+	;医嘱项Rowid
+	s arcimdr=$p(^OEORD(+oeoridr,"I",$p(oeoridr,"||",2),1),"^",2) ;OEORI_ItmMast_DR->ARC_ItmMast
+   	s extsub=$o(^ARCIM(+arcimdr,$p(arcimdr,"||",2),"EXT","0")) ;取第一条记录
+   	;b ;111
+   	q:extsub="" ""
+   	s extCode=$p(^ARCIM(+arcimdr,$p(arcimdr,"||",2),"EXT",extsub),"^",4)
+   	q:extCode="" ""
+   	q:'$d(^TTAB("TS",$g(extCode))) ""
+   	s reportDate=$p(^TTAB("TS",extCode),"\",33)
+   	q reportDate
+]]></Implementation>
+</Method>
+
+<Method name="GetPrescPriceOrditem">
+<Description>
+Creator:Lid
+CreatDate:2012-08-29
+Desc:根据Adm获取检查的划价医嘱
+Input:
+Return:
+Debug:w ##class(web.DHCOPBILLOrdDirectList).GetPrescPriceOrditem(8514)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Adm</FormalSpec>
+<Implementation><![CDATA[
+	New (Adm)
+	;^OEORD(0,"Adm",{OEORD_Adm_DR},{OEORD_RowId})
+	;^OEORD({OE_Order.OEORD_RowId},"I",{OEORI_Childsub})
+	Set OEORDDR="",rtn=""
+	For  Set OEORDDR=$o(^OEORD(0,"Adm",Adm,OEORDDR)) Quit:OEORDDR=""  Do
+	.Quit:'$d(^OEORD(OEORDDR))
+	.Set Sub=""
+	.For  Set Sub=$o(^OEORD(OEORDDR,"I",Sub)) Quit:Sub=""  Do
+	..Set OEORIDR=OEORDDR_"||"_Sub
+	..Set PrescPriceFlag="" ;##class(web.UDHCJFBILL).GetPrescPriceOrdItemFlag(OEORIDR,"")
+    ..Set OEPflag=$p(PrescPriceFlag,"^",1)
+    ..Set OEPInputFlag=$p(PrescPriceFlag,"^",2)
+    ..Quit:OEPflag'="Y"	;过滤非划价医嘱
+    ..Quit:(OEPflag="Y")&(OEPInputFlag="Y")&($d(^PrescPriceOrdItemSend(Adm,OEORIDR)))	;过滤已经划价且已给平台发送的医嘱
+    ..If rtn=""  Set rtn=OEORIDR
+    ..Else  Set rtn=rtn_"^"_OEORIDR
+    ;
+    Quit rtn
+]]></Implementation>
+</Method>
+
+<Method name="GetHospDesc">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>LocRowid</FormalSpec>
+<Implementation><![CDATA[
+	s HospID=##class(web.UDHCHospitalGroup).GetHospitalIDByLocID(LocRowid)
+	s HospDesc=""
+	i HospID'="" s HospDesc=$p(^CT("HOSP",HospID),"^",2)
+	q HospDesc
+]]></Implementation>
+</Method>
+
+<Method name="GetPrtRowId">
+<Description>
+根据集中打印发票表获取
+w ##class(web.DHCOPBILLOrdDirectList).GetPrtRowId(20689)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>apiRowId</FormalSpec>
+<Implementation><![CDATA[
+	new (apiRowId)
+	set prtRowIdStr=""
+	set acpDr="0"
+	for  set acpDr=$o(^DHCINVPRTCAPi(0,"APINVDR",apiRowId,acpDr)) quit:acpDr=""  do
+	.set prtRowId=$p(^DHCINVPRTCAP(acpDr),"^",1)
+	.if prtRowIdStr="" set prtRowIdStr=prtRowId
+	.else  set prtRowIdStr=prtRowIdStr_"^"_prtRowId
+	quit prtRowIdStr
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+/*
+
+/// 获取申请类医嘱导引单打印数据
+ClassMethod GetServerPrtInfoOLD(job)
+{
+	s adm="",ServerStr=""
+	f  s adm=$o(^TMP("DHCOPBILL","OrdDirectList","Server",job,adm)) q:adm=""  d
+    .s patInfo=..GetPatInfoByAdm(adm)
+    .s baseInfo=$p(patInfo,$c(2),1)
+    .s admInfo=$p(patInfo,$c(2),2)
+    .s prtStr=$g(^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job))
+	.s prtInfo=..GetInvInfoByPrtRowid("",$p(prtStr,"^",2),$p(prtStr,"^",1))
+	.s invNO=$p(prtInfo,"^",2) ;发票号
+	.s prtUsrCode=$p(prtInfo,"^",11) ;收款员
+	.s recDepLocInfo="",recdepDr="" 
+	.f  s recdepDr=$o(^TMP("DHCOPBILL","OrdDirectList","Server",job,adm,recdepDr)) q:recdepDr=""  d
+    ..s recDepLoc=$p(^CTLOC(recdepDr),"^",2)
+	..i recDepLoc["-" s recDepLoc=$p(recDepLoc,"-",2)
+	..;$p($g(^CTLOC(RoomDr,"ADDR","1")),"^",1)    
+    ..;s RoomFloor=$p($g(^CTLOC(RoomDr)),"^",16)
+	..s recDepLocPosition=$p($g(^CTLOC(recdepDr,"ADDR","1")),"^",1)  ;科室的物理地址
+	..;申请医嘱特有信息
+	..s diagDesc="" ;诊断信息
+	..s lisInfo=""  ;临床诊断及实验室检查
+	..s totalAmtSum=0
+	..s ordDetial=..GetOrdDetails("Server",job, adm, recdepDr,.totalAmtSum)
+	..i recDepLocInfo="" d
+	...s recDepLocInfo=recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_"^"_invNO_"^"_prtUsrCode_"^"_lisInfo_"^"_diagDesc_$c(3)_ordDetial
+	..e  s recDepLocInfo=recDepLocInfo_$c(4)_recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_"^"_invNO_"^"_prtUsrCode_"^"_lisInfo_"^"_diagDesc_$c(3)_ordDetial
+	.i ServerStr="" s ServerStr=recDepLocInfo
+	.e  s ServerStr=ServerStr_$c(5)_recDepLocInfo
+	
+	q ServerStr
+}
+
+/// 获取非申请类医嘱导引单打印数据
+ClassMethod GetNoServerPrtInfoOLD(job)
+{
+	s adm="",noServerStr=""
+	f  s adm=$o(^TMP("DHCOPBILL","OrdDirectList","NoServer",job,adm)) q:adm=""  d
+    .s patInfo=..GetPatInfoByAdm(adm)
+    .s baseInfo=$p(patInfo,$c(2),1)
+    .s admInfo=$p(patInfo,$c(2),2)
+    .s prtStr=$g(^TMP("DHCOPBILL","OrdDirectList","PRTRowid",job))
+	.s prtInfo=..GetInvInfoByPrtRowid("",$p(prtStr,"^",2),$p(prtStr,"^",1))
+	.s invNO=$p(prtInfo,"^",2) ;发票号
+	.s prtUsrCode=$p(prtInfo,"^",11) ;收款员
+	.s recDepLocInfo="",recdepDr="" 
+	.f  s recdepDr=$o(^TMP("DHCOPBILL","OrdDirectList","NoServer",job,adm,recdepDr)) q:recdepDr=""  d
+    ..s recDepLoc=$p(^CTLOC(recdepDr),"^",2)
+	..i recDepLoc["-" s recDepLoc=$p(recDepLoc,"-",2)
+	..;$p($g(^CTLOC(RoomDr,"ADDR","1")),"^",1)    
+    ..;s RoomFloor=$p($g(^CTLOC(RoomDr)),"^",16)
+	..s recDepLocPosition=$p($g(^CTLOC(recdepDr,"ADDR","1")),"^",1)  ;科室的物理地址
+	..s totalAmtSum=0
+	..s ordDetial=..GetOrdDetails("NoServer",job, adm, recdepDr,.totalAmtSum)
+	..i recDepLocInfo="" d
+	...s recDepLocInfo=recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_"^"_invNO_"^"_prtUsrCode_$c(3)_ordDetial
+	..e  s recDepLocInfo=recDepLocInfo_$c(4)_recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_"^"_invNO_"^"_prtUsrCode_$c(3)_ordDetial
+	.i noServerStr="" s noServerStr=recDepLocInfo
+	.e  s noServerStr=noServerStr_$c(5)_recDepLocInfo
+	
+	q noServerStr
+}
+ClassMethod SetPrintInfoOld(job) As %String
+{
+	s rtn=""
+	;1.普通医嘱信息
+	s adm="",noServerStr=""
+	f  s adm=$o(^TMP("DHCOPBILL","OrdDirectList","NoServer",job,adm)) q:adm=""  d
+    .s patInfo=..GetPatInfoByAdm(adm)
+    .s baseInfo=$p(patInfo,$c(2),1)
+    .s admInfo=$p(patInfo,$c(2),2)
+	.s recDepLocInfo="",recdepDr="" 
+	.f  s recdepDr=$o(^TMP("DHCOPBILL","OrdDirectList","NoServer",job,adm,recdepDr)) q:recdepDr=""  d
+    ..s recDepLoc=$p(^CTLOC(recdepDr),"^",2)
+	..i recDepLoc["[" s recDepLoc=$p(recDepLoc,"-",2)
+	..;$p($g(^CTLOC(RoomDr,"ADDR","1")),"^",1)    
+    ..;s RoomFloor=$p($g(^CTLOC(RoomDr)),"^",16)
+	..s recDepLocPosition=$p($g(^CTLOC(recdepDr,"ADDR","1")),"^",1)  ;科室的物理地址
+	..s ordInfo="",totalAmtSum=0 ,ordDr=""
+	..f  s ordDr=$o(^TMP("DHCOPBILL","OrdDirectList","NoServer",job,adm,recdepDr,ordDr)) q:ordDr=""  d
+	...s ordStr=$g(^DHCPB(+ordDr,"O",$p(ordDr,"||",2)))
+	...q:ordStr=""
+	...s arcmiDr=$p(ordStr,"^",3) ;医嘱项指针
+	...s arcmiDesc=$p(^ARCIM(+arcmiDr,$p(arcmiDr,"||",2),1),"^",2) 
+	...s oeoriDr=$p(ordStr,"^",4) ;医嘱指针
+	...s qty=+$p(ordStr,"^",5),refundQty=+$p(ordStr,"^",6)
+	...s factQty=qty+refundQty
+	...s unitPrice=$p(ordStr,"^",7) 
+	...s totalAmt=+$p(ordStr,"^",8)
+	...s totalAmtSum=totalAmtSum+totalAmt
+	...i ordInfo="" d
+	....s ordInfo=arcmiDesc_"^"_factQty_"^"_unitPrice
+	...e  d
+	....s ordInfo=ordInfo_"!"_arcmiDesc_"^"_factQty_"^"_unitPrice
+	..i recDepLocInfo="" d
+	...s recDepLocInfo=recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_$c(3)_ordInfo
+	..e  s recDepLocInfo=recDepLocInfo_$c(4)_recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_$c(3)_ordInfo
+	.i noServerStr="" s noServerStr=recDepLocInfo
+	.e  s noServerStr=noServerStr_$c(5)_recDepLocInfo
+	
+	b ;2
+	;2.申请医嘱信息
+	s adm="",noServerStr=""
+	f  s adm=$o(^TMP("DHCOPBILL","OrdDirectList","Server",job,adm)) q:adm=""  d
+    .s patInfo=..GetPatInfoByAdm(adm)
+    .s baseInfo=$p(patInfo,$c(2),1)
+    .s admInfo=$p(patInfo,$c(2),2)
+	.s recDepLocInfo="",recdepDr="" 
+	.f  s recdepDr=$o(^TMP("DHCOPBILL","OrdDirectList","Server",job,adm,recdepDr)) q:recdepDr=""  d
+    ..s recDepLoc=$p(^CTLOC(recdepDr),"^",2)
+	..i recDepLoc["[" s recDepLoc=$p(recDepLoc,"-",2)
+	..;$p($g(^CTLOC(RoomDr,"ADDR","1")),"^",1)    
+    ..;s RoomFloor=$p($g(^CTLOC(RoomDr)),"^",16)
+	..s recDepLocPosition=$p($g(^CTLOC(recdepDr,"ADDR","1")),"^",1)  ;科室的物理地址
+	..;申请医嘱特有信息
+	..s diagDesc="" ;诊断信息
+	..s lisInfo=""  ;临床诊断及实验室检查
+	..s ordInfo="",totalAmtSum=0 ,ordDr=""
+	..f  s ordDr=$o(^TMP("DHCOPBILL","OrdDirectList","Server",job,adm,recdepDr,ordDr)) q:ordDr=""  d
+	...s ordStr=$g(^DHCPB(+ordDr,"O",$p(ordDr,"||",2)))
+	...q:ordStr=""
+	...s arcmiDr=$p(ordStr,"^",3) ;医嘱项指针
+	...s arcmiDesc=$p(^ARCIM(+arcmiDr,$p(arcmiDr,"||",2),1),"^",2) 
+	...s oeoriDr=$p(ordStr,"^",4) ;医嘱指针
+	...s qty=+$p(ordStr,"^",5),refundQty=+$p(ordStr,"^",6)
+	...s factQty=qty+refundQty
+	...s unitPrice=$p(ordStr,"^",7) 
+	...s totalAmt=+$p(ordStr,"^",8)
+	...s totalAmtSum=totalAmtSum+totalAmt
+	...i ordInfo="" d
+	....s ordInfo=arcmiDesc_"^"_factQty_"^"_unitPrice
+	...e  d
+	....s ordInfo=ordInfo_"!"_arcmiDesc_"^"_factQty_"^"_unitPrice
+	..i recDepLocInfo="" d
+	...s recDepLocInfo=recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_$c(3)_ordInfo
+	..e  s recDepLocInfo=recDepLocInfo_$c(4)_recDepLoc_"^"_recDepLocPosition_"^"_baseInfo_"^"_admInfo_"^"_totalAmtSum_$c(3)_ordInfo
+	.i noServerStr="" s noServerStr=recDepLocInfo
+	.e  s noServerStr=noServerStr_$c(5)_recDepLocInfo
+	
+	;3.特殊医嘱信息
+	
+	
+	q rtn
+}
+*/
+]]></Content>
+</UDLText>
+</Class>
+</Export>

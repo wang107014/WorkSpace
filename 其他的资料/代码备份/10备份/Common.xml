@@ -1,0 +1,847 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-01-25 12:03:54">
+<Class name="web.BOE.Common">
+<Import>SQLUser</Import>
+<Super>%RegisteredObject</Super>
+<TimeChanged>65038,43265.38388</TimeChanged>
+<TimeCreated>64978,52647.299618</TimeCreated>
+
+<Query name="TestQueryNew">
+<Description>
+creat by wangminglong
+d ##class(%ResultSet).RunQuery("web.BOE.Common","TestQueryNew","2019-1-24","2019-1-24")</Description>
+<Type>%Query</Type>
+<FormalSpec>stdate:%String,enddate:%String</FormalSpec>
+<SqlProc>1</SqlProc>
+<Parameter name="ROWSPEC" value="ADM,ARCIMCATEDESC,ARCIMCODE,ARCIMDESC,ARCITMPRICE,CHARGEITEMCODE,CHARGEITEMDESC,CHARGEITEMPRICE,OEORIORDERITEMID,RECEIPTNO,PATPATIENTID,PATPATIENTNAME,PATPATIENTCARDNUM,PATPATIENTTYPE,PATPATIENTFROM,ITEMQTY,STATUSDESC,ORDERPRESCRIBERID,ORDERPRESCRIBERNAME,ORDEREXECUTORID,ORDEREXECUTORNAME,CREATEDATE,CREATETIME,UPDATEDATE,UPDATETIME,HISTORYID"/>
+</Query>
+
+<Method name="TestQueryNewExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,stdate:%String,enddate:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$I(^CacheTemp)
+	If $g(ind)="" Set ind=1
+	
+	//取值内容 start
+	s type="2"
+	
+	if type="2"  d
+	.//医技检查部分 DHCRB_RegInfo
+	.//w !,"医技检查部分"
+	.k ^Temp("TempClass","CheckDHCRBRegInfo")
+	.s stdate=$zdh(stdate,3)
+	.s enddate=$zdh(enddate,3)
+	.f idate=stdate:1:enddate d
+	..s RARRowid=""  f  s RARRowid=$o(^DHCPACRegInfoi("RegDate",idate,RARRowid)) q:RARRowid=""  d
+	...s RAROEORIDR=$p(^DHCPACRegInfo(RARRowid),"^",11)
+	...s OrderID=RAROEORIDR         //OEORIORDERITEMID  医嘱流水id 9
+	...s receiptno=""               //RECEIPTNO  发票号  10   
+	...s papmifrom="" 			    //PATPATIENTFROM  患者来源 15 				
+	...s orderexecutorid=""         //ORDEREXECUTORID 最后执行人id  20 
+	...s orderexecutorname=""       //ORDEREXECUTORNAME  最后执行人姓名 21                        
+	...s historyid=""               //HISTORYID    历史id  wml-26
+	...q:$d(^Temp("TempClass","CheckDHCRBRegInfo",RAROEORIDR))  //过滤重复值
+	...s ^Temp("TempClass","CheckDHCRBRegInfo",RAROEORIDR)=""
+	...s RegDate=$zd(idate,3),RegTime=$zt($p(^DHCPACRegInfo(RARRowid),"^",9),1)
+	...s Ord=$p(RAROEORIDR,"||",1),OrdChild=$p(RAROEORIDR,"||",2)
+	...s adm=$p(^DHCPACRegInfo(RARRowid),"^",10)     //ADM 就诊号  1
+	...s admType=$p(^PAADM(adm),"^",2)     //PATPATIENTTYPE 患者就诊类型 14
+	...q:admType="H"  //过滤体检患者
+	...s papmidr=$p(^PAADM(adm),"^",1)
+	...s papmidocid=$p(^PAADM(adm),"^",9)   //ORDERPRESCRIBERID 开医嘱人的id 18
+	...s papmidocname=$p(^CTPCP(papmidocid,1),"^",2)  //ORDERPRESCRIBERNAME  开医嘱人姓名 19
+	
+	...s papmino=$p(^PAPER(papmidr,"PAT",1),"^",1)    //PATPATIENTID 患者主索引 11
+	...s name=$p(^PAPER(papmidr,"ALL"),"^",1)        //PATPATIENTNAME 患者姓名 12
+	...s cfrowid=$o(^DHCCARDi("CF",0,"PAPMIDR",papmidr,""),-1)
+	...s cardno=$p(^DHCCARD("CF",cfrowid),"^",2)     //PATPATIENTCARDNUM 卡号 13
+	...s statusdr=$p(^OEORD(Ord,"I",OrdChild,1),"^",13)
+	...s statusDesc=$p(^OEC("OSTAT",statusdr),"^",2)    //STATUSDESC  医嘱项目状态 17
+	...s arcimDr=$p($g(^OEORD(Ord,"I",OrdChild,1)),"^",2) 
+	...q:arcimDr=""
+    
+    ...;取医嘱项目数量 add by wangminglong 2019-1-24 start
+    ...s PatBillDR=$o(^DHCPBi(0,"OEORI",OrderID,""))
+    ...s PBOChildsub=$o(^DHCPBi(0,"OEORI",OrderID,PatBillDR,""))
+    ...s ARCIMID=$p(^OEORD(Ord,"I",OrdChild,1),"^",2)
+    ...s ARCIMSubCatID=$p($g(^ARCIM(+ARCIMID,$p(ARCIMID,"||",2),1)),"^",10)
+    ...s OrderType=$p($g(^ARC("IC",ARCIMSubCatID)),"^",7)   // 医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+    ...s OrdQty=$p(^OEORD(Ord,"I",OrdChild,1),"^",12)
+    ...s PackUOMRowid=$p($g(^ARCIM(+ARCIMID,1,8)),"^",14) ;整包装单位
+    ...S PackUOM=""
+	...If PackUOMRowid'=""  Do
+	....S INCI=$o(^INCI(0,"ARCIM_DR",+ARCIMID,""))		
+	....If INCI'="" Do 
+	.....S INCIUOM=$p(^INCI(INCI,1),"^",10) 
+    .....S ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+    .....If ConFacDr="" S ConFac=1
+	.....Else  S ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	....Else  S ConFac=1
+	....S PackUOM=$p($g(^CT("UOM",PackUOMRowid)),"^",2)
+	....if PackUOM["(" s PackUOM=$p(PackUOM,"(",1)  ;盒(30)这种单位改为盒显示
+	...S PackQty=$p(^DHCPB(PatBillDR,"O",PBOChildsub),"^",5)
+    ...S Refundqty=$p(^DHCPB(PatBillDR,"O",PBOChildsub),"^",6)
+    ...S PackQty=PackQty+Refundqty     
+    ...s PackQty=PackQty/ConFac   //数量
+    ...s itemqty=PackQty   //ITEMQTY    医嘱项目数量  wml-16 
+    ...;取医嘱项目数量 add by wangminglong 2019-1-24 end
+    
+	...s Sttdate=$p(^OEORD(Ord,"I",OrdChild,1),"^",9)
+	...s SttTime=$p(^OEORD(Ord,"I",OrdChild,1),"^",10)
+	...s Sttdate=$zd(Sttdate,3)    //CREATEDATE   创建日期 wml-22 
+    ...s SttTime=$zt(SttTime,1)     //CREATETIME   创建时间 wml-23
+    ...s updatedate=$zd(+$h,3)            //UPDATEDATE   修改日期 wml-24
+	...s updatetime=$zt($p($h,",",2),1)   //UPDATETIME   修改时间 wml-25
+	...s arcitmprice=##Class(web.UDHCJFPRICE).GetOrderPrice("","",arcimDr,$zdh(Sttdate,3),"","","","")
+	...s arcitmprice=+$p(arcitmprice,"^") 					    //ARCITMPRICE 医嘱项价格 wml-5
+    ...s arcimCatDr=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",10)
+    ...s arcimDesc=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",2)   //ARCIMDESC 医嘱名称  wml-4
+    ...s arcimCode=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",1)  //ARCIMCODE 医嘱编码  wml-3
+    ...s arcimCateDesc=$p(^ARC("IC",arcimCatDr),"^",2)       //ARCIMCATEDESC 医嘱分类  wml-2
+    ...s arcimOrderType=$p(^ARC("IC",arcimCatDr),"^",7)
+    ...q:(admType="H")&&(arcimOrderType'="X")  //体检患者的检查医嘱在这里取
+    ...s statusdr=$p(^OEORD(Ord,"I",OrdChild,1),"^",13)
+    ...s statusDesc=$p(^OEC("OSTAT",statusdr),"^",2)
+    ...q:(statusDesc="核实")
+    ...//b:RAROEORIDR="2324||3"
+    
+    ...if arcimOrderType="X"  d
+    ....i $d(^DHCAPREPTA(0,"OrdTar",Ord_"||"_OrdChild))  d
+    .....s TariffDr=""  f  s TariffDr=$o(^DHCAPREPTA(0,"OrdTar",Ord_"||"_OrdChild,TariffDr))  q:TariffDr=""  d
+    ......s ARTIRowId=""  f  s ARTIRowId=$o(^DHCAPREPTA(0,"OrdTar",Ord_"||"_OrdChild,TariffDr,ARTIRowId)) q:ARTIRowId=""  d
+    .......s OrderExeID=$p(^DHCAPREPTA(ARTIRowId),"^",10)
+    .......s Billed=$p(^DHCAPREPTA(ARTIRowId),"^",9)
+    .......q:Billed'="P"
+    .......s TarCode=$p(^DHCTARI(TariffDr),"^",1)   //CHARGEITEMCODE 收费项目代码 wml-6
+    .......s TarDesc=$p(^DHCTARI(TariffDr),"^",2)   //CHARGEITEMDESC 收费项目名称 wml-7
+    .......s TarPriceStr=##class(web.UDHCJFPRICE).GetItmPrice(TariffDr,"","","","","2","")  // wml add
+    .......s TarPrice=$p(TarPriceStr,"^",1)   //CHARGEITEMPRICE  收费项目单价 wml-8 add
+	.......d OUTPUTRow   //wml do
+	....e  d
+	.....s TariffDr=""  f  s TariffDr=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr)) q:TariffDr=""  d
+    ......s OLTStartDate=""  f  s OLTStartDate=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate)) q:OLTStartDate=""  d
+    .......s OLTRowId=""  f  s OLTRowId=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate,OLTRowId))  q:OLTRowId=""  d
+    ........s StdDate=$p(^DHCOLT(OLTRowId),"^",4)
+    ........s EndDate=$p(^DHCOLT(OLTRowId),"^",5)
+    ........s (TarCode,TarDesc)=""
+    ........if EndDate="" s EndDate="99999"
+    ........q:((($zdh(Sttdate,3))<StdDate)||(($zdh(Sttdate,3))>EndDate))
+    ........s TarCode=$p(^DHCTARI(TariffDr),"^",1)
+    ........s TarDesc=$p(^DHCTARI(TariffDr),"^",2)
+    ........s TarPriceStr=##class(web.UDHCJFPRICE).GetItmPrice(TariffDr,"","","","","2","")  // wml add
+    ........s TarPrice=$p(TarPriceStr,"^",1)   //CHARGEITEMPRICE  收费项目单价 wml8 add
+	........d OUTPUTRow   //wml do
+	...e  d
+    ....s TariffDr=""  f  s TariffDr=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr)) q:TariffDr=""  d
+    .....s OLTStartDate=""  f  s OLTStartDate=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate)) q:OLTStartDate=""  d
+    ......s OLTRowId=""  f  s OLTRowId=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate,OLTRowId))  q:OLTRowId=""  d
+    .......s StdDate=$p(^DHCOLT(OLTRowId),"^",4)
+    .......s EndDate=$p(^DHCOLT(OLTRowId),"^",5)
+    .......s (TarCode,TarDesc)=""
+    .......if EndDate="" s EndDate="99999"
+    .......q:((($zdh(Sttdate,3))<StdDate)||(($zdh(Sttdate,3))>EndDate))
+    .......s TarCode=$p(^DHCTARI(TariffDr),"^",1)
+    .......s TarDesc=$p(^DHCTARI(TariffDr),"^",2)
+    .......s TarPriceStr=##class(web.UDHCJFPRICE).GetItmPrice(TariffDr,"","","","","2","")  // wml add
+    .......s TarPrice=$p(TarPriceStr,"^",1)   //CHARGEITEMPRICE  收费项目单价 wml8 add
+    .......//if arcimOrderType="X"  d
+    ........//s OrderExeID=OrderID_"||"_numb
+    ........//s ARTIRowId=$o(^DHCAPREPTA(0,"OrdTar",Ord_"||"_OrdChild,TariffDr,""),-1)  //DHC_AppRepTarItm 
+    ........//i ARTIRowId'=""  d
+    .........//s OrderExeID=$p(^DHCAPREPTA(ARTIRowId),"^",10)
+    .........//w !,OrderExeID_TarCode_","_adm_","_papmino_","_name_","_arcimCateDesc_","_arcimCode_","_arcimDesc_","_$j(arcitmprice,3,2)_","_statusDesc_","_TarCode_","_TarDesc_","_Sttdate_","_SttTime_","_RegDate_","_RegTime
+	........//e  d 
+	.........//w !,OrderID_"||1"_TarCode_","_adm_","_papmino_","_name_","_arcimCateDesc_","_arcimCode_","_arcimDesc_","_$j(arcitmprice,3,2)_","_statusDesc_","_TarCode_","_TarDesc_","_Sttdate_","_SttTime_","_RegDate_","_RegTime
+	.......//e  d
+	.......d OUTPUTRow   //wml do
+    
+	
+	
+	.//体检部分dhc_pe_result
+	.//w !,"体检部分"
+	.//^DHCPERLT("0","DateOrder",{RLT_UpdateDate},{RLT_OEORI_DR},{RLT_RowId})
+	.f idate=stdate:1:enddate d
+	..s RLTOEORIDR=""  f  s RLTOEORIDR=$o(^DHCPERLT("0","DateOrder",idate,RLTOEORIDR)) q:RLTOEORIDR=""  d
+	...//s RLTRowId=""  f  s RLTRowId=$o(^DHCPERLT("0","DateOrder",idate,RLTOEORIDR,RLTRowId)) q:RLTRowId=""  d
+	...s OrderID=RLTOEORIDR,RLTRowId=$o(^DHCPERLT("0","DateOrder",idate,RLTOEORIDR,""),-1)   //OEORIORDERITEMID  医嘱流水id 9
+	...;b //add by wangminglong 2019-1-24      
+	...s receiptno=""               //RECEIPTNO  发票号  10   
+	...s papmifrom="" 			    //PATPATIENTFROM  患者来源 15 		
+	...s orderexecutorid=""         //ORDEREXECUTORID 最后执行人id  20 
+	...s orderexecutorname=""       //ORDEREXECUTORNAME  最后执行人姓名 21                        
+	...s historyid=""               //HISTORYID    历史id  26
+	...//add by wangminglong 2019-1-24
+
+	...s RegDate=$zd(idate,3),RegTime=$zt($p(^DHCPERLT(RLTRowId),"^",11),1)
+	...s Ord=$p(RLTOEORIDR,"||",1),OrdChild=$p(RLTOEORIDR,"||",2)
+	...s adm=$p(^OEORD(Ord),"^",1)         //ADM 就诊号  1
+	...s admType=$p(^PAADM(adm),"^",2)     //PATPATIENTTYPE 患者就诊类型 14
+	...s papmidr=$p(^PAADM(adm),"^",1)
+	...s papmidocid=$p(^PAADM(adm),"^",9)   //ORDERPRESCRIBERID 开医嘱人的id 18
+	...s papmidocname=$p(^CTPCP(papmidocid,1),"^",2)  //ORDERPRESCRIBERNAME  开医嘱人姓名 19
+	...s papmino=$p(^PAPER(papmidr,"PAT",1),"^",1)    //PATPATIENTID 患者主索引 11
+	...s name=$p(^PAPER(papmidr,"ALL"),"^",1)         //PATPATIENTNAME 患者姓名 12
+	...s cfrowid=$o(^DHCCARDi("CF",0,"PAPMIDR",papmidr,""),-1)
+	...s cardno=$p(^DHCCARD("CF",cfrowid),"^",2)     //PATPATIENTCARDNUM 卡号 13
+	...s statusdr=$p(^OEORD(Ord,"I",OrdChild,1),"^",13)
+	...s statusDesc=$p(^OEC("OSTAT",statusdr),"^",2)    //STATUSDESC  医嘱项目状态 17
+	...s arcimDr=$p($g(^OEORD(Ord,"I",OrdChild,1)),"^",2) //
+	...q:arcimDr=""
+	
+	...;取医嘱项目数量 add by wangminglong 2019-1-24 start
+    ...s ARCIMID=$p(^OEORD(Ord,"I",OrdChild,1),"^",2)
+    ...s ARCIMSubCatID=$p($g(^ARCIM(+ARCIMID,$p(ARCIMID,"||",2),1)),"^",10)
+    ...s OrdQty=$p(^OEORD(Ord,"I",OrdChild,1),"^",12)
+    ...s itemqty=OrdQty      //ITEMQTY    医嘱项目数量  wml-16 
+    ...;b ;取医嘱项目数量 add by wangminglong 2019-1-24 end
+    
+	...s Sttdate=$p(^OEORD(Ord,"I",OrdChild,1),"^",9)
+	...s SttTime=$p(^OEORD(Ord,"I",OrdChild,1),"^",10)
+	...s arcitmprice=##Class(web.UDHCJFPRICE).GetOrderPrice("","",arcimDr,Sttdate,"","","","")
+	...s Sttdate=$zd(Sttdate,3)    //CREATEDATE   创建日期  22 
+    ...s SttTime=$zt(SttTime,1)     //CREATETIME   创建时间 23
+    ...s updatedate=$zd(+$h,3)            //UPDATEDATE   修改日期 24
+	...s updatetime=$zt($p($h,",",2),1)   //UPDATETIME   修改时间 25
+    
+    ...s arcitmprice=##Class(web.UDHCJFPRICE).GetOrderPrice("","",arcimDr,Sttdate,"","","","")
+	...s arcitmprice=+$p(arcitmprice,"^") 					    //ARCITMPRICE 医嘱项价格 5
+    ...s arcimCatDr=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",10)
+    ...s arcimDesc=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",2)   //ARCIMDESC 医嘱名称  4
+    ...s arcimCode=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",1)  //ARCIMCODE 医嘱编码  3
+    ...s arcimCateDesc=$p(^ARC("IC",arcimCatDr),"^",2)       //ARCIMCATEDESC 医嘱分类 2
+    ...s statusdr=$p(^OEORD(Ord,"I",OrdChild,1),"^",13)
+    ...s statusDesc=$p(^OEC("OSTAT",statusdr),"^",2)
+    ...s arcimOrderType=$p(^ARC("IC",arcimCatDr),"^",7)
+    ...q:(((arcimOrderType="L")))
+    ...;b //b:RLTOEORIDR="1030||2"
+    ...//q:((arcimCateDesc["体检")&&((arcimCateDesc'="其他(体检)"))&&(statusDesc="核实"))
+    ...s TariffDr=""  f  s TariffDr=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr)) q:TariffDr=""  d
+    ....s OLTStartDate=""  f  s OLTStartDate=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate)) q:OLTStartDate=""  d
+    .....s OLTRowId=""  f  s OLTRowId=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate,OLTRowId))  q:OLTRowId=""  d
+    ......s StdDate=$p(^DHCOLT(OLTRowId),"^",4)
+    ......s EndDate=$p(^DHCOLT(OLTRowId),"^",5)
+    ......s (TarCode,TarDesc)=""
+    ......if EndDate="" s EndDate="99999"
+    ......q:((($zdh(Sttdate,3))<StdDate)||(($zdh(Sttdate,3))>EndDate))
+    ......s TarCode=$p(^DHCTARI(TariffDr),"^",1)   //CHARGEITEMCODE 收费项目代码 6
+    ......s TarDesc=$p(^DHCTARI(TariffDr),"^",2)   //CHARGEITEMDESC 收费项目名称 7
+    ......s TarPriceStr=##class(web.UDHCJFPRICE).GetItmPrice(TariffDr,"","","","","2","")  // wml add
+    ......s TarPrice=$p(TarPriceStr,"^",1)   //CHARGEITEMPRICE  收费项目单价 8 add
+    ......;b ;w1
+    ......d OUTPUTRow   //wml do
+	
+	
+	
+	
+	.//体检放弃检查的医嘱
+	.f idate=stdate:1:enddate d
+	..//^DHCPERefuseCheck(0,"ReDate",{Re_Date},{Re_Rowid})
+	..s ReRowid=0  f  s ReRowid=$o(^DHCPERefuseCheck(0,"ReDate",idate,ReRowid)) q:ReRowid=""  d
+	...s OrderID=$p(^DHCPERefuseCheck(ReRowid),"^",5)              //OEORIORDERITEMID  医嘱流水id 9
+	...//b:OrderID="1268||21"
+	...s Ord=+OrderID,OrdChild=$p(OrderID,"||",2)
+	
+	...;b //为空的字段 add by wangminglong 2019-1-24    start  
+	...s receiptno=""               //RECEIPTNO  发票号  10   
+	...s papmifrom="" 			    //PATPATIENTFROM  患者来源 15 		
+	...s orderexecutorid=""         //ORDEREXECUTORID 最后执行人id  20 
+	...s orderexecutorname=""       //ORDEREXECUTORNAME  最后执行人姓名 21                        
+	...s historyid=""               //HISTORYID    历史id  26
+	...//为空的字段 add by wangminglong 2019-1-24    start 
+	
+	...s adm=$p($g(^OEORD(Ord)),"^",1)      //ADM 就诊号  1
+	...q:adm=""
+	...s admType=$p(^PAADM(adm),"^",2)       //PATPATIENTTYPE 患者就诊类型 14
+	...s papmidr=$p(^PAADM(adm),"^",1)
+	...s papmidocid=$p(^PAADM(adm),"^",9)   //ORDERPRESCRIBERID 开医嘱人的id 18
+	...s papmidocname=$p(^CTPCP(papmidocid,1),"^",2)  //ORDERPRESCRIBERNAME  开医嘱人姓名 19
+	...s papmino=$p(^PAPER(papmidr,"PAT",1),"^",1)    //PATPATIENTID 患者主索引 11
+	...s name=$p(^PAPER(papmidr,"ALL"),"^",1)    	  //PATPATIENTNAME 患者姓名 12
+	...s cfrowid=$o(^DHCCARDi("CF",0,"PAPMIDR",papmidr,""),-1)
+	...s cardno=$p(^DHCCARD("CF",cfrowid),"^",2)     //PATPATIENTCARDNUM 卡号 13
+	...s arcimDr=$p($g(^OEORD(Ord,"I",OrdChild,1)),"^",2) //
+	...q:arcimDr=""
+	...;取医嘱项目数量 add by wangminglong 2019-1-24 start
+    ...s ARCIMID=$p(^OEORD(Ord,"I",OrdChild,1),"^",2)
+    ...s ARCIMSubCatID=$p($g(^ARCIM(+ARCIMID,$p(ARCIMID,"||",2),1)),"^",10)
+    ...s OrdQty=$p(^OEORD(Ord,"I",OrdChild,1),"^",12)
+    ...s itemqty=OrdQty      //ITEMQTY    医嘱项目数量  wml-16 
+    ...;b ;取医嘱项目数量 add by wangminglong 2019-1-24 end
+	...s Sttdate=$p(^OEORD(Ord,"I",OrdChild,1),"^",9)     //CREATEDATE   创建日期  22 
+	...s SttTime=$p(^OEORD(Ord,"I",OrdChild,1),"^",10)     //CREATETIME   创建时间 23
+	...s updatedate=$zd(+$h,3)            //UPDATEDATE   修改日期 24
+	...s updatetime=$zt($p($h,",",2),1)   //UPDATETIME   修改时间 25
+	...s arcitmprice=##Class(web.UDHCJFPRICE).GetOrderPrice("","",arcimDr,Sttdate,"","","","")
+	...s arcitmprice=+$p(arcitmprice,"^") 					   //ARCITMPRICE 医嘱项价格 5
+    ...s arcimCatDr=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",10)
+    ...s arcimDesc=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",2)		//ARCIMDESC 医嘱名称  4
+    ...s arcimCode=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",1)     //ARCIMCODE 医嘱编码  3 
+    ...s arcimCateDesc=$p(^ARC("IC",arcimCatDr),"^",2)			//ARCIMCATEDESC 医嘱分类 2
+    ...s arcimOrderType=$p(^ARC("IC",arcimCatDr),"^",7)
+    ...s statusdr=$p(^OEORD(Ord,"I",OrdChild,1),"^",13)
+    ...s statusDesc="执行" //$p(^OEC("OSTAT",statusdr),"^",2) 体检放弃检查的医嘱传执行  //STATUSDESC  医嘱项目状态 17
+    ...//^DHCOLT(0,"ARTTA",{OLT_ARCIM_DR},{OLT_Tariff_DR},{OLT_StartDate},{OLT_RowId})
+    ...s Sttdate=$zd(Sttdate,3)
+    ...s SttTime=$zt(SttTime,1)
+    ...s (RegDate,RegTime)=""
+    ...s RegDate=$zd(idate,3)
+    ...s RegTime=$zd($p(^DHCPERefuseCheck(ReRowid),"^",4),3)
+    ...//q:(admType="H")&&((arcimCateDesc'="其他(体检)")&&(arcimCateDesc'="健康管理医嘱")&&(arcimCateDesc'="专项护理"))
+    ...s TariffDr=""  f  s TariffDr=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr)) q:TariffDr=""  d
+    ....s OLTStartDate=""  f  s OLTStartDate=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate)) q:OLTStartDate=""  d
+    .....s OLTRowId=""  f  s OLTRowId=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate,OLTRowId))  q:OLTRowId=""  d
+    ......s StdDate=$p(^DHCOLT(OLTRowId),"^",4)
+    ......s EndDate=$p(^DHCOLT(OLTRowId),"^",5)
+    ......s (TarCode,TarDesc)=""
+    ......if EndDate="" s EndDate="99999"
+    ......q:((($zdh(Sttdate,3))<StdDate)||(($zdh(Sttdate,3))>EndDate))
+    ......s TarCode=$p(^DHCTARI(TariffDr),"^",1)     //CHARGEITEMCODE 收费项目代码 6
+    ......s TarDesc=$p(^DHCTARI(TariffDr),"^",2)	//CHARGEITEMDESC 收费项目名称 7
+    ......s TarPriceStr=##class(web.UDHCJFPRICE).GetItmPrice(TariffDr,"","","","","2","")  // wml add
+    ......s TarPrice=$p(TarPriceStr,"^",1)   //CHARGEITEMPRICE  收费项目单价 8 add
+    ......d OUTPUTRow   //wml do
+	
+	
+	
+	.//病理医嘱单独查询
+	.f idate=stdate:1:enddate d
+	..//^OEORDi(0,"StatDate",{ST_Date},{OE_Order.OEORD_RowId},{OE_OrdItem.OEORI_Childsub},{ST_Childsub})
+	..s Ord="0"  f  s Ord=$o(^OEORDi(0,"StatDate",idate,Ord)) q:Ord=""  d
+	...s OrdChild="0"  f  s OrdChild=$o(^OEORDi(0,"StatDate",idate,Ord,OrdChild)) q:OrdChild=""  d
+	....s OrdChildsub=$o(^OEORDi(0,"StatDate",idate,Ord,OrdChild,""),-1)
+	....s OrderID=Ord_"||"_OrdChild        //OEORIORDERITEMID  医嘱流水id 9
+	
+	....;b //add by wangminglong 2019-1-24      
+	....s receiptno=""               //RECEIPTNO  发票号  10   
+	....s papmifrom="" 			    //PATPATIENTFROM  患者来源 15 		
+	....s orderexecutorid=""         //ORDEREXECUTORID 最后执行人id  20 
+	....s orderexecutorname=""       //ORDEREXECUTORNAME  最后执行人姓名 21                        
+	....s historyid=""               //HISTORYID    历史id  26
+	....//add by wangminglong 2019-1-24
+	
+	....s adm=$p($g(^OEORD(Ord)),"^",1)   //ADM 就诊号  1
+	....q:adm=""
+	....s admType=$p(^PAADM(adm),"^",2)   //PATPATIENTTYPE 患者就诊类型 14
+	....q:admType="H"  //体检的病理在DHC_PE_Result 中
+	....s papmidocid=$p(^PAADM(adm),"^",9)   //ORDERPRESCRIBERID 开医嘱人的id 18
+	....q:papmidocid=""
+	....s papmidocname=$p(^CTPCP(papmidocid,1),"^",2)  //ORDERPRESCRIBERNAME  开医嘱人姓名 19
+	....s papmidr=$p(^PAADM(adm),"^",1)              //PATPATIENTID 患者主索引 11
+	....s papmino=$p(^PAPER(papmidr,"PAT",1),"^",1)   //PATPATIENTNAME 患者姓名 12
+	....s name=$p(^PAPER(papmidr,"ALL"),"^",1)
+	....s cfrowid=$o(^DHCCARDi("CF",0,"PAPMIDR",papmidr,""),-1)
+	....s cardno=$p(^DHCCARD("CF",cfrowid),"^",2)     //PATPATIENTCARDNUM 卡号 13
+	
+	....s arcimDr=$p($g(^OEORD(Ord,"I",OrdChild,1)),"^",2) //
+	....q:arcimDr=""
+	
+	....;b ;取医嘱项目数量 add by wangminglong 2019-1-24 start
+    ....s ARCIMID=$p(^OEORD(Ord,"I",OrdChild,1),"^",2)
+    ....s ARCIMSubCatID=$p($g(^ARCIM(+ARCIMID,$p(ARCIMID,"||",2),1)),"^",10)
+    ....s OrdQty=$p(^OEORD(Ord,"I",OrdChild,1),"^",12)
+    ....s itemqty=OrdQty      //ITEMQTY    医嘱项目数量  wml-16 
+    ....;b ;取医嘱项目数量 add by wangminglong 2019-1-24 end
+	
+	....s Sttdate=$p(^OEORD(Ord,"I",OrdChild,1),"^",9)     //CREATEDATE   创建日期  22 
+	....s SttTime=$p(^OEORD(Ord,"I",OrdChild,1),"^",10)    //CREATETIME   创建时间 23
+	....s updatedate=$zd(+$h,3)            //UPDATEDATE   修改日期 24
+	....s updatetime=$zt($p($h,",",2),1)   //UPDATETIME   修改时间 25
+	....s arcitmprice=##Class(web.UDHCJFPRICE).GetOrderPrice("","",arcimDr,Sttdate,"","","","")
+	....s arcitmprice=+$p(arcitmprice,"^") 					    //ARCITMPRICE 医嘱项价格 5
+    ....s arcimCatDr=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",10)
+    ....s arcimDesc=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",2)   //ARCIMDESC 医嘱名称  4
+    ....s arcimCode=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",1)   //ARCIMCODE 医嘱编码  3
+    ....q:arcimCatDr'="9" //病理申请
+    ....s arcimCateDesc=$p(^ARC("IC",arcimCatDr),"^",2)       //ARCIMCATEDESC 医嘱分类 2
+    ....s arcimOrderType=$p(^ARC("IC",arcimCatDr),"^",7)
+    ....s statusdr=$p(^OEORD(Ord,"I",OrdChild,1),"^",13)
+    ....s statusDesc=$p(^OEC("OSTAT",statusdr),"^",2)      //STATUSDESC  医嘱项目状态 17
+    ....s Sttdate=$zd(Sttdate,3)
+    ....s SttTime=$zt(SttTime,1)
+    ....s (RegDate,RegTime)=""
+    ....s RegDate=$zd(idate,3)
+    ....s RegTime=$zt($p(^OEORD(Ord,"I",OrdChild,"ST",OrdChildsub),"^",2),1)
+    ....//q:(arcimOrderType="X")||(arcimOrderType="L")||(arcimOrderType="R")  //过滤所有检查检验药品的非执行医嘱
+    ....//q:(admType="H")&&((arcimCateDesc'="其他(体检)")&&(arcimCateDesc'="健康管理医嘱")&&(arcimCateDesc'="专项护理"))
+    ....s TariffDr=""  f  s TariffDr=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr)) q:TariffDr=""  d
+    .....s OLTStartDate=""  f  s OLTStartDate=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate)) q:OLTStartDate=""  d
+    ......s OLTRowId=""  f  s OLTRowId=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate,OLTRowId))  q:OLTRowId=""  d
+    .......s StdDate=$p(^DHCOLT(OLTRowId),"^",4)
+    .......s EndDate=$p(^DHCOLT(OLTRowId),"^",5)
+    .......s (TarCode,TarDesc)=""
+    .......if EndDate="" s EndDate="99999"
+    .......q:((($zdh(Sttdate,3))<StdDate)||(($zdh(Sttdate,3))>EndDate))
+    .......s TarCode=$p(^DHCTARI(TariffDr),"^",1)    //CHARGEITEMCODE 收费项目代码 6
+    .......s TarDesc=$p(^DHCTARI(TariffDr),"^",2)    //CHARGEITEMDESC 收费项目名称 7
+    .......s TarPriceStr=##class(web.UDHCJFPRICE).GetItmPrice(TariffDr,"","","","","2","")  // wml add
+    .......s TarPrice=$p(TarPriceStr,"^",1)   //CHARGEITEMPRICE  收费项目单价 8 add
+    .......d OUTPUTRow   //wml do
+	
+	
+
+	
+	.//非检验检查
+	.//w !,"非检验检查"
+	.f idate=stdate:1:enddate d
+	..s Ord="0"  f  s Ord=$o(^OEORDi(0,"StDt",idate,Ord)) q:Ord=""  d
+	...s OrdChild="0" f  s OrdChild=$o(^OEORDi(0,"StDt",idate,Ord,OrdChild)) q:OrdChild=""  d
+	....s OrderID=Ord_"||"_OrdChild            //OEORIORDERITEMID  医嘱流水id 9
+	....;b //add by wangminglong 2019-1-24      
+	....s receiptno=""               //RECEIPTNO  发票号  10   
+	....s papmifrom="" 			    //PATPATIENTFROM  患者来源 15 		
+	....s orderexecutorid=""         //ORDEREXECUTORID 最后执行人id  20 
+	....s orderexecutorname=""       //ORDEREXECUTORNAME  最后执行人姓名 21                        
+	....s historyid=""               //HISTORYID    历史id  26
+	....//add by wangminglong 2019-1-24
+	....s adm=$p($g(^OEORD(Ord)),"^",1)      //ADM 就诊号  1
+	....q:adm=""
+	....s admType=$p(^PAADM(adm),"^",2)       //PATPATIENTTYPE 患者就诊类型 14
+	....//q:admType="H"
+	....s PEIADMRowid="",IADMStatus=""
+	....s:((admType="H")&&($d(^DHCPEIADM(0,"PAADM",adm)))) PEIADMRowid=$o(^DHCPEIADM(0,"PAADM",adm,""),-1)
+	....s:PEIADMRowid'="" IADMStatus=$p(^DHCPEIADM(PEIADMRowid),"^",8)
+	....q:(admType="H")&&(IADMStatus="CANCELPE") //过滤取消体检的患者
+	....s papmidr=$p(^PAADM(adm),"^",1)              
+	....s papmidocid=$p(^PAADM(adm),"^",9)   //ORDERPRESCRIBERID 开医嘱人的id 18
+	....s papmidocname=$p(^CTPCP(papmidocid,1),"^",2)  //ORDERPRESCRIBERNAME  开医嘱人姓名 19
+	....s papmino=$p(^PAPER(papmidr,"PAT",1),"^",1)       //PATPATIENTID 患者主索引 11
+	....s name=$p(^PAPER(papmidr,"ALL"),"^",1)			 //PATPATIENTNAME 患者姓名 12
+	....s cfrowid=$o(^DHCCARDi("CF",0,"PAPMIDR",papmidr,""),-1)
+	....s cardno=$p(^DHCCARD("CF",cfrowid),"^",2)     //PATPATIENTCARDNUM 卡号 13
+	....s arcimDr=$p($g(^OEORD(Ord,"I",OrdChild,1)),"^",2) //
+	....q:arcimDr=""
+	....;取医嘱项目数量 add by wangminglong 2019-1-24 start
+    ....s ARCIMID=$p(^OEORD(Ord,"I",OrdChild,1),"^",2)
+    ....s ARCIMSubCatID=$p($g(^ARCIM(+ARCIMID,$p(ARCIMID,"||",2),1)),"^",10)
+    ....s OrdQty=$p(^OEORD(Ord,"I",OrdChild,1),"^",12)
+    ....s itemqty=OrdQty      //ITEMQTY    医嘱项目数量  wml-16 
+    ....;b ;取医嘱项目数量 add by wangminglong 2019-1-24 end
+	....s Sttdate=$p(^OEORD(Ord,"I",OrdChild,1),"^",9)     
+	....s SttTime=$p(^OEORD(Ord,"I",OrdChild,1),"^",10)
+	....s arcitmprice=##Class(web.UDHCJFPRICE).GetOrderPrice("","",arcimDr,Sttdate,"","","","")
+	....s arcitmprice=+$p(arcitmprice,"^") 					    //ARCITMPRICE 医嘱项价格 5
+    ....s arcimCatDr=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",10)
+    ....s arcimDesc=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",2)  //ARCIMDESC 医嘱名称  4
+    ....s arcimCode=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",1) //ARCIMCODE 医嘱编码  3
+    ....s arcimCateDesc=$p(^ARC("IC",arcimCatDr),"^",2)           //ARCIMCATEDESC 医嘱分类 2
+    ....s arcimOrderType=$p(^ARC("IC",arcimCatDr),"^",7)
+    ....s statusdr=$p(^OEORD(Ord,"I",OrdChild,1),"^",13)
+    ....s statusDesc=$p(^OEC("OSTAT",statusdr),"^",2)           //STATUSDESC  医嘱项目状态 17
+    ....//^DHCOLT(0,"ARTTA",{OLT_ARCIM_DR},{OLT_Tariff_DR},{OLT_StartDate},{OLT_RowId})
+    ....s Sttdate=$zd(Sttdate,3)       //CREATEDATE   创建日期  22 
+    ....s SttTime=$zt(SttTime,1)       //CREATETIME   创建时间 23
+    ....s updatedate=$zd(+$h,3)            //UPDATEDATE   修改日期 24
+	....s updatetime=$zt($p($h,",",2),1)   //UPDATETIME   修改时间 25
+    ....s (RegDate,RegTime)=""
+    ....s RegDate=Sttdate
+    ....s RegTime=SttTime
+    ....q:(arcimOrderType="X")||(arcimOrderType="L")||(arcimOrderType="R")  //过滤所有检查检验药品的非执行医嘱
+    ....//i ($d(^DHCPERLT(0,"OEORI",OrderID))) d
+    .....//s RLTRowId=$o(^DHCPERLT(0,"OEORI",OrderID,""),-1)
+    .....//s RegDate=$p(^DHCPERLT(RLTRowId),"^",6)
+    .....//s RegTime=$p(^DHCPERLT(RLTRowId),"^",11)
+    .....//s:RegDate'="" RegDate=$zd(RegDate,3)
+    .....//s:RegTime'="" RegTime=$zt(RegTime,1)
+    .....//s statusDesc="执行" 
+    ....//if $d(^DHCPEDataEx("DHCPEPreIOrdItem","RefuseCheck",OrderID)) d
+    .....//s statusDesc="放弃检查"
+    .....//s RegDate=$zd($p(^DHCPEDataEx("DHCPEPreIOrdItem","RefuseCheck",OrderID),"^",3),3)
+    .....//s RegTime=$zt($p(^DHCPEDataEx("DHCPEPreIOrdItem","RefuseCheck",OrderID),"^",4),1)
+    ....//q:(statusDesc="核实")&&((arcimOrderType="X")||((arcimOrderType="L")))
+    ....//q:statusDesc="执行"
+    ....//q:((arcimCateDesc["体检")&&((arcimCateDesc'="其他(体检)"))&&(statusDesc="核实"))
+    ....//q:(admType="H")&&((arcimCateDesc'="其他(体检)")||(arcimCateDesc'="健康管理医嘱"))
+    ....q:(admType="H")&&((arcimCateDesc'="其他(体检)")&&(arcimCateDesc'="健康管理医嘱")&&(arcimCateDesc'="专项护理"))
+    ....//b:OrderID="1055||15"
+    ....s TariffDr=""  f  s TariffDr=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr)) q:TariffDr=""  d
+    .....s OLTStartDate=""  f  s OLTStartDate=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate)) q:OLTStartDate=""  d
+    ......s OLTRowId=""  f  s OLTRowId=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate,OLTRowId))  q:OLTRowId=""  d
+    .......s StdDate=$p(^DHCOLT(OLTRowId),"^",4)
+    .......s EndDate=$p(^DHCOLT(OLTRowId),"^",5)
+    .......s (TarCode,TarDesc)=""
+    .......if EndDate="" s EndDate="99999"
+    .......q:((($zdh(Sttdate,3))<StdDate)||(($zdh(Sttdate,3))>EndDate))
+    .......s TarCode=$p(^DHCTARI(TariffDr),"^",1)     //CHARGEITEMCODE 收费项目代码 6
+    .......s TarDesc=$p(^DHCTARI(TariffDr),"^",2)     //CHARGEITEMDESC 收费项目名称 7
+    .......s TarPriceStr=##class(web.UDHCJFPRICE).GetItmPrice(TariffDr,"","","","","2","")  // wml add
+    .......s TarPrice=$p(TarPriceStr,"^",1)   //CHARGEITEMPRICE  收费项目单价 8 add
+    .......d OUTPUTRow   //wml do
+	
+	
+	
+	.//检索已发药药品医嘱 DHC_OEDispensing
+	.//^DHCOEDISQTY(0,"DSPDate",65030,174)
+	.f idate=stdate:1:enddate  d
+	..s rowid=""  f  s rowid=$o(^DHCOEDISQTY(0,"DSPDate",idate,rowid))  q:rowid=""  d
+	...s DSPStatus=$p(^DHCOEDISQTY(rowid),"^",7)  //TC:未发药 ,R:已退,C:已发
+	...q:DSPStatus="TC"
+	...s DSPOEORIDR=$p(^DHCOEDISQTY(rowid),"^",1)
+	...s Ord=+DSPOEORIDR,OrdChild=$P(DSPOEORIDR,"||",2)
+	...s OrderID=DSPOEORIDR          //OEORIORDERITEMID  医嘱流水id 9
+	
+	...;b //add by wangminglong 2019-1-24      
+	...s receiptno=""               //RECEIPTNO  发票号  10   
+	...s papmifrom="" 			    //PATPATIENTFROM  患者来源 15 		
+	...s orderexecutorid=""         //ORDEREXECUTORID 最后执行人id  20 
+	...s orderexecutorname=""       //ORDEREXECUTORNAME  最后执行人姓名 21                        
+	...s historyid=""               //HISTORYID    历史id  26
+	...//add by wangminglong 2019-1-24
+	
+	
+	...s adm=$p($g(^OEORD(Ord)),"^",1)         //ADM 就诊号  1
+	...q:adm=""
+	...s papmidocid=$p(^PAADM(adm),"^",9)   //ORDERPRESCRIBERID 开医嘱人的id 18
+	...s papmidocname=$p(^CTPCP(papmidocid,1),"^",2)  //ORDERPRESCRIBERNAME  开医嘱人姓名 19
+	...s admType=$p(^PAADM(adm),"^",2)         //PATPATIENTTYPE 患者就诊类型 14
+	...s PEIADMRowid="",IADMStatus=""
+	...s papmidr=$p(^PAADM(adm),"^",1)
+	...s papmino=$p(^PAPER(papmidr,"PAT",1),"^",1)    //PATPATIENTID 患者主索引 11
+	...s name=$p(^PAPER(papmidr,"ALL"),"^",1)         //PATPATIENTNAME 患者姓名 12
+	...s cfrowid=$o(^DHCCARDi("CF",0,"PAPMIDR",papmidr,""),-1)
+	...s cardno=$p(^DHCCARD("CF",cfrowid),"^",2)     //PATPATIENTCARDNUM 卡号 13
+	...s arcimDr=$p($g(^OEORD(Ord,"I",OrdChild,1)),"^",2) //
+	...q:arcimDr=""
+	
+	...;取医嘱项目数量 add by wangminglong 2019-1-24 start
+    ...s PatBillDR=$o(^DHCPBi(0,"OEORI",OrderID,""))
+    ...s PBOChildsub=$o(^DHCPBi(0,"OEORI",OrderID,PatBillDR,""))
+    ...s ARCIMID=$p(^OEORD(Ord,"I",OrdChild,1),"^",2)
+    ...s ARCIMSubCatID=$p($g(^ARCIM(+ARCIMID,$p(ARCIMID,"||",2),1)),"^",10)
+    ...s OrderType=$p($g(^ARC("IC",ARCIMSubCatID)),"^",7)   // 医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
+    ...s OrdQty=$p(^OEORD(Ord,"I",OrdChild,1),"^",12)
+    ...s PackUOMRowid=$p($g(^ARCIM(+ARCIMID,1,8)),"^",14) ;整包装单位
+    ...S PackUOM=""
+	...If PackUOMRowid'=""  Do
+	....S INCI=$o(^INCI(0,"ARCIM_DR",+ARCIMID,""))		
+	....If INCI'="" Do 
+	.....S INCIUOM=$p(^INCI(INCI,1),"^",10) 
+    .....S ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+    .....If ConFacDr="" S ConFac=1
+	.....Else  S ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	....Else  S ConFac=1
+	....S PackUOM=$p($g(^CT("UOM",PackUOMRowid)),"^",2)
+	....if PackUOM["(" s PackUOM=$p(PackUOM,"(",1)  ;盒(30)这种单位改为盒显示
+	...S PackQty=$p(^DHCPB(PatBillDR,"O",PBOChildsub),"^",5)
+    ...S Refundqty=$p(^DHCPB(PatBillDR,"O",PBOChildsub),"^",6)
+    ...S PackQty=PackQty+Refundqty     
+    ...s PackQty=PackQty/ConFac   //数量
+    ...s itemqty=PackQty
+    ...;取医嘱项目数量 add by wangminglong 2019-1-24 end
+	
+	
+	...s Sttdate=$p(^OEORD(Ord,"I",OrdChild,1),"^",9)
+	...s SttTime=$p(^OEORD(Ord,"I",OrdChild,1),"^",10)
+	...s arcitmprice=##Class(web.UDHCJFPRICE).GetOrderPrice("","",arcimDr,Sttdate,"","","","")
+	...s arcitmprice=+$p(arcitmprice,"^") 					    //ARCITMPRICE 医嘱项价格 5
+	...//b //
+    ...s arcimCatDr=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",10)
+    ...s arcimDesc=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",2)      //ARCIMDESC 医嘱名称  4
+    ...s arcimCode=$p(^ARCIM(+arcimDr,$p(arcimDr,"||",2),1),"^",1)      //ARCIMCODE 医嘱编码  3
+    ...s arcimCateDesc=$p(^ARC("IC",arcimCatDr),"^",2)            //ARCIMCATEDESC 医嘱分类 2
+    ...s arcimOrderType=$p(^ARC("IC",arcimCatDr),"^",7)
+    ...s statusdr=$p(^OEORD(Ord,"I",OrdChild,1),"^",13)
+    ...s statusDesc="" 
+    ...//s statusDesc=$p(^OEC("OSTAT",statusdr),"^",2)
+    ...s:DSPStatus="R" statusDesc="撤销"
+    ...s:DSPStatus="C" statusDesc="执行"         //STATUSDESC  医嘱项目状态 17
+    ...s Sttdate=$zd(Sttdate,3)          //CREATEDATE   创建日期  22 
+    ...s SttTime=$zt(SttTime,1)			//CREATETIME   创建时间 23
+    ...s updatedate=$zd(+$h,3)            //UPDATEDATE   修改日期 24
+	...s updatetime=$zt($p($h,",",2),1)   //UPDATETIME   修改时间 25
+    ...s (RegDate,RegTime)=""
+    ...s RegDate=$zd(idate,3)
+    ...s RegTime=$zt($p(^DHCOEDISQTY(rowid),"^",9),1)
+    ...//q:(admType="H")&&((arcimCateDesc'="其他(体检)")&&(arcimCateDesc'="健康管理医嘱")&&(arcimCateDesc'="专项护理"))
+    ...s TariffDr=""  f  s TariffDr=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr)) q:TariffDr=""  d
+    ....s OLTStartDate=""  f  s OLTStartDate=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate)) q:OLTStartDate=""  d
+    .....s OLTRowId=""  f  s OLTRowId=$o(^DHCOLT(0,"ARTTA",arcimDr,TariffDr,OLTStartDate,OLTRowId))  q:OLTRowId=""  d
+    ......s StdDate=$p(^DHCOLT(OLTRowId),"^",4)
+    ......s EndDate=$p(^DHCOLT(OLTRowId),"^",5)
+    ......s (TarCode,TarDesc)=""
+    ......if EndDate="" s EndDate="99999"
+    ......q:((($zdh(Sttdate,3))<StdDate)||(($zdh(Sttdate,3))>EndDate))
+    ......s TarCode=$p(^DHCTARI(TariffDr),"^",1)     //CHARGEITEMCODE 收费项目代码 6
+    ......s TarDesc=$p(^DHCTARI(TariffDr),"^",2)    //CHARGEITEMDESC 收费项目名称 7
+    ......s TarPriceStr=##class(web.UDHCJFPRICE).GetItmPrice(TariffDr,"","","","","2","")  // wml add
+    ......s TarPrice=$p(TarPriceStr,"^",1)   //CHARGEITEMPRICE  收费项目单价 8 add
+    ......d OUTPUTRow   //wml do
+	//取值内容 end
+	Set qHandle=$lb(0,repid,0)
+ 	Quit $$$OK
+OUTPUTRow
+ 	Set Data=$lb(adm,arcimCateDesc,arcimCode,arcimDesc,arcitmprice,TarCode,TarDesc,TarPrice,OrderID,receiptno,papmino,name,cardno,admType,papmifrom,itemqty,statusDesc,papmidocid,papmidocname,orderexecutorid,orderexecutorname,Sttdate,SttTime,updatedate,updatetime,historyid)  //wml data
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+	quit
+]]></Implementation>
+</Method>
+
+<Method name="TestQueryNewClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>TestQueryNewExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="TestQueryNewFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>TestQueryNewExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+		Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// creat by wangminglong
+
+]]></Content>
+</UDLText>
+
+<Method name="GetPatientCertificateInfo">
+<Description>
+Creator:huangchuanqi 20181126
+根据患者登记号获取证件信息。Flag=Y 说明有证件信息患者(如果DVAnumber无值，就取DHC_PaperCardNum第一个类型的值)
+入参：PANo登记号
+出参：标志Flag_"^"_证件ID_"^"_证件名_"^"_证件号码
+##Class(web.BOE.Common).GetPatientCertificateInfo("020000002069")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PANo:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	q:PANo="" ""
+	s Info="",Status="",Flag="N"
+	s PAPMIRowId=$o(^PAPERi("PAPMI_PatNo",PANo,0))			 
+	q:PAPMIRowId="" "" 
+	s CardTypeDR=$p(^PAPER(PAPMIRowId,"PAT",3),"^",7)
+	s DVAnumber=$p(^PAPER(PAPMIRowId,"PAT",3),"^",6)
+	s:CardTypeDR'="" CardType=$p(^PAC("CARD",CardTypeDR),"^",2)
+	s:CardTypeDR="" CardType=""
+	s Cardr="",CardNo=""
+	f  s Cardr=$o(^DHCPCNi("PAPMI",PAPMIRowId,Cardr))  q:((Cardr="")||(Status="Y"))  d 
+	.s DHCPCNROWID="" 
+	.f  s DHCPCNROWID=$o(^DHCPCNi("PAPMI",PAPMIRowId,Cardr,DHCPCNROWID))  q:((DHCPCNROWID="")||(Status="Y"))  d
+	..s CardNo=$p(^DHCPCN(DHCPCNROWID),"^",4)
+	..s:CardNo'="" Status="Y"
+	i (DVAnumber'="")  s Flag="Y"
+	i ((DVAnumber="")&(Status="Y"))   s Flag="Y"  s DVAnumber=CardNo
+	s Info=Flag_"^"_CardTypeDR_"^"_CardType_"^"_DVAnumber
+	q Info
+]]></Implementation>
+</Method>
+
+<Method name="GetSZFByPANo">
+<Description>
+##Class(web.BOE.Common).GetSZFByPANo("020000000005")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PANo:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	q:PANo="" ""
+	s PAPMIRowId=$o(^PAPERi("PAPMI_PatNo",PANo,0))			 
+	q:PAPMIRowId="" "" 
+	q $p(^PAPER(PAPMIRowId,"ALL"),"^",9)
+]]></Implementation>
+</Method>
+
+<Method name="ChkLbByStkAndINST">
+<Description>
+w ##class(web.DHCxsp).ChkLbByStkAndINST(54)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>inst</FormalSpec>
+<Implementation><![CDATA[
+	//n (inst)
+	q:inst="" -1
+	k ^TMP("web.God.ChkLbByStkAndADJ","inst",inst)
+	s adj=$p(^DHCINST(inst),"^",15)
+	q:adj="" -2 //meiyou tiaozheng
+	s date=$p(^DHCINAD(adj),"^",8)
+	q:date="" -3
+	s datefmt=$zd(date,3)
+	s loc=$p(^DHCINST(inst),"^",5)
+	s HospId=$p(^CTLOC(loc),"^",22)
+	s cnt=0,amtsum=0
+	s inci=0
+	f  s inci=$o(^INCI("IL_LOC",loc,inci)) q:inci=""  d
+	.s incidesc=$p(^INCI(inci,1),"^",2)
+	.s buomID=$p(^INCI(inci,1),"^",10)
+	.s pandianflag=0
+	.s chl=0
+	.f  s chl=$o(^INCI("IL_LOC",loc,inci,chl)) q:chl=""  d
+	..s chlsub=0
+	..f  s chlsub=$o(^INCI(inci,"IL",chl,"LB",chlsub)) q:chlsub=""  d
+	...s inclb=inci_"||"_chl_"||"_chlsub
+	...s stkqty=+##class(web.DHCSTSTKQTY).QtyINCLB(inclb,datefmt) //基本单位库存(库存查询)
+	...s sp=##class(web.DHCSTPRICE).GetSp(inclb,date, buomID, HospId)  //售价
+	...s spamt=sp*stkqty
+	...s spamt=##class(web.DHCST.Common.AppCommon).FormatSpAmt(spamt,HospId)  //格式化保留两位小数
+	...s instichl=$o(^DHCINST(inst,"STI",0,inclb,""))
+	...q:(instichl="") //(stkqty=0) 
+	...s countqty=$p($g(^DHCINST(inst,"STI",+instichl)),"^",5)   //实盘数
+	...s countamt=$p($g(^DHCINST(inst,"STI",+instichl)),"^",32)   //实盘金额
+	...s difspamt=spamt-countamt
+	...i 1 d //(countqty'=stkqty)||(difspamt>0.01)||((difspamt<-0.01))
+	....s str=incidesc_" stkqty:,"_stkqty_",countqty:"_countqty_",spamt:"_spamt_",countamt:"_countamt
+	....s ^TMP("web.God.ChkLbByStkAndADJ","inst",inst,"instichl",+instichl,"inclb",inclb)=str
+	....w str,!
+	....s cnt=cnt+1
+	q cnt
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// w ##class(web.BOE.Common).password("0072")
+
+]]></Content>
+</UDLText>
+
+<Method name="password">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>userCode:%String</FormalSpec>
+<Implementation><![CDATA[
+ s ok="",aa="",okk=""
+ s userId=$O(^SSU("SSUSR",0,"SSUSR_Initials",$$ALPHAUP^SSUTIL4(userCode),"")) //""的下一个索引
+ s pin=$p($G(^SSU("SSUSR",userId)),"^",3) //密码
+ s leng=$l(pin)
+ //q:(leng>12) ""  //加密生成超过12位退出
+ f pp=1:1:leng q:okk="1"  d  //a:b:c b到c 从a开始循环
+ .s ppp=..Passco(aa,pp,pin) //aa密码 pp某一位密码 pin 密文
+ .;b
+ .s aa=$p(ppp,"#",1)
+ .s pp=$p(ppp,"#",2)
+ .s okk=$p(ppp,"#",3)
+ w "用户密码是:"_""_aa,!
+ q aa
+]]></Implementation>
+</Method>
+
+<Method name="Passco">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>aa:%String,pp:%String,pin:%String</FormalSpec>
+<Implementation><![CDATA[
+ s ok="",okk=""
+ s p=33
+ f d=p:1:126 q:ok="1"  d //从42开始循环
+ .s h=$c(d)
+ .;b
+ .i aa="" s ppp=h
+ .e  s ppp=aa_""_h 
+ .s len=$l(ppp)
+ .s pass=$$ENCR^SSUTIL2(ppp)
+ .i pass=pin s ok="1",okk="1" 
+ .i $e(pass,1,len)=$e(pin,1,len) s ok="1"
+ .i ok'="1" s ppp=aa q
+ .i aa="" s aa=h
+ .e  s aa=aa_""_h
+ q aa_"#"_pp_"#"_okk
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// w ##class(web.DHCxsp).password("0072")
+
+]]></Content>
+</UDLText>
+
+<Method name="Lookpassword">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>userCode:%String</FormalSpec>
+<Implementation><![CDATA[
+ s ok="",aa="",okk=""
+ s userId=$O(^SSU("SSUSR",0,"SSUSR_Initials",$$ALPHAUP^SSUTIL4(userCode),"")) //""的下一个索引
+ s pin=$p($G(^SSU("SSUSR",userId)),"^",3) //密码
+ s leng=$l(pin)
+ //q:(leng>12) ""  //加密生成超过12位退出
+ f pp=1:1:leng q:okk="1"  d  //a:b:c b到c 从a开始循环
+ .s ppp=..Passco(aa,pp,pin) //aa密码 pp某一位密码 pin 密文
+ .;b
+ .s aa=$p(ppp,"#",1)
+ .s pp=$p(ppp,"#",2)
+ .s okk=$p(ppp,"#",3)
+ //w "用户密码是:"_""_aa,!
+ q aa
+]]></Implementation>
+</Method>
+
+<Method name="GetSeqNoAvailFlag">
+<Description>
+Creator:huangchuanqi 20190115
+查询预约号当前号段是否支持取号
+OutPut:0支持取号
+d ##class(web.BOE.Common).GetSeqNoAvailFlag("969||13||2")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>APPTRowId:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+		q:APPTRowId="" -1
+		Set object =##class(User.RBAppointment).%OpenId(APPTRowId)
+		i $IsObject(object) {
+		s RBASId=object.APPTASParRef.%Id()
+		s SeqNo=object.APPTQueueNo
+		}
+		q:RBASId="" -1
+		q:SeqNo="" -1
+		s ResRowId=$P(RBASId,"||",1)
+		s Childsub=$P(RBASId,"||",2)
+	 	s ASQueueNo=$P($G(^RBAS(ResRowId,Childsub,"DHC")),"^",4)
+	 	s NormalQueueNoStr=$P(ASQueueNo,$C(1),1)
+	 	s AddQueueNoStr=$P(ASQueueNo,$C(1),2)
+	 	
+	    s NumberDan=$P($G(^RBAS(ResRowId,Childsub,"DHC")),"^",24)  //号段 
+	    s TimeDan=$P($G(^RBAS(ResRowId,Childsub,"DHC")),"^",25)  //时间段
+	    s DateDan=$P($G(^RBAS(ResRowId,Childsub)),"^",1)   //号源日期
+	 	s time=$zth("23:59")  //
+	 	s nowtime=$p($h,",",2) //当前时间
+	 	s nowdate=$p($h,",",1) //当前日期
+	 	
+	 	Q:NormalQueueNoStr=""
+	 	s Flag=0
+	 	for i=1:1:$l(NormalQueueNoStr,",") {
+		 	
+		 	s SingleNumberDan=$P(NumberDan,",",i)  //循环号源段,找出该号源在号源段中的位置
+		 	s SingleNumberStart=$P(SingleNumberDan,"-",1) //该当前时间段的开始有效号源
+			s SingleNumberend=$P(SingleNumberDan,"-",2) //该当前时间的最后有效号源
+		 	i ((SingleNumberStart<=SeqNo)&&(SeqNo<=SingleNumberend)) {
+			 	s wtime=$P(TimeDan,",",i) //根据该位置i找出该号源对应的预约时间段
+			 	s time=$zth($P(wtime,"-",1)) //该号源的有效时间预约时间开始时间
+			 } 
+		 	
+			 s SingleQueueNoStr=$P(NormalQueueNoStr,",",i)
+			 s SingleQueueNo=$P(SingleQueueNoStr,":",1)
+			 s SingleQueueNoAPPMethodRowId=$P(SingleQueueNoStr,":",3)
+			 continue:SingleQueueNo'=SeqNo    
+			 
+			 
+			 i ((nowtime>time)&&(nowdate=DateDan)) {					
+				s Flag=-1
+			 }
+			 	
+		}
+		q Flag
+]]></Implementation>
+</Method>
+</Class>
+</Export>

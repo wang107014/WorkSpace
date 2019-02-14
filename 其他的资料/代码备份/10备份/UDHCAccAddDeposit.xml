@@ -1,0 +1,1558 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-01-30 14:43:02">
+<Class name="web.UDHCAccAddDeposit">
+<ClassType/>
+<Import>SQLUser</Import>
+<ProcedureBlock>0</ProcedureBlock>
+<Super>%RegisteredObject,websys.Abstract</Super>
+<TimeChanged>65043,52917.325498</TimeChanged>
+<TimeCreated>60306,54086.141513</TimeCreated>
+<Inheritance>right</Inheritance>
+
+<Parameter name="BUILD">
+<Internal>0</Internal>
+<Default>224</Default>
+</Parameter>
+
+<Method name="GetReceiptType">
+<Description>
+取预交金的收据类型设置</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	set ReceiptType=""
+	set myBCInfo=##class(web.DHCOPConfig).GetOPBaseConfig()
+	if ($piece(myBCInfo,"^",1)="0")
+	{
+		set ReceiptType=$p(myBCInfo,"^",29)
+	}
+	quit ReceiptType
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// w ##class(web.UDHCAccAddDeposit).TransPayModeDesc("现金")
+
+]]></Content>
+</UDLText>
+
+<Method name="TransPayModeDesc">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PaymodeDesc</FormalSpec>
+<Implementation><![CDATA[
+	s Paymode=""
+	q:PaymodeDesc="" ""
+	s Paymode=$o(^CT("CTPM",0,"Desc",PaymodeDesc,""))
+	
+	q Paymode
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// zw ##class(web.UDHCAccAddDeposit).NewDeposit("","","37046^2010^7050^^^undefined^1^^^^^^^^P^2")
+
+]]></Content>
+</UDLText>
+
+<Method name="NewDeposit">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>itmjs:%Library.String="",itmjsex:%Library.String="",str:%Library.String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+ 	s ^tempwml("NewDeposit")=$lb(itmjs,itmjsex,str)
+ 	s $ZT="ERROR^DHCSSERR" d ##Class(web.UDHCCardRef).tb()
+ 	s ren=..AddDeposit(str)
+ 	i $p(ren,"^",1)=0  d ##Class(web.UDHCCardRef).tc()
+ 	e  TROLLBACK
+	q ren
+]]></Implementation>
+</Method>
+
+<Method name="AddDeposit">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>str:%Library.String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	//str= AccountIDobj.value + "^" + amtobj.value + "^" + Guser + "^" + ReceiptsNoobj.value + "^" + BackReasonobj.value + "^" + Password + "^" + PayModeid + "^" + BankCardTypeid + "^" + CardChequeNoobj.value + "^" + Bankid + "^" + Companyobj.value + "^" + PayAccNoobj.value + "^" + ChequeDateobj.value + "^" + Remarkobj.value + "^R" + "^" + session['LOGON.HOSPID']+"^"+Prtrowid;
+ 	n (str)
+ 	
+ 	s ReceiptType=..GetReceiptType()
+	
+ 	k PLIST
+ 	s rtn1="^^^"
+ 	s err="",pass1="",pass=""
+ 	s AccountID=$p(str,"^",1)
+ 	q:'$d(^DHCACD("AccM",AccountID)) "accerr"
+ 	s PLIST(0)=AccountID
+ 	s amt=+$p(str,"^",2)
+	q:+$g(amt)<0 "amterr"
+	q:+$g(amt)=0 "0^^^^^^"
+	q:$p(str,"^",7)="" "PayModeErr"
+ 	s PLIST(3)=$p(str,"^",15)  
+ 	s PLIST(17)=$p(str,"^",16)  ;AccPD_Hospital_DR
+ 	s PLIST(18)="N"
+ 	s PLIST(19)=$p(str,"^",17)  ;退款原纪录
+	s depRowid=""
+	
+ 	i PLIST(3)="R"  s amt=0-amt
+ 	s ban=$p(^DHCACD("AccM",AccountID),"^",8)
+ 	q:(PLIST(3)="R")&(ban+amt<0) "noamt"
+ 	//.s pass1=$p(str,"^",6)    //##Class(web.SSUser).Encrypt($p(str,"^",6))
+ 	//.s pass=$p(^DHCACD("AccM",AccountID),"^",12)
+ 	//q:pass'=pass1 "passerr"
+ 	
+ 	s PLIST(4)=amt
+ 	s PLIST(5)=+$H
+ 	s PLIST(6)=$p($H,",",2)
+ 	s PLIST(7)=$p(str,"^",3)
+ 	s myUseDR=$p(str,"^",3)
+ 	s PLIST(8)=$p(str,"^",4)
+ 	s PLIST(11)=$p(str,"^",5)
+ 	m mPLIST=PLIST 
+ 	
+	lock ^DHCACD("AccM",AccountID)
+	;s rtn=##Class(web.UDHCACPayList).UpdateAM(AccountID,amt)
+	s rtn=##Class(web.UDHCAccAddDeposit).UpdateAM(AccountID,amt)
+	lock -^DHCACD("AccM",AccountID)
+	s ren=$p(rtn,"^",1)
+	q:ren'=0 ren
+	k PLIST
+	m PLIST=mPLIST
+	s PLIST(10)=$p(rtn,"^",2)
+	s myPreType=$p(str,"^",15)
+	s ReceiptsNo=$p(str,"^",4)
+	if ReceiptType="" d
+	.s myBillNo=..GetBuildPDNo(myPreType, myUseDR, "")
+	.i myBillNo'="" s PLIST(8)=myBillNo
+	e  d
+	.
+	.s myrtn=..UpdatePDReceipts(myUseDR,ReceiptType)
+	.s ren=$p(myrtn,"^",1)
+	.i ren=0  d
+	..s ReceiptsNo=$p(myrtn,"^",2)
+	..s PLIST(8)=ReceiptsNo
+	q:ren'=0 ren
+	S PLIST(18)="N"
+	s PLIST(19)=$p(str,"^",17)  ;退款原纪录
+	b ;111111
+	s ren=##Class(web.UDHCAccPreDeposit).INSERT()
+	i ren=0  d  
+	.k PLIST
+	.s depRowid=myRowID
+	.s PLIST(0)=myRowID
+	.s PLIST(3)=$p(str,"^",7)
+	.s PLIST(4)=$p(str,"^",8)
+	.s PLIST(5)=$p(str,"^",9)
+	.s PLIST(6)=$p(str,"^",10)
+	.s PLIST(7)=$p(str,"^",11)
+	.s PLIST(8)=amt
+	.s PLIST(9)=$p(str,"^",12)
+	.s chequedate=$p(str,"^",13)
+	.
+	.;i chequedate["/"  s PLIST(10)=$zdh(chequedate,4)
+	.s PLIST(10)=##class(websys.Conversions).DateHtmlToLogical(chequedate)
+	.s PLIST(11)=+$H
+ 	.s PLIST(12)=$p($H,",",2)
+	.s PLIST(13)=$p(str,"^",14)
+	.
+	.s ren=##Class(web.UDHCAccPrePayMode).INSERT()
+	.i ren=0 s paymodeRowid=myRowID
+	.i ren=0 s rtn1=..getAddDeposit(depRowid)
+	b ;1123
+	q ren_"^"_rtn1_"^"_depRowid
+]]></Implementation>
+</Method>
+
+<Method name="UpdatePDReceipts">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>UserID,ReceiptType</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (UserID,ReceiptType)
+	s myrtn=..GetCurrentRecNo(UserID, ReceiptType)
+	s rtn=$p(myrtn,"^",1)
+	q:rtn'="0" myrtn
+	s EndReceiptsNo=$p(myrtn,"^",3)
+	s CurReceiptsNo=$p(myrtn,"^",4)
+	s CurReceiptsID=$p(myrtn,"^",5)
+	
+	i +EndReceiptsNo=+CurReceiptsNo d      ;如果是最后一张领取的发票??标记为已用完
+	.s rtn=..InvToFinal(CurReceiptsID,CurReceiptsNo,UserID,ReceiptType)
+	.
+	q:rtn'=0 rtn
+	i +CurReceiptsNo<+EndReceiptsNo d
+	.s lastnum=..incre(CurReceiptsNo)
+	.&sql(update DHC_INVOICE set inv_lastnum=:lastnum where inv_rowid=:CurReceiptsID)   
+	.s rtn=SQLCODE
+	
+	q rtn_"^"_CurReceiptsNo
+]]></Implementation>
+</Method>
+
+<Method name="InvToFinal">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rid:%String,invno:%String,usr:%String,ReceiptType</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	       
+	       &sql(update DHC_INVOICE set inv_lastnum=:invno,inv_finalflag='N' where inv_rowid=:rid)
+	       &sql(select count(*) into :num from DHC_INVOICE where inv_usr=:usr and inv_type=:ReceiptType and (inv_finalflag='' or inv_finalflag is null) and inv_rowid<>'0')
+	       i num'=0  d
+	       .&sql(select min(inv_rowid) into :rowid1  from DHC_INVOICE where inv_usr=:usr and inv_type=:ReceiptType and (inv_finalflag='' or inv_finalflag is null) and inv_rowid<>'0')
+	       .&sql(update DHC_INVOICE set inv_finalflag='Y' where inv_rowid=:rowid1)
+	       q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="incre">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>invno:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+ ;发票号自动累加1
+	s invno=$g(invno)
+	s lng=$l(invno)
+	s ret=+invno+1
+	s l=$l(ret)
+	f i=lng:(-1):(l+1) d
+	.s ret="0"_""_ret
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="getAddDeposit">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Rowid:%Library.String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	;这个千万不要修改，否则就会出错  主要在返回值上 zhaocz
+	n (Rowid)
+	s val=^DHCACD("AccM",+Rowid,"AccPD",$p(Rowid,"||",2))
+	s amt=$p(val,"^",2),amtleft=$p(val,"^",8)
+	s date=$p(val,"^",3),time=$p(val,"^",4)
+	s myBillNo=$p(val,"^",6)
+	s datetime=$zd(date,3)_" "_$zt(time)
+	s amt1=amt
+	i amt<0 s amt1=0-amt
+	s amtdx=..RMBDXXZH(amt1)
+	i amt<0 s amtdx="负"_amtdx
+	s amt=$j(amt,3,2),amtleft=$j(amtleft,3,2)
+	s rtn=amt_"^"_amtdx_"^"_amtleft_"^"_datetime_"^"_myBillNo
+	
+	q rtn
+]]></Implementation>
+</Method>
+
+<Method name="RMBDXXZH">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>numstr:%Library.String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+    ;RMB DAXIAOXIE CONVERSION,
+	k P1
+	s numstr=$tr(numstr," ","")
+	s i=0,lendec=0,lenint=0
+	S a="",b="",c="",d="",bbak="",bs=""
+	s numstr=+numstr
+	i $p(numstr,".",1)=""  s numstr="0"_numstr
+	s lenint=$l($p(numstr,".",1))
+	s lendec=2
+	i $p(numstr,".",2)="00" s lendec=0  
+	s dxint(13)="",dxdec(2)="",sz(13)=""
+	s dxstr="万|仟|佰|拾|亿|仟|佰|拾|万|仟|佰|拾|元"
+	s szstr="零|壹|贰|叁|肆|伍|陆|柒|捌|玖"
+	s lendxstr=$l(dxstr,"|")+1
+	s lenszstr=$l(szstr,"|")+1
+	f i=1:1:lendxstr d
+	.s dxint(i)=$p(dxstr,"|",lendxstr-i)
+	.s sz(i)=" "
+	.i i<11  s sz(i)=$p(szstr,"|",i)  
+	s dxdec(1)="角",dxdec(2)="分",dxstr=" "
+	;**整数部分**
+	f i=1:1:lenint d
+	.s a=$e($e(numstr,1,lenint),i,i)
+	.s b=sz(a+1)
+	.s c=dxint(lenint-i+1)
+	.s d=" "
+	.i dxstr'=" "  s d=$e(dxstr,$l(dxstr)-1,($l(dxstr)-1)+2-1)  
+	.i a="0"  s b="",bs="零"
+	.i (b="零")&((d="零")!(b=bbak)!(c="元")!(c="万")!(c="亿"))  s b=""
+	.i (a="0")&(c'="元")&(c'="万")&(c'="亿") s c=""
+	.i ((c="元")!(c="万")!(c="亿"))&(d="零")&(a="0")  d 
+	..s dxstr=$e(dxstr,1,1+($l(dxstr)-2)-1)
+	.s d=$e(dxstr,$l(dxstr)-1,($l(dxstr)-1)+2-1)
+	.i (c="元")&(d="万")&(c="万")&(d="亿")  s c=""
+	.i (bs="零")&(a'=0)&(a'="") s b=bs_b,bs=""
+	.s dxstr=dxstr_b_c,bbak=b
+	;
+	;**小数部分**
+	i ($p(numstr,".",2)=0)!(lendec=0)!($p(numstr,".",2)="")  s dxstr=dxstr_"整" 
+	i $p(numstr,".",2)>0  d
+	.f i=1:1:lendec d
+	..s a=$e($p(numstr,".",2),i,i)
+	..s b=sz(a+1)
+	..i (a="0")&(dxdec(i)="分")  s b=""  
+	..i a="0"  s dxstr=dxstr_b
+	..i a'="0"  s dxstr=dxstr_b_dxdec(i)   
+	i numstr<1 s dxstr=$e(dxstr,3,$l(dxstr))
+	i numstr<0.1 s dxstr=$e(dxstr,3,$l(dxstr))
+	i numstr=0 s dxstr=""
+	s dxstr=$tr(dxstr," ","")
+	s P1=dxstr
+	s retcode=dxstr
+	q retcode
+]]></Implementation>
+</Method>
+
+<Method name="AddNewDeposit">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>AccRowID:%Library.String,PDInfo:%Library.String,PDPMInfo:%Library.String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	//PDInfo=amt_"^"_PDType_"^"_user_"^"_BillNum_"^"_BackReason
+	//PayAccNO表示对方的账户
+	//PDPMInfo=PayModeDR_"^"_CardDR_"^"_ChequeNO_"^"_CMBankDR_"^"_Branch_"^"_Amt_"^"_PayAccNO_"^"_ChequeDat_"^"_Remark
+	
+	n (AccRowID,PDInfo, PDPMInfo)
+	
+	s $ZT="ERROR^DHCSSERR"
+	
+ 	q:'$d(^DHCACD("AccM",AccRowID)) "-201"		  ;不存在有效账户
+	
+	s myAmt=+$p(PDInfo,"^")
+	q:myAmt=0 "0^"
+	
+	s ReceiptType=..GetReceiptType()
+	
+	lock ^DHCACD("AccM",AccRowID)
+	;s rtn=##Class(web.UDHCACPayList).UpdateAM(AccRowID,myAmt)
+	s rtn=##Class(web.UDHCAccAddDeposit).UpdateAM(AccRowID,myAmt)
+	lock -^DHCACD("AccM",AccRowID)
+	s ren=+$p(rtn,"^",1)
+	
+	q:ren'=0 ren
+	q:(+$p(PDInfo,"^",1))=0 "0^"
+	
+	s myLeft=$p(rtn,"^",2)
+	k PLIST
+	s err="",pass1="",pass=""	
+	s PLIST(0)=AccRowID	
+	s amt=+$p(PDInfo,"^",1)
+	s PLIST(3)=$p(PDInfo,"^",2)		;AccPD_Type
+	s PLIST(4)=amt					;AccPD_PreSum
+	s PLIST(5)=+$H					;AccPD_PreDate
+	s PLIST(6)=$p($H,",",2)			;AccPD_PreTime
+	s PLIST(7)=$p(PDInfo,"^",3)		;AccPD_User_DR
+	s PLIST(8)=$p(PDInfo,"^",4)		;AccPD_BillNum
+	s PLIST(10)=myLeft				;AccPD_Left
+	s PLIST(11)=$p(PDInfo,"^",5)		;AccPD_BackReason
+	
+	s PLIST(17)=$p(PDInfo,"^",6)  ;AccPD_Hospital_DR
+ 	s PLIST(18)="N"
+	
+	s myUseDR=$p(PDInfo,"^",3)
+	s myPreType=$p(PDInfo,"^",2)
+	s ReceiptsNo=$p(PDInfo,"^",4)
+	if ReceiptType="" d
+	.s myBillNo=..GetBuildPDNo($p(PDInfo,"^",2), $p(PDInfo,"^",3), "")
+	.i myBillNo'="" s PLIST(8)=myBillNo
+	e  d
+	.
+	.s myrtn=..UpdatePDReceipts(myUseDR,ReceiptType)
+	.s ren=$p(myrtn,"^",1)
+	.i ren=0  d
+	..s ReceiptsNo=$p(myrtn,"^",2)
+	..s PLIST(8)=ReceiptsNo
+	q:ren'=0 ren
+	
+	
+	s ren=##Class(web.UDHCAccPreDeposit).INSERT()
+	
+	q:(+ren) ren
+	
+	s myPDRowID=$p(PLIST(1),$c(1))
+	;对于多种的支付方式，利用$C(2)分割
+	//PDPMInfo=PayModeDR_"^"_CardDR_"^"_ChequeNO_"^"_CMBankDR_"^"_Branch_"^"_Amt_"^"_PayAccNO_"^"_ChequeDate_"^"_Remark
+	s mylen=$l(PDPMInfo, $c(2))
+	f i=1:1:mylen q:(+ren)  d
+	.k PLIST
+	.s str=$p(PDPMInfo,$c(2),i)
+	.s PLIST(0)=myPDRowID
+	.s PLIST(3)=$p(str,"^",1)		;APPM_PayMode_DR
+	.s PLIST(4)=$p(str,"^",2)		;APPM_Card_DR
+	.s PLIST(5)=$p(str,"^",3)		;APPM_CardChequeNo
+	.s PLIST(6)=$p(str,"^",4)		;APPM_CMBank_DR
+	.s PLIST(7)=$p(str,"^",5)		;APPM_Branch
+	.s PLIST(8)=$p(str,"^",6)		;APPM_Amt
+	.s PLIST(9)=$p(str,"^",7)		;APPM_PayAccNO
+	.s chequedate=$p(str,"^",8)	;
+	.;i chequedate["/"  s PLIST(10)=$zdh(chequedate,4)		;APPM_ChequeDate
+	.s PLIST(10)=chequedate
+	.s PLIST(11)=+$H				;APPM_Date
+ 	.s PLIST(12)=$p($H,",",2)		;APPM_Time
+	.s PLIST(13)=$p(str,"^",9)		;APPM_Remark
+	.s ren=##Class(web.UDHCAccPrePayMode).INSERT()
+	
+	q ren_"^"_$g(myPDRowID)
+]]></Implementation>
+</Method>
+
+<Method name="UpdateAM">
+<Description>
+[Previously private]</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>AccRowID:%String,PNum:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	;与账户支付有些区别，不能把担保额作为交退
+	;用来更新账户  
+	;参数：AccRowID   激活账户的RowID
+	;      PNum       需要更新的钱数
+	n (AccRowID, PNum)
+	
+	s $ZT="ERROR^DHCSSERR"
+	
+	s AccRowID=$g(AccRowID)
+	s PNum=$g(PNum)
+	s CNum=0
+	s tmpNum=$zabs(PNum)
+	s CNum=$p(^DHCACD("AccM",AccRowID),"^",8)
+	s DepNum=0		;$p(^DHCACD("AccM",AccRowID),"^",14)
+	;s DepNum=##class(web.UDHCAccManageCLSIF).GetAccMDepPrice(AccRowID, "","")
+	s CNum=+CNum-DepNum	;减去下限
+	;*********************************************************************
+	q:((PNum<0)&&(tmpNum>CNum)) 100     ;判断一下是否有冲突.(注意必须要求的)
+	
+	s myrtn=##class(web.UDHCAccManager).SELECT(AccRowID)
+	
+	q:myrtn myrtn_"^0"
+	
+	s PLIST(9)=PLIST(9)+PNum
+	
+	s myrtn=##class(web.UDHCAccManager).UPDATE(AccRowID)
+	
+	q:myrtn myrtn_"^0"
+	i $d(^DHCACD("AccM",AccRowID))
+	{
+	        s leftnum=$p(^DHCACD("AccM",AccRowID),"^",8)
+	}
+	else
+	{
+	        s leftnum=0     
+	}
+	
+	q myrtn_"^"_leftnum
+	;
+]]></Implementation>
+</Method>
+
+<Method name="GetCurrentRecNo">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>userid:%String,type:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s ReceiptType=..GetReceiptType()
+	q:ReceiptType="" "0^^^^^"
+	q:$g(userid)="" "100^^^^^"_ReceiptType
+	;q:$g(type)="" "100^^^^^"
+	
+	s rtn="100",startno="",endno="",currentno="",currinvid=""
+	s invid="0"
+	f  s invid=$o(^DHCINVOICE(0,"USER",userid,invid)) q:(invid="")||(rtn="0")  d
+	.s type0=$p(^DHCINVOICE(invid),"^",8)
+	.q:type0'=ReceiptType
+	.s flag=$p(^DHCINVOICE(invid),"^",7)
+	.q:flag'="Y"
+	.s startno=$p(^DHCINVOICE(invid),"^",1)
+	.s endno=$p(^DHCINVOICE(invid),"^",2)
+	.s currentno=$p(^DHCINVOICE(invid),"^",6)
+	.s currinvid=invid
+	.s rtn="0"
+	//+2016-12-16 ZhYW 余票张数
+	s leftNum=+endno-currentno+1
+    
+    q rtn_"^"_startno_"^"_endno_"^"_currentno_"^"_currinvid_"^"_ReceiptType_"^"_leftNum
+]]></Implementation>
+</Method>
+
+<Method name="getdefaultpaymode">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>group:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	q:'$d(^DHCOPGS("GS",group)) "-320^^"
+	s rtn="-320",paymodeid="",paymode=""
+	s sub=0
+	f  s sub=$o(^DHCOPGS("GS",group,"PM",sub)) q:sub=""  s str=^(sub) d
+	.s def=$p(str,"^",4)
+	.q:def'="Y"
+	.s paymodedr=$p(str,"^",1)
+	.q:paymodedr=""
+	.q:'$d(^CT("CTPM",paymodedr))
+	.s paymodecode=$p(^CT("CTPM",paymodedr),"^",1)
+	.q:paymodecode="CPP"
+	.s rtn="0"
+	.s paymodeid=paymodedr
+	.s paymode=$p(^CT("CTPM",paymodedr),"^",2)
+	q rtn_"^"_paymode_"^"_paymodeid
+]]></Implementation>
+</Method>
+
+<Query name="AccDepDetail">
+<Type>websys.Query</Type>
+<FormalSpec>AccountID:%String,USERID:%String,FOOTID:%String,PatName,RegNo,CardNo,phone</FormalSpec>
+<Parameter name="ROWSPEC" value="LNO:%String,Tdate:%String,Ttime:%String,Tamt:%String,Ttype:%String,Tuser:%String,Treceiptsno:%String,Tjkdate:%String,Taccleft:%String,Tpaymode:%String,Tbankcardtype:%String,Tchequeno:%String,Tbank:%String,Tcompany:%String,Tpayaccno:%String,Tchequedate:%String,Tbackreason:%String,Tremark:%String, AccPreRowID:%String,CanRefAmt:%String"/>
+</Query>
+
+<Method name="AccDepDetailExecute">
+<Description>
+d ##class(%ResultSet).RunQuery("web.UDHCAccAddDeposit","AccDepDetail","36220","","","测保保","0000009134","000001036766","")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,AccountID:%String,USERID:%String,FOOTID:%String,PatName,RegNo,CardNo,phone]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+ 	set repid=$I(^CacheTemp)
+ 	set ind=1
+ 	set qHandle=$lb(0,repid,0)
+	if ($g(AccountID)="")&($g(USERID)="")&($g(FOOTID)="")  quit $$$OK
+	s pdsum=0
+	i $G(AccountID)'=""  d
+	.s accid=AccountID
+	.s dsub="0"
+	.f  s dsub=$o(^DHCACD("AccM",accid,"AccPD",dsub)) q:dsub=""  d
+	..k PLIST
+	..q:$d(^DHCACD("AccM",accid,"AccPD",dsub))=10
+	..s ss=^DHCACD("AccM",accid,"AccPD",dsub)
+	..d getdetail
+	..d OutputRow1
+	i ($g(USERID)'="")&($g(FOOTID)>0)  d
+	.s accid="0"
+	.f  s accid=$o(^DHCACDi("AccM",0,"PDFootDR",FOOTID,accid)) q:accid=""  d
+	..s dsub="0"
+	..f  s dsub=$o(^DHCACDi("AccM",0,"PDFootDR",FOOTID,accid,"AccPD",dsub)) q:dsub=""  d
+	...k PLIST
+	...q:$d(^DHCACD("AccM",accid,"AccPD",dsub))=10
+	...s ss=^DHCACD("AccM",accid,"AccPD",dsub)
+	...d getdetail
+	...d OutputRow1
+	i ($g(USERID)'="")&($g(FOOTID)=0)  d
+	.s rtn=##Class(web.UDHCAccPDFootCLS).getUserPDFootLast(USERID)
+    .s pddate=+rtn
+    .f  s pddate=$o(^DHCACDi("AccM",0,"User",USERID,pddate)) q:pddate=""  d
+    ..s accid="0"
+    ..f  s accid=$o(^DHCACDi("AccM",0,"User",USERID,pddate,accid)) q:accid=""  d
+    ...s dsub="0"
+    ...f  s dsub=$o(^DHCACDi("AccM",0,"User",USERID,pddate,accid,"AccPD",dsub)) q:dsub=""  d
+    ....;q:$d(^DHCACD("AccM",accid,"AccPD",dsub))'=1
+    ....q:$p(^DHCACD("AccM",accid,"AccPD",dsub),"^",7)'=""
+    ....k PLIST
+    ....q:$d(^DHCACD("AccM",accid,"AccPD",dsub))=10
+    ....s ss=^DHCACD("AccM",accid,"AccPD",dsub)
+	....d getdetail
+	....d OutputRow1
+	i ind>1  d
+	.f i=1:1:18  d
+	..s PLIST(i)=""
+	.s PLIST(1)="合计"
+	.s PLIST(3)=$j(pdsum,3,2)
+	.d OutputRow1
+	set qHandle=$lb(0,repid,0)
+	quit $$$OK
+OutputRow1
+	set Data=$lb(ind,PLIST(1),PLIST(2),PLIST(3),PLIST(4),PLIST(5),PLIST(6),PLIST(7),PLIST(8),PLIST(9),PLIST(10),PLIST(11),PLIST(12),PLIST(13),PLIST(14),PLIST(15),PLIST(16),PLIST(17),myAccPreRowID,PLIST(18))
+	set ^CacheTemp(repid,ind)=Data
+	set ind=ind+1
+	quit
+getdetail
+	s myAccPreRowID=accid_"||"_dsub
+	s PLIST(1)=##class(websys.Conversions).DateLogicalToHtml($p(ss,"^",3))
+	s PLIST(2)=##class(websys.Conversions).TimeLogicalToHtml($p(ss,"^",4),1)
+	s PLIST(3)=$j($p(ss,"^",2),3,2)
+	s pdsum=pdsum+PLIST(3)
+	s PLIST(4)=$p(ss,"^",1)		;AccPD_Type
+	s myPDType=$p(ss,"^",1)
+	s myPDTypeDesc=""
+	s CanRefAmt=""
+	if myPDType="P"  d
+	.s PLIST(4)="交款"
+	.s CanRefAmt=PLIST(3)
+	.s sub=""  f  s sub=$o(^DHCACDi("AccM",0,"Ref",myAccPreRowID,accid,"AccPD",sub)) q:sub=""  d
+	..s refamt=$p(^DHCACD("AccM",accid,"AccPD",sub),"^",2)
+	..s CanRefAmt=CanRefAmt+refamt
+	;add by FangT 可退金额大于余额时候使可退金额等于余额
+	set Balance=$p(^DHCACD("AccM",accid),"^",8)
+	if CanRefAmt>Balance set CanRefAmt=Balance
+	;add End 2019-01-25
+	if myPDType="R" s PLIST(4)="退款"
+	if myPDType="T" s PLIST(4)="转帐"
+	if myPDType="F" s PLIST(4)="退款" ;F:状态是账户结算时的退款
+	s PLIST(5)=$p(ss,"^",5)
+	i PLIST(5)'=""  s PLIST(5)=$p(^SSU("SSUSR",$p(ss,"^",5)),"^",2)
+	s PLIST(6)=$p(ss,"^",6)
+	s PLIST(7)=$p(ss,"^",7)
+
+	i +PLIST(7)'="0" d
+	.s prtdate=$p($g(^DHCOPInsFoot($p(ss,"^",7))),"^",2)
+	.s prtdate=##class(websys.Conversions).DateLogicalToHtml(prtdate)
+	.s prttime=$p($g(^DHCOPInsFoot($p(ss,"^",7))),"^",7)
+	.s prttime=##class(websys.Conversions).TimeLogicalToHtml(prttime,1)
+	.s PLIST(7)=prtdate_" "_prttime
+	s accPDLeft=$p(ss,"^",8)
+	s PLIST(8)=$fn(accPDLeft,"",2)
+	s PLIST(16)=$p(ss,"^",9)
+	s psub="0"
+	f  s psub=$o(^DHCACD("AccM",accid,"AccPD",dsub,"P",psub)) q:psub=""  s sp=^(psub) d
+	.s PLIST(9)=$p(sp,"^",1)
+	.s myPayModeDR=$p(sp,"^",1)		;APPM_PayMode_DR
+	.i PLIST(9)'=""  s PLIST(9)=$p(^CT("CTPM",myPayModeDR),"^",2)
+	.s PLIST(10)=$p(sp,"^",2)		;APPM_Card_DR
+	.i PLIST(10)'=""  s PLIST(10)=$p(^ARC("CARD",$p(sp,"^",2)),"^",2)
+	.s PLIST(11)=$p(sp,"^",3)		;APPM_CardChequeNo
+	.s PLIST(12)=$p(sp,"^",4)		;APPM_CMBank_DR
+	.i PLIST(12)'=""  s PLIST(12)=$p(^CMC("CMCBM",$p(sp,"^",4)),"^",2)
+	.s PLIST(13)=$p(sp,"^",5)		
+	.s PLIST(14)=$p(sp,"^",7)
+	.s PLIST(15)=$p(sp,"^",8)
+	.i PLIST(15)'=""  s PLIST(15)=##class(websys.Conversions).DateLogicalToHtml($p(sp,"^",8))
+	.s PLIST(17)=$p(sp,"^",11)
+	s PLIST(18)=CanRefAmt
+	q
+]]></Implementation>
+</Method>
+
+<Method name="GetBuildPDNo">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PreType:%String="",UserDR:%String="",ExpStr:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (PreType, UserDR, ExpStr)
+	
+	s myBillNo=""
+	s myPDFlag=+$g(^DHCACDP("ParaSet","PDAutoNo"))
+	
+	s myUseCode=$p(^SSU("SSUSR",UserDR),"^",1)
+	
+	i (myPDFlag=1) d
+	.s myBillNo=##class(web.UDHCAccPreDeposit).GetMaxBillNo(PreType, myUseCode)
+	
+	;如果使用发票号码
+	;GetCurrentRecNo
+	
+	q myBillNo
+]]></Implementation>
+</Method>
+
+<Method name="ReadPDDetailsClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>ReadPDDetailsExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+ 	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="ReadPreDepositSum">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>AccRowID:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	;获取上缴预交金的总额
+	;^DHCACD("AccM",{DHC_AccManager.AccM_RowID},"AccPD",{AccPD_Sub})
+	;w ##class(web.UDHCAccAddDeposit).ReadPreDepositSum("1")
+	q:(AccRowID="") 0
+	
+	s myPDSum=0
+	s myPDSub=""
+	f  s myPDSub=$o(^DHCACD("AccM",AccRowID,"AccPD", myPDSub)) q:(myPDSub="")  d
+	.q:($d(^DHCACD("AccM",AccRowID,"AccPD", myPDSub))=10)
+	.s myPDNum=$p(^DHCACD("AccM",AccRowID,"AccPD", myPDSub), "^", 2)
+	.s myPDSum=+myPDSum+myPDNum
+	
+	q myPDSum
+]]></Implementation>
+</Method>
+
+<Method name="ReadPDDetailsExecute">
+<Description>
+制作一个多条件的预交金查询界面
+d ##class(%ResultSet).RunQuery("web.UDHCAccAddDeposit","ReadPDDetails","020000002122","","020000002122","65038","65038","","")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,AccCardNO:%String,UserCode:%String,PAPMNo:%String,StDate:%String,EndDate:%String,UserCodeA:%String,PDDFlag:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+ 	set repid=$I(^CacheTemp)
+	set ind=1
+	set qHandle=$lb(0,repid,0)
+	s ^tempwml("ReadPDDetails")=$lb(AccCardNO , UserCode , PAPMNo , StDate , EndDate , UserCodeA , PDDFlag)
+	if ((StDate="")||(EndDate=""))  quit $$$OK
+	s ^tm("ddd2211")=$lb(AccCardNO , UserCode , PAPMNo , StDate , EndDate , UserCodeA , PDDFlag)	
+	s StDate=##class(websys.Conversions).DateHtmlToLogical(StDate)
+	s EndDate=##class(websys.Conversions).DateHtmlToLogical(EndDate)
+	i UserCode="" s UserCodeA=""
+	s pdsum=0
+	s myIdx=0
+	s curDate=##class(websys.Conversions).DateLogicalToHtml(+$h)
+	;创建一个TMP
+	k ^TMPRPDD("TPRD",$j)
+    s pddate=StDate-1
+    
+    i PAPMNo'="" d
+    .s PAPMNo=##class(web.UDHCJFBaseCommon).regnocon(PAPMNo)
+
+    f pddate=EndDate:-1:StDate  d
+    .s accid=0
+    .f  s accid=$o(^DHCACDi("AccM",0,"APDDate",pddate,accid)) q:accid=""  d
+    ..s dsub=0
+    ..f  s dsub=$o(^DHCACDi("AccM",0,"APDDate",pddate,accid,"AccPD",dsub)) q:dsub=""  d
+    ...q:($d(^DHCACD("AccM",accid,"AccPD",dsub))=10)
+    ...s myPreTime=$p(^DHCACD("AccM",accid,"AccPD",dsub),"^",4)
+    ...s myPDRowID=accid_"||"_dsub
+    ...s ^TMPRPDD("TPRD",$j,pddate,myPreTime,myPDRowID)=myPDRowID
+
+    s myIdx=0
+    s pddate=""
+    f  s pddate=$o(^TMPRPDD("TPRD",$j,pddate),-1) q:(pddate="")||(pddate=0)  d
+    .s myTime=""
+    .f  s myTime=$o(^TMPRPDD("TPRD",$j,pddate, myTime),-1) q:(+$g(myTime)=0)  d
+    ..s myPDRowID=0
+    ..f  s myPDRowID=$o(^TMPRPDD("TPRD",$j,pddate, myTime, myPDRowID)) q:(myPDRowID="")  d
+    ...s accid=+myPDRowID
+    ...s dsub=$p(myPDRowID,"||",2)
+    ...q:($d(^DHCACD("AccM",accid,"AccPD",dsub))=10)
+    ...s myFUserDR=$p(^DHCACD("AccM",accid,"AccPD",dsub),"^",13)
+    ...s myPreTime=$p(^DHCACD("AccM",accid,"AccPD",dsub),"^",4)
+    ...q:((pddate>EndDate))
+    ...s myUserDR=$p(^DHCACD("AccM",accid,"AccPD",dsub),"^",5)
+    ...s myUCode=$p($g(^SSU("SSUSR",myUserDR)),"^",1)
+    ...//q:((UserCode'="")&&(UserCode'=myUCode))
+    ...q:((UserCodeA'="")&&(UserCodeA'=myUserDR))
+    ...k PLIST
+    ...q:$d(^DHCACD("AccM",accid,"AccPD",dsub))=10
+    ...s ss=^DHCACD("AccM",accid,"AccPD",dsub)
+    ...s myPDFlag=$p(ss,"^",1)
+    ...;q:(PDDFlag'="")&&(PDDFlag'=myPDFlag)
+    ...s accamt=+$p(ss,"^",2)
+    ...q:(PDDFlag="P")&&(accamt<0)
+    ...q:(PDDFlag="R")&&(accamt>0)
+    ...s myPAPMDR=$p($g(^DHCACD("AccM",accid)),"^",2)		//AccM_PAPMI_DR
+    ...s myPAPMNo=$p($g(^DHCACD("AccM",accid)),"^",3)		//AccM_PAPMINo
+    ...//s myCardNo=$p($g(^DHCACD("AccM",accid)),"^",4)		//AccM_CardNo
+    ...s myCardNo=##class(web.UDHCJFBaseCommon).GetCardNoByAccMRowId(accid)
+    ...s myPAName=$p($g(^PAPER(myPAPMDR,"ALL")),"^",1)
+    ...q:((AccCardNO'="")&&(AccCardNO'=myCardNo))
+    ...q:((PAPMNo'="")&&(PAPMNo'=myPAPMNo))
+	...s myIdx=+myIdx+1
+	...d getdetailRD
+	...d OutputRowRD
+	
+	d ValidateRD
+
+	k ^TMPRPDD("TPRD",$j)
+	
+	i ind>1  d
+	.;f i=1:1:17  d
+	.;.s PLIST(i)=""
+	.s PLIST(1)="合计"
+	.s PLIST(3)=$j(pdsum,3,2)
+	.d OutputRowRD
+	Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+	
+OutputRowRD
+	set Data=$lb(myIdx,PLIST(1),PLIST(2),PLIST(3),PLIST(4),PLIST(5),PLIST(6),PLIST(7),PLIST(8),PLIST(9),PLIST(10),PLIST(11),PLIST(12),PLIST(13),PLIST(14),PLIST(15),PLIST(16),PLIST(17), myPAPMNo,myCardNo, myPAName, myPDType,curDate)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+	quit
+ValidateRD
+	s (myIdx,PLIST(1),PLIST(2),PLIST(3),PLIST(4),PLIST(5),PLIST(6),PLIST(7),PLIST(8),PLIST(9),PLIST(10),PLIST(11),PLIST(12),PLIST(13),PLIST(14),PLIST(15),PLIST(16),PLIST(17), myPAPMNo,myCardNo, myPAName)=""
+	quit
+getdetailRD
+	s PLIST(1)=##class(websys.Conversions).DateLogicalToHtml($p(ss,"^",3))		;AccPD_PreDate
+	s PLIST(2)=##class(websys.Conversions).TimeLogicalToHtml($p(ss,"^",4),1)		;AccPD_PreTime
+	s PLIST(3)=$j($p(ss,"^",2),3,2)
+	s pdsum=pdsum+PLIST(3)
+	s PLIST(4)=$p(ss,"^",1)		; AccPD_Type
+	s myPDType=$p(ss,"^",1)
+	s myPDTypeDesc=""
+	if myPDType="P" s PLIST(4)="交款"
+	if myPDType="R" s PLIST(4)="退款"
+	if myPDType="T" s PLIST(4)="转帐"
+	if myPDType="F" s PLIST(4)="账户结算退款"
+	s PLIST(5)=$p(ss,"^",5)				;AccPD_User_DR
+	i PLIST(5)'=""  s PLIST(5)=$p(^SSU("SSUSR",$p(ss,"^",5)),"^",2)
+	s PLIST(6)=$p(ss,"^",6)
+	s PLIST(7)=$p(ss,"^",7)				;
+	s myFootDate=$p(ss,"^",11)			;AccPD_FootDate
+	s myFootTime=$p(ss,"^",12)			;AccPD_FootTime
+	i ((myFootDate'="")&(myFootTime'=""))  d
+	.s myFootDate=##class(websys.Conversions).DateLogicalToHtml(myFootDate)
+	.s myFootTime=##class(websys.Conversions).TimeLogicalToHtml(myFootTime,1)
+	.s PLIST(7)=myFootDate_" "_myFootTime
+	s accPDLeft=$p(ss,"^",8)
+	s PLIST(8)=$fn(accPDLeft,"",2)
+	s PLIST(16)=$p(ss,"^",9)
+	s psub="0"
+	f  s psub=$o(^DHCACD("AccM",accid,"AccPD",dsub,"P",psub)) q:psub=""  s sp=^(psub) d
+	.s PLIST(9)=$p(sp,"^",1)		
+	.s myPayModeDR=$p(sp,"^",1)		;APPM_PayMode_DR
+	.i PLIST(9)'=""  s PLIST(9)=$p(^CT("CTPM",$p(sp,"^",1)),"^",2)
+	.if myPayModeDR=46 d
+	..s myPayModeSMF=##class(DHCBILL.ScanPay.Adapter.TLSAdapter).GetPaymodedetail(46,"PRE",myPDRowID)
+	..if myPayModeSMF="alipay" S PLIST(9)="支付宝"
+	..if myPayModeSMF="wxpay" S PLIST(9)="微信"      //扫码付区分微信支付宝 add by mn 2019-01-27
+	.s PLIST(10)=$p(sp,"^",2)		;APPM_Card_DR
+	.i PLIST(10)'=""  s PLIST(10)=$p(^ARC("CARD",$p(sp,"^",2)),"^",2)
+	.s PLIST(11)=$p(sp,"^",3)		;APPM_CardChequeNo
+	.s PLIST(12)=$p(sp,"^",4)		;APPM_CMBank_DR
+	.i PLIST(12)'=""  s PLIST(12)=$p(^CMC("CMCBM",$p(sp,"^",4)),"^",2)
+	.s PLIST(13)=$p(sp,"^",5)		
+	.s PLIST(14)=$p(sp,"^",7)
+	.s PLIST(15)=$p(sp,"^",8)
+	.i PLIST(15)'=""  s PLIST(15)=##class(websys.Conversions).DateLogicalToHtml($p(sp,"^",8))
+	.s PLIST(17)=$p(sp,"^",11)
+	.;集中打印返回的预交金以医保基金支付的形式冲到账户里，存的是集中打印的的id   add zhli  17.11.28
+	.i $p(sp,"^",1)=$o(^CT("CTPM",0,"Desc","医保基金支付","")) s PLIST(17)="导航号:"_$p(sp,"^",11)
+	q
+]]></Implementation>
+</Method>
+
+<Method name="SetPreDepositList">
+<Description>
+w ##class(web.UDHCAccAddDeposit).SetPreDepositList("1")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>AccRowID:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	;^DHCACD("AccM",{DHC_AccManager.AccM_RowID},"AccPD",{AccPD_Sub})
+	q:(AccRowID="") 0
+	
+	;用于患者的自助查询；提供一个按照时间的循序排序
+	;^TMPAccPat("Acc",$j,Date,Time)=rowID
+	s myPDSum=0
+	s myPDSub=0
+	f  s myPDSub=$o(^DHCACD("AccM",AccRowID,"AccPD", myPDSub)) q:(myPDSub="")  d
+	.q:($d(^DHCACD("AccM",AccRowID,"AccPD", myPDSub))=10)
+	.;序号  交易时间  交易类型  金额  操作员  单据号 余额
+	.s myPDDate=$p(^DHCACD("AccM",AccRowID,"AccPD", myPDSub),"^",3)
+	.s myPDTime=$p(^DHCACD("AccM",AccRowID,"AccPD", myPDSub),"^",4)
+	.s myTMPPDDate=##class(websys.Conversions).DateLogicalToHtml(myPDDate)
+	.s myTMPPDTime=##class(websys.Conversions).TimeLogicalToHtml(myPDTime,1)
+	.s myPreDate=myTMPPDDate_" "_myTMPPDTime
+	.s myPDType=$p(^DHCACD("AccM",AccRowID,"AccPD", myPDSub),"^",1)
+	.s myPDTypeDesc=""
+	.i myPDType="P" d
+	..s myPDTypeDesc="缴款"
+	.i myPDType="R" d
+	..s myPDTypeDesc="退款"
+	.i myPDType="F" d
+	..s myPDTypeDesc="结算"
+	.s myPDSum=$p(^DHCACD("AccM",AccRowID,"AccPD", myPDSub),"^",2)
+	.s myUserDesc=""
+	.s myUserDR=$p(^DHCACD("AccM",AccRowID,"AccPD", myPDSub),"^",5)
+	.s:(myUserDR'="") myUserDesc=$p(^SSU("SSUSR",myUserDR),"^",2)
+	.s myBillNum=$p(^DHCACD("AccM",AccRowID,"AccPD", myPDSub),"^",6)
+	.s myPDLeft=$p(^DHCACD("AccM",AccRowID,"AccPD", myPDSub),"^",8)
+	.;增加一个子节点，防止同一时间；,DHCWeb.OPCommon.js
+	.s mySub=""
+	.s mySub=$o(^TMPAccPat("Acc",$j,myPDDate,myPDTime,mySub),-1)
+	.s mySub=+$g(mySub)+1
+	.s ^TMPAccPat("Acc",$j,myPDDate,myPDTime,mySub)=myPreDate_"^"_myPDTypeDesc_"^"_myPDSum_"^"_myUserDesc_"^"_myBillNum_"^"_myPDLeft_"^PD^"_AccRowID_"||"_myPDSub
+	
+	q 0
+]]></Implementation>
+</Method>
+
+<Method name="ReadPDDetailsFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>ReadPDDetailsExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+ 	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+	//
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {				// fetch row
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	// Save QHandle
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="ReadPDStateClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>ReadPDStateExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+ 	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="UnFootPDDetailsClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>UnFootPDDetailsExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+ 	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="ReadPDStateExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,UserDR:%String,StDate:%String,EndDate:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	New repid, index
+	Set repid=$I(^CacheTemp)
+	;
+	Set qHandle=$lb(0,repid,0)
+	
+	If $g(ind)="" Set ind=1
+	i ((StDate="")&&(EndDate="")){
+		Quit $$$OK
+	}
+	
+	;d ##class(%ResultSet).RunQuery("web.UDHCAccAddDeposit","ReadPDState","",+$h,+$h)
+	
+	s pdsum=0
+	s myIdx=0
+	
+	;创建一个TMP
+	k ^TMPRPDD("TPRD",$j)
+    s pddate=StDate-1
+    
+	;^DHCACDi("AccM",0,"APDDate",{AccPD_PreDate},
+	;{DHC_AccManager.AccM_RowID},"AccPD",{AccPD_Sub})
+    f pddate=StDate:1:EndDate  d
+    .s accid=0
+    .f  s accid=$o(^DHCACDi("AccM",0,"APDDate",pddate,accid)) q:accid=""  d
+    ..s pdsub=0
+    ..f  s pdsub=$o(^DHCACDi("AccM",0,"APDDate",pddate,accid,"AccPD",pdsub)) q:pdsub=""  d
+    ...q:($d(^DHCACD("AccM",accid,"AccPD",pdsub))=10)
+    ...s myPreTime=$p(^DHCACD("AccM",accid,"AccPD",pdsub),"^",4)
+    ...s myPDRowID=accid_"||"_pdsub
+    ...s pdamt=$p(^DHCACD("AccM",accid,"AccPD",pdsub),"^",2)
+    ...s myUserDR=$p(^DHCACD("AccM",accid,"AccPD",pdsub),"^",5)
+	...s myOperName=""
+	...s myUserCode=""
+	...i (myUserDR'="") d
+	....s myOperName=$p(^SSU("SSUSR",myUserDR),"^",2)
+	....s myUserCode=$p(^SSU("SSUSR",myUserDR),"^",1)
+    ...s ^TMPRPDD("TPRD",$j, myUserDR)=myOperName
+    ...i pdamt>=0 d
+    ....s ^TMPRPDD("TPRD",$j, myUserDR,"PDNum")=$g(^TMPRPDD("TPRD",$j, myUserDR,"PDNum"))+1
+    ....s ^TMPRPDD("TPRD",$j, myUserDR,"PDSum")=$g(^TMPRPDD("TPRD",$j, myUserDR,"PDSum"))+pdamt
+    ...e  d
+    ....s ^TMPRPDD("TPRD",$j, myUserDR,"RNum")=$g(^TMPRPDD("TPRD",$j, myUserDR,"RNum"))+1
+    ....s ^TMPRPDD("TPRD",$j, myUserDR,"RSum")=$g(^TMPRPDD("TPRD",$j, myUserDR,"RSum"))+pdamt
+    ...s ^TMPRPDD("TPRD",$j, myUserDR,"T")=$g(^TMPRPDD("TPRD",$j, myUserDR,"T"))+pdamt
+	
+	d ValidateRDPS
+	
+	s myUserDR=0
+	;收预交金
+	s myTPDNum=0
+	s myTPDSum=0
+	;退预交金
+	s myTRNum=0
+	s myTRSum=0
+	s myTSum=0
+	f  s myUserDR=$o(^TMPRPDD("TPRD",$j, myUserDR))  q:(myUserDR="")  d
+	.s myUserName=$g(^TMPRPDD("TPRD",$j, myUserDR))
+	.s myGetPDNum=+$g(^TMPRPDD("TPRD",$j, myUserDR,"PDNum"))
+	.s myTPDNum=+myTPDNum+myGetPDNum
+	.s myGetPDSum=+$g(^TMPRPDD("TPRD",$j, myUserDR,"PDSum"))
+	.s myTPDSum=+myTPDSum+myGetPDSum
+	.s myGetPDSum=$fn(myGetPDSum,"",2)
+	.s myRefPDNum=+$g(^TMPRPDD("TPRD",$j, myUserDR,"RNum"))
+	.s myTRNum=myTRNum+myRefPDNum
+	.s myRefPDSum=+$g(^TMPRPDD("TPRD",$j, myUserDR,"RSum"))
+	.s myTRSum=+myTRSum+myRefPDSum
+	.s myRefPDSum=$fn(myRefPDSum,"",2)
+	.s mySum=+$g(^TMPRPDD("TPRD",$j, myUserDR,"T"))
+	.s myTSum=+myTSum+mySum
+	.s mySum=$fn(mySum,"",2)
+	.s myIdx=myIdx+1
+	.d OutputRowRDPS
+	
+	;合计
+	
+	d ValidateRDPS
+	
+	s myUserName="合计"
+	s myGetPDNum=myTPDNum
+	s myGetPDSum=$fn(myTPDSum,"",2)
+	s myRefPDNum=myTRNum
+	s myRefPDSum=$fn(myTRSum,"",2)
+	s mySum=$fn(myTSum,"",2)
+	
+	d OutputRowRDPS
+	
+	k ^TMPRPDD("TPRD",$j)
+	
+	Quit $$$OK
+OutputRowRDPS
+	set Data=$lb(myIdx,myUserName, myGetPDNum, myGetPDSum, myRefPDNum, myRefPDSum, mySum,myUserDR)
+	Set ^CacheTemp(repid,ind)=Data
+	Set ind=ind+1
+	quit
+ValidateRDPS
+	s (myIdx,myUserName, myGetPDNum, myGetPDSum, myRefPDNum, myRefPDSum, mySum)=""
+	quit
+]]></Implementation>
+</Method>
+
+<Method name="ReadPDStateFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>ReadPDStateExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+	Set repid=$LIST(qHandle,2)
+	Set ind=$LIST(qHandle,3)
+	Set ind=$o(^CacheTemp(repid,ind))
+	If ind="" {				
+		Set AtEnd=1
+		Set Row=""
+	}
+	Else      {				
+		Set Row=^CacheTemp(repid,ind)
+	}
+	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="UnFootPDDetailsExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,USERID:%String,StDate:%String,StTime:%String,EndDate:%String,EndTime:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+ 	Set repid=$I(^CacheTemp)
+	//s ^PPP=Regno_"^"_Name_"^"_StDate_"^"_EndDate_"^"_locid_"^"_typeid_"^"_getbilled_"^"_getpaid_"^"_gettobill
+	;d ##class(%ResultSet).RunQuery("web.UDHCAccAddDeposit","UnFootPDDetails","23310",+$h,"55749",+$h,$p($h,",",2))
+	;所有的都是倒序排列
+	;对于结算和未结算都是按照日期时间，其他的判断都加到界面上解决
+	
+	if ($g(USERID)="") Set qHandle=$lb(0,repid,0) quit $$$OK
+ 	
+ 	If $g(ind)="" Set ind=1
+	s pdsum=0
+	s myIdx=0
+	
+	i ($g(USERID)'="")  d
+	.;^DHCACDi("AccM",0,"User",{AccPD_User_DR},{AccPD_PreDate},
+	.;{DHC_AccManager.AccM_RowID},"AccPD",{AccPD_Sub})
+    .s pddate=EndDate+1
+    .f  s pddate=$o(^DHCACDi("AccM",0,"User",USERID,pddate),-1) q:(pddate="")||(pddate<StDate)  d
+    ..s accid=""
+    ..f  s accid=$o(^DHCACDi("AccM",0,"User",USERID,pddate,accid),-1) q:accid=""  d
+    ...s dsub=0
+    ...f  s dsub=$o(^DHCACDi("AccM",0,"User",USERID,pddate,accid,"AccPD",dsub)) q:dsub=""  d
+    ....q:($d(^DHCACD("AccM",accid,"AccPD",dsub))=10)
+    ....s myFUserDR=$p(^DHCACD("AccM",accid,"AccPD",dsub),"^",13)
+    ....s myPreTime=$p(^DHCACD("AccM",accid,"AccPD",dsub),"^",4)
+    ....;q:(myFUserDR'="")
+    ....q:((StDate'="")&&(pddate=StDate)&&(myPreTime<StTime))
+    ....q:((EndDate'="")&&(pddate=EndDate)&&(myPreTime>EndTime))
+    ....
+    ....k PLIST
+    ....q:$d(^DHCACD("AccM",accid,"AccPD",dsub))=10
+    ....s ss=^DHCACD("AccM",accid,"AccPD",dsub)
+    ....s myPAPMDR=$p($g(^DHCACD("AccM",accid)),"^",2)		;AccM_PAPMI_DR
+    ....s myPAPMNo=$p($g(^DHCACD("AccM",accid)),"^",3)		;AccM_PAPMINo
+    ....s myCardNo=$p($g(^DHCACD("AccM",accid)),"^",4)		;AccM_CardNo
+    ....s myPAName=$p($g(^PAPER(myPAPMDR,"ALL")),"^",1)
+	....s myIdx=+myIdx+1
+	....d getdetailUF
+	....d OutputRowUF
+	
+	d ValidateUF
+	i ind>1  d
+	.f i=1:1:17  d
+	..s PLIST(i)=""
+	.s PLIST(1)="合计"
+	.s PLIST(3)=$j(pdsum,3,2)
+	.d OutputRowUF
+	Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+	////////////////////////////////////
+ 	;myPAPMNo,myCardNo, myPAName
+ 
+OutputRowUF
+	set Data=$lb(myIdx,PLIST(1),PLIST(2),PLIST(3),PLIST(4),PLIST(5),PLIST(6),PLIST(7),PLIST(8),PLIST(9),PLIST(10),PLIST(11),PLIST(12),PLIST(13),PLIST(14),PLIST(15),PLIST(16),PLIST(17), myPAPMNo,myCardNo, myPAName)
+	
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	
+ 	Set ind=ind+1
+	quit
+ValidateUF
+	s (myIdx,PLIST(1),PLIST(2),PLIST(3),PLIST(4),PLIST(5),PLIST(6),PLIST(7),PLIST(8),PLIST(9),PLIST(10),PLIST(11),PLIST(12),PLIST(13),PLIST(14),PLIST(15),PLIST(16),PLIST(17), myPAPMNo,myCardNo, myPAName)=""
+	quit
+getdetailUF
+	s PLIST(1)=$zd($p(ss,"^",3),4)
+	s PLIST(2)=$zt($p(ss,"^",4))
+	s PLIST(3)=$j($p(ss,"^",2),3,2)
+	s pdsum=pdsum+PLIST(3)
+	s PLIST(4)=$p(ss,"^",1)		; AccPD_Type
+	s myPDType=$p(ss,"^",1)
+	s myPDTypeDesc=""
+	if myPDType="P" s PLIST(4)="交款"
+	if myPDType="R" s PLIST(4)="退款"
+	if myPDType="T" s PLIST(4)="转帐"
+	s PLIST(5)=$p(ss,"^",5)
+	i PLIST(5)'=""  s PLIST(5)=$p(^SSU("SSUSR",$p(ss,"^",5)),"^",2)
+	s PLIST(6)=$p(ss,"^",6)
+	s PLIST(7)=$p(ss,"^",7)
+	i PLIST(7)'=""  s PLIST(7)=$zd($p(^DHCACD("AccPDFL",$p(ss,"^",7)),"^",1),4)_" "_$zt($p(^DHCACD("AccPDFL",$p(ss,"^",7)),"^",2))
+	s PLIST(8)=$p(ss,"^",8)
+	s PLIST(16)=$p(ss,"^",9)
+	s psub="0"
+	f  s psub=$o(^DHCACD("AccM",accid,"AccPD",dsub,"P",psub)) q:psub=""  s sp=^(psub) d
+	.s PLIST(9)=$p(sp,"^",1)		
+	.s myPayModeDR=$p(sp,"^",1)		;APPM_PayMode_DR
+	.i PLIST(9)'=""  s PLIST(9)=$p(^CT("CTPM",$p(sp,"^",1)),"^",2)
+	.s PLIST(10)=$p(sp,"^",2)		;APPM_Card_DR
+	.i PLIST(10)'=""  s PLIST(10)=$p(^ARC("CARD",$p(sp,"^",2)),"^",2)
+	.s PLIST(11)=$p(sp,"^",3)		;APPM_CardChequeNo
+	.s PLIST(12)=$p(sp,"^",4)		;APPM_CMBank_DR
+	.i PLIST(12)'=""  s PLIST(12)=$p(^CMC("CMCBM",$p(sp,"^",4)),"^",2)
+	.s PLIST(13)=$p(sp,"^",5)		
+	.s PLIST(14)=$p(sp,"^",7)
+	.s PLIST(15)=$p(sp,"^",8)
+	.i PLIST(15)'=""  s PLIST(15)=$zd($p(sp,"^",8),4)
+	.s PLIST(17)=$p(sp,"^",11)
+	q
+]]></Implementation>
+</Method>
+
+<Query name="paymodelookup">
+<Type>%SQLQuery</Type>
+<SqlQuery><![CDATA[select CTPM_Desc,CTPM_rowid from  CT_PayMode where CTPM_Code<>'CPP']]></SqlQuery>
+<Parameter name="ROWSPEC" value="paymode:%String,paymodeid:%String"/>
+</Query>
+
+<Method name="UnFootPDDetailsFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>UnFootPDDetailsExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+ 	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+	//
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {				// fetch row
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	// Save QHandle
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="ReadPDDetails">
+<Description>
+利用各种方式查询预交金</Description>
+<Type>%Query</Type>
+<FormalSpec>AccCardNO:%String,UserCode:%String,PAPMNo:%String,StDate:%String,EndDate:%String,UserCodeA:%String,PDDFlag:%String</FormalSpec>
+<SqlProc>1</SqlProc>
+<Parameter name="ROWSPEC" value="LNO:%String,Tdate:%String,Ttime:%String,Tamt:%String,Ttype:%String,Tuser:%String,Treceiptsno:%String,Tjkdate:%String,Taccleft:%String,Tpaymode:%String,Tbankcardtype:%String,Tchequeno:%String,Tbank:%String,Tcompany:%String,Tpayaccno:%String,Tchequedate:%String,Tbackreason:%String,Tremark:%String,PAPMNo:%String,CardNo:%String,PAName:%String,PDType:%String,curDate"/>
+</Query>
+
+<Query name="ReadPDState">
+<Description>
+获取预交金汇总信息</Description>
+<Type>%Query</Type>
+<FormalSpec>UserDR:%String,StDate:%String,EndDate:%String</FormalSpec>
+<Parameter name="ROWSPEC" value="No:%String,TUserName:%String,TGetPDNum:%String,TGetPDSum:%String,TRefPDNum:%String,TRefPDSum:%String,TSum:%String"/>
+</Query>
+
+<Query name="bankcardtype">
+<Type>%SQLQuery</Type>
+<SqlQuery>select CARD_Desc,CARD_rowid from  ARC_BankCardType</SqlQuery>
+<Parameter name="ROWSPEC" value="bankcardtype:%String,bankcardtypeid:%String"/>
+</Query>
+
+<Query name="UnFootPDDetails">
+<Description>
+未结算的预交金明细</Description>
+<Type>%Query</Type>
+<FormalSpec>USERID:%String,StDate:%String,StTime:%String,EndDate:%String,EndTime:%String</FormalSpec>
+<Parameter name="ROWSPEC" value="LNO:%String,Tdate:%String,Ttime:%String,Tamt:%String,Ttype:%String,Tuser:%String,Treceiptsno:%String,Tjkdate:%String,Taccleft:%String,Tpaymode:%String,Tbankcardtype:%String,Tchequeno:%String,Tbank:%String,Tcompany:%String,Tpayaccno:%String,Tchequedate:%String,Tbackreason:%String,Tremark:%String,PAPMNo:%String,CardNo:%String, PAName:%String"/>
+</Query>
+
+<Query name="banklookup">
+<Type>%SQLQuery</Type>
+<SqlQuery>select CMCBM_Desc,CMCBM_rowid from  CMC_BankMas</SqlQuery>
+<Parameter name="ROWSPEC" value="bank:%String,bankid:%String"/>
+</Query>
+
+<Method name="UpdateReceiptNO">
+<Description>
+Creator: ZhYW
+CreatDate: 2016-12-16
+Description: 更新门诊预交金票据号
+Input:
+Output:
+Debug: </Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>userId:%String,rcpno:%String,receiptType:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	new (userId,rcpno, receiptType)
+	set myrtn=..GetCurrentRecNo(userId, receiptType)
+	set rtn=$p(myrtn,"^",1)
+	quit:(rtn'="0") myrtn
+	set startno=$p(myrtn,"^",2)
+	set endno=$p(myrtn,"^",3)
+	set rowid=$p(myrtn,"^",5)
+	quit:(rowid="") myrtn
+	
+	set len=$l(endno)
+	if ($l(rcpno)<len) do
+	.set prelen=len-$l(rcpno)
+	.for i=1:1:prelen set rcpno="0"_rcpno
+	
+	set curlen=$l(rcpno)
+	quit:(len'=curlen)||(+rcpno<+startno)||(+(rcpno)>+(endno+1)) -202
+	
+	if (+rcpno>+endno) do              //如果是最后一张领取的发票??标记为已用完
+	.set rtn=..InvToFinal(rowid,rcpno,userId,receiptType)
+	else  do
+	.&SQL(UPDATE DHC_INVOICE SET inv_lastnum=:rcpno WHERE inv_rowid=:rowid)
+	.set rtn=SQLCODE
+	
+	quit rtn
+]]></Implementation>
+</Method>
+
+<Query name="FindAccHandInfo">
+<Description>
+预交金结账信息查询
+入参:开始时间(必填),结束时间(必填),收费员(非必填),院区指针(非必填,有多个院区时应填)
+返回值:公司代码,年度,预交金号,登记号,交款日期,支付方式编码,收费金额,收费员姓名,患者性质,单位编号,服务类型,业务状态,系统日期,系统时间,数据状态
+d ##class(%ResultSet).RunQuery("web.UDHCAccAddDeposit","FindAccHandInfo","11/12/2018","11/12/2018","","")</Description>
+<Type>%Query</Type>
+<FormalSpec>StDate:%String,EndDate:%String,Guser:%String,HospDr:%String</FormalSpec>
+<SqlName>ZTFIYJJA01</SqlName>
+<SqlProc>1</SqlProc>
+<Parameter name="ROWSPEC" value="BUKRS:%String,AccYear:%String,AccNo:%String,PatNo:%String,AddDate:%String,PayModeCode:%String,AddAmt:%String,AddUserName:%String,ZHZXZ:%String,ZKUNNR:%String,ZFWLX:%String,AddFlag:%String,HisDate:%String,HisTime:%String,ZSJZT:%String"/>
+</Query>
+
+<Method name="FindAccHandInfoExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,StDate:%String,EndDate:%String,Guser:%String,HospDr:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    Set repid=$I(^CacheTemp)
+    Set ind=1
+    s ^tmpxhm(123)=StDate_"^"_EndDate
+    If StDate="" Set qHandle=$lb(0,repid,0) Quit $$$OK
+    If EndDate="" Set qHandle=$lb(0,repid,0) Quit $$$OK
+    s:StDate=$c(0) StDate=+$h-1
+    s:EndDate=$c(0) EndDate=+$h-1
+    Set StDate=##class(websys.Conversions).DateHtmlToLogical(StDate)
+    Set EndDate=##class(websys.Conversions).DateHtmlToLogical(EndDate)
+    Set BUKRS="H040",ZHZXZ="01",ZKUNNR="",ZFWLX="01",ZSJZT=""	;公司代码,患者性质,单位编号,服务类型,数据状态 合肥京东方项目望海接口写死
+    b ;1
+    For pdate=StDate:1:EndDate do
+    .;b ;2
+    .Set FootID=""
+    .For  Set FootID=$o(^DHCOPInsFootI(0,"Date",pdate,FootID)) quit:FootID=""  do
+    ..Set AccRowid=""
+    ..For  Set AccRowid=$o(^DHCACDi("AccM",0,"PDFootDR",FootID,AccRowid)) quit:AccRowid=""  do
+    ...Set sub=0
+    ...For  Set sub=$o(^DHCACDi("AccM",0,"PDFootDR",FootID,AccRowid,"AccPD",sub)) quit:sub=""  do
+    ....Set AddUser=$p(^DHCACD("AccM",AccRowid,"AccPD",sub),"^",5)
+    ....Set AddUserName=$p(^SSU("SSUSR",AddUser),"^",2)
+    ....Set AddDate=$p(^DHCACD("AccM",AccRowid,"AccPD",sub),"^",3)
+    ....Set AccDate=$zd(AddDate,3)	;YYYY-MM-DD
+    ....Set AccYear=$p(AccDate,"-",1)
+    ....Set AddDate=$zd(AddDate,8)	;YYYYMMDD格式
+    ....Set HosptialID=$p(^DHCACD("AccM",AccRowid,"AccPD",sub),"^",15)
+    ....quit:(Guser'="")&&(AddUser'=Guser)&&(Guser'=$c(0))
+    ....quit:(HospDr'="")&&(HospDr'=HosptialID)&&(HospDr'=$c(0))
+    ....Set AccType=$p(^DHCACD("AccM",AccRowid,"AccPD",sub),"^",1)
+    ....Set AddFlag=""
+    ....If AccType="P" Set AddFlag="01"
+    ....If AccType="R" Set AddFlag="02"
+    ....Set AddAmt=$p(^DHCACD("AccM",AccRowid,"AccPD",sub),"^",2)
+    ....s Oldaccid=""
+    ....i AddAmt<0  d
+    .....s ZSJZT="02"
+    .....s AddAmt=0-AddAmt
+    .....s Oldaccid=$p(^DHCACD("AccM",AccRowid,"AccPD",sub),"^",17)
+    .....e  s ZSJZT="01"
+    ....;b ;232
+    ....If (AddAmt>0) do
+    .....Set PayModeDr=$p(^DHCACD("AccM",AccRowid,"AccPD",sub,"P",1),"^",1)
+    .....Set PayModeCode=$p(^CT("CTPM",PayModeDr),"^",1)
+    .....//add by xhm:高悦说用中文
+    .....Set PayModeDesc=$p(^CT("CTPM",PayModeDr),"^",2)
+    .....;b //add by xhm 增加扫码付支付方式传明细
+    .....s paymodedetail=""
+    .....i (PayModeDr=46)&(Oldaccid="") s paymodedetail=##class(DHCBILL.ScanPay.Adapter.TLSAdapter).GetPaymodedetail(PayModeDr,"PRE",AccRowid_"||"_sub)
+    .....//add bu xhm 因为表里没存退标志
+    .....i (PayModeDr=46)&(Oldaccid'="") s paymodedetail=##class(DHCBILL.ScanPay.Adapter.TLSAdapter).GetPaymodedetail(PayModeDr,"PRE",Oldaccid)
+    .....b ;22
+    .....i paymodedetail'=""  d
+    ......s:paymodedetail="wxpay" PayModeDesc="微信"
+    ......s:paymodedetail="alipay" PayModeDesc="支付宝"
+    
+    .....Set AccNo=$p(^DHCACD("AccM",AccRowid,"AccPD",sub),"^",6)
+    .....Set PatNo=$p(^DHCACD("AccM",AccRowid),"^",3)
+    .....Set HisDate=$zd(+$h,8)
+    .....Set HisTime=$zt($p($h,",",2),1)
+    .....Set HisTime=$tr(HisTime,":","")
+    .....Do OutputAccHandInfo
+    Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+OutputAccHandInfo
+	set Data=$lb(BUKRS,AccYear,AccNo,PatNo,AddDate,PayModeDesc,AddAmt,AddUserName,ZHZXZ,ZKUNNR,ZFWLX,AddFlag,HisDate,HisTime,ZSJZT)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+	quit
+]]></Implementation>
+</Method>
+
+<Method name="FindAccHandInfoFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>FindAccHandInfoExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="FindAccHandInfoClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>FindAccHandInfoExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="FindDepositHandInfo">
+<Description>
+押金结账信息查询
+入参:开始时间(必填),结束时间(必填),收费员(非必填)
+返回值:公司代码,年度,预交金号,登记号,交款日期,支付方式编码,收费金额,收费员姓名,患者性质,单位编号,服务类型,业务状态,系统日期,系统时间,数据状态
+d ##class(%ResultSet).RunQuery("web.UDHCAccAddDeposit","FindDepositHandInfo","01/06/2016","01/12/2018","")</Description>
+<Type>%Query</Type>
+<FormalSpec>StDate:%String,EndDate:%String,Guser:%String</FormalSpec>
+<SqlName>ZTFIYJA01</SqlName>
+<SqlProc>1</SqlProc>
+<Parameter name="ROWSPEC" value="BUKRS:%String,AccYear:%String,AccNo:%String,Adm:%String,PatNo:%String,AddDate:%String,PayModeCode:%String,AddAmt:%String,AddUserName:%String,ZHZXZ:%String,ZKUNNR:%String,ZFWLX:%String,AddFlag:%String,HisDate:%String,HisTime:%String,ZSJZT:%String"/>
+</Query>
+
+<Method name="FindDepositHandInfoExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,StDate:%String,EndDate:%String,Guser:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+   
+    Set repid=$I(^CacheTemp)
+    Set ind=1
+    set:StDate=$c(0) StDate=+$h-1
+    set:EndDate=$c(0) EndDate=+$h-1
+    s ^tmpxhm("33344")=StDate_"^"_EndDate_"^"_Guser
+    b ;232
+    If StDate="" Set qHandle=$lb(0,repid,0) Quit $$$OK
+    If EndDate="" Set qHandle=$lb(0,repid,0) Quit $$$OK
+    Set StDate=##class(websys.Conversions).DateHtmlToLogical(StDate)
+    Set EndDate=##class(websys.Conversions).DateHtmlToLogical(EndDate)
+    b ;2
+    Set BUKRS="H040",ZHZXZ="01",ZKUNNR="",ZFWLX="02",ZSJZT=""	;公司代码,患者性质,单位编号,服务类型,数据状态 合肥京东方项目望海接口写死
+    For pdate=StDate:1:EndDate do
+    .b ;231
+    .Set jkdr=""
+    .For  Set jkdr=$o(^DHCJFUSERJK(0,"date",pdate,jkdr)) quit:jkdr=""  do
+    ..Set yjrowid=""
+    ..b ;23
+    ..For  Set yjrowid=$o(^DHCSFPRINTDETAIL(0,"JKDR",jkdr,yjrowid)) quit:yjrowid=""  do
+    ...Set AddUser=$p(^DHCSFPRINTDETAIL(yjrowid),"^",14)
+    ...Set AddUserName=$p(^SSU("SSUSR",AddUser),"^",2)
+    ...Set AddDate=$p(^DHCSFPRINTDETAIL(yjrowid),"^",2)
+    ...Set PrintDate=$zd(AddDate,3)	;YYYY-MM-DD
+    ...Set AccYear=$p(PrintDate,"-",1)
+    ...Set AddDate=$zd(AddDate,8)	;YYYYMMDD格式
+    ...//quit:(Guser'="")&&(AddUser'=Guser)&&(Guser'=$c(0))
+    ...Set AccType=$p(^DHCSFPRINTDETAIL(yjrowid),"^",8)
+    ...quit:AccType=4
+    ...Set AddFlag=""
+    ...If AccType=1 Set AddFlag="01"
+    ...Else  Set AddFlag="02"
+    ...Set AddAmt=$p(^DHCSFPRINTDETAIL(yjrowid),"^",6)
+    ...i AddAmt<0  d
+    ....s ZSJZT="02"
+    ....s AddAmt=0-AddAmt
+    ...e  s ZSJZT="01"
+    ...If AddAmt>0 do
+    ....If AccType=2 Set AddFlag="01"
+    ...Set PayModeDr=$p(^DHCSFPRINTDETAIL(yjrowid),"^",9)
+    ...Set PayModeCode=$p(^CT("CTPM",PayModeDr),"^",2)
+    ...//add by xhm ：高悦说用中文
+    ...Set PayModeDesc=$p(^CT("CTPM",PayModeDr),"^",2)
+    ...//add by xhm 增加扫码付支付方式传明细
+    ...s paymodedetail=""
+    ...i PayModeDr=46 s paymodedetail=##class(DHCBILL.ScanPay.Adapter.TLSAdapter).GetPaymodedetail(PayModeDr,"DEP",yjrowid)
+    ...i paymodedetail'=""  d
+    ....s:paymodedetail="wxpay" PayModeDesc="微信"
+    ....s:paymodedetail="alipay" PayModeDesc="支付宝"
+    ...Set AccNo=$p(^DHCSFPRINTDETAIL(yjrowid),"^",1)
+    ...Set Adm=$p(^DHCSFPRINTDETAIL(yjrowid),"^",4)
+    ...Set PAPMI=$p(^PAADM(Adm),"^",1)
+    ...i $d(^PAPER(PAPMI,"PAT",1)) Set PatNo=$p(^PAPER(PAPMI,"PAT",1),"^",1)
+    ...e  s PatNo="weizhi"
+    ...Set HisDate=$zd(+$h,8)
+    ...Set HisTime=$zt($p($h,",",2),1)
+    ...Set HisTime=$tr(HisTime,":","")
+    ...Do OutputDepositHandInfo1
+    Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+OutputDepositHandInfo1
+	set Data=$lb(BUKRS,AccYear,AccNo,Adm,PatNo,AddDate,PayModeDesc,AddAmt,AddUserName,ZHZXZ,ZKUNNR,ZFWLX,AddFlag,HisDate,HisTime,ZSJZT)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+	quit
+]]></Implementation>
+</Method>
+
+<Method name="FindDepositHandInfoFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>FindDepositHandInfoExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="FindDepositHandInfoClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>FindDepositHandInfoExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+    Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="getRefundAmtByPayModeStr">
+<Description>
+取传入支付方式的可退金额
+w ##class(web.UDHCAccAddDeposit).getRefundAmtByPayModeStr(37473,46)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>AccRowID,PayModeStr</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s ^testlog=AccRowID_","_PayModeStr
+	q:(AccRowID="") PayModeStr_"^0"
+	s RtnStr=""
+	s InvCount=$L(PayModeStr,"^")
+	f k=1:1:InvCount d
+	.s paymdr=$p(PayModeStr,"^",k)  
+	.Set PayMode(paymdr)=0	
+	
+	s myPDSub=""
+	f  s myPDSub=$o(^DHCACD("AccM",AccRowID,"AccPD", myPDSub)) q:(myPDSub="")  d
+	.q:($d(^DHCACD("AccM",AccRowID,"AccPD", myPDSub))=10)
+	.s myPMSub=""  f  s myPMSub=$o(^DHCACD("AccM",AccRowID,"AccPD", myPDSub,"P",myPMSub)) q:myPMSub=""  d
+	..s myPMSum=$p(^DHCACD("AccM",AccRowID,"AccPD", myPDSub,"P",myPMSub),"^",6)
+	..s myPMDr=$p(^DHCACD("AccM",AccRowID,"AccPD", myPDSub,"P",myPMSub),"^",1)
+	..;i myPMDr=46 b ;0
+	..q:("^"_PayModeStr_"^")'[("^"_myPMDr_"^")
+	..;i myPMDr=46 b ;
+	..s PayMode(myPMDr)=PayMode(myPMDr)+myPMSum
+	
+	s sub=""  f  s sub=$o(PayMode(sub)) q:sub=""  d
+	.s amt=PayMode(sub)
+	.i amt<0 s amt=0
+	.i RtnStr=""  s RtnStr=sub_"^"_amt
+	.e  s RtnStr=RtnStr_"|"_sub_"^"_amt
+	
+	q RtnStr
+]]></Implementation>
+</Method>
+
+<Method name="CheckPayModeInAccPre">
+<Description>
+w ##class(web.UDHCAccAddDeposit).CheckPayModeInAccPre(381855,4)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>AccPreRowID,PayModeDr</FormalSpec>
+<Implementation><![CDATA[
+	new (AccPreRowID,PayModeDr)
+	set rtn="N",myPayMode=""
+	quit:AccPreRowID="" ""
+	quit:AccPreRowID="undefined" "Y^"
+	if PayModeDr="1"  quit "Y^"
+	set sub=0
+	for  set sub=$o(^DHCACD("AccM",+AccPreRowID,"AccPD",$p(AccPreRowID,"||",2),"P",sub))  quit:sub=""  do
+	.set PayMode=$p(^DHCACD("AccM",+AccPreRowID,"AccPD",$p(AccPreRowID,"||",2),"P",sub),"^",1)
+	.if myPayMode="" set myPayMode=PayMode
+	.b ;aaaaa
+	.quit:PayMode'=PayModeDr
+	.set rtn="Y"
+	quit rtn_"^"_myPayMode
+]]></Implementation>
+</Method>
+</Class>
+</Export>
