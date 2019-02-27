@@ -13,4 +13,19 @@
 
 	4、收费结算后根据发票ID获取结算信息推送给CRM
 	w ##class(DHCBillCRMPay.OPBillPay).SendOPBillChargeInfoToCRMNew(375582)
+
+
+
+
+
+
+
+##CRM订单信息推送给HIS
+
+	 w ##class(DHCBILL.Package.DataInteface.DHCPkgPatintBill).ReceivePatintBillFromCRM()
 	
+
+
+##CRM退费订单信息推送给HIS
+
+	w ##class(DHCBILL.Package.DataInteface.DHCPkgRefundBill).ReceivePkgRefundBillFromCRM("")

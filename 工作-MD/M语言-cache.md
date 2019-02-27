@@ -119,6 +119,8 @@
 	DHC-APP>w $zd($p($h,",",1),3)
 	2018-04-08
 
+	w ##class(websys.Conversions).DateHtmlToLogical()
+	w ##class(websys.Conversions).TimeLogicalToHtml(submittime, 1)
 3、$zdh反转换日期格式
 
 	DHC-APP>w $zdh("2018-04-12",3)
@@ -526,6 +528,8 @@ open(o) 开启一个设备以备使用
 			}
 	}
 		
+	插入失败时可以查看原因
+	w %msg
 
 ##2、表的删除数据
 

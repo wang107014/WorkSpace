@@ -1,0 +1,962 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-02-19 10:42:27">
+<Class name="web.udhcOPRefEdit1">
+<ClassType/>
+<Import>SQLUser</Import>
+<ProcedureBlock>0</ProcedureBlock>
+<Super>%RegisteredObject</Super>
+<TimeChanged>65037,61853.282011</TimeChanged>
+<TimeCreated>60314,60591.280216</TimeCreated>
+
+<Parameter name="BUILD">
+<Default>266</Default>
+</Parameter>
+
+<Method name="RefundReceipt">
+<Description>
+/此类主要的目的?
+/对于退费的统一数据操作?增删改等?同时在类方法中提供事务?
+/此类的更改主要针对于合肥的门诊卡消费退费
+/ClassMethod RefundReceipt(itmjs As %Library.String = "", itmjsex As %Library.String = "", INVPRTRowid As %String, rUser As %String)</Description>
+<ClassMethod>1</ClassMethod>
+<CodeMode>code</CodeMode>
+<FormalSpec>INVPRTRowid:%String,rUser:%String,sFlag:%String,StopOrdStr:%String,NInvPay:%String,gloc:%String,RebillFlag:%String,ULoadLocDR:%String,RPayModeDR:%String,NewInsType:%String,myExpStr:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	
+	//1.写票据负单
+	//2.更新原来的票据
+	//3.同时写负担的票据帐单连接表
+	//;对于合肥版本：如果原来的小票是发票就发送PINVFlag="Y"
+	//;如果原先是小票而不是发票，只是被集中打印发票操作过，PINVFlag="N"
+	//^TMPRef=51050::10033::A::48745||14::45.00::46::1::693::2
+	//        										"177480::639::A::170||14::254::92::1::131::1::1::Y^^^^"
+	//w ##class(web.udhcOPRefEdit1).RefundReceipt(214530,639,"A","",895,6,1,231,1,1,"N^^^^")
+	//w ##class(web.udhcOPRefEdit1).RefundReceipt(344280, 5, "S","158775||1^158775||2^158775||3",63.29,7, 1,351,1)
+	//w ##class(web.udhcOPRefEdit1).RefundReceipt(213750,639,"S","244||23^244||24^244||25^244||26^244||29^244||30^244||31^244||32",0,6,0,231,1,1,"N^^^^")
+	;ULoadLocDR  用户登录的科室
+	;RPayModeDR  退费的支付模式
+	;INVPRTRowid, rUser, sFlag, StopOrdStr, NInvPay, gloc, RebillFlag, ULoadLocDR, RPayModeDR
+	s NewInsType=$g(NewInsType)
+	n (INVPRTRowid, rUser,sFlag,StopOrdStr,NInvPay,gloc,RebillFlag, ULoadLocDR, RPayModeDR, NewInsType,myExpStr)
+	s ^tempwml("RefundReceipt")=$lb(INVPRTRowid, rUser,sFlag,StopOrdStr,NInvPay,gloc,RebillFlag, ULoadLocDR, RPayModeDR, NewInsType,myExpStr)
+	;s $ZT="ERROR^DHCSSERR"
+	s MulityPayModeFlag=$p(myExpStr,"^",1)
+
+    s AdmLGFlag=$p(^DHCINVPRT(INVPRTRowid),"^",44) ;发票上的急诊留观标志
+	i ((AdmLGFlag="Y")&(+NInvPay>0)) d
+	.;留观病人退费在前台界面只显示退费医嘱，所有RebillFlag传过来值是0，实际上是部分退费,所以需求重新赋值
+	.;认为留观病人不存在全部退费
+	.s RebillFlag=1
+    
+	;Lid 2010-07-07 设置设置作废重打或部分退费标志
+	;0:全退,1:部分退,2:作废重打
+	i RebillFlag="1" d
+	.i +StopOrdStr=0 s refundFlag=2
+	.e  s refundFlag=1
+	e  s refundFlag=0
+	
+	;取配置表,是否配置打印负票 yyx 2010-09-06
+	s myBCInfo=##class(web.DHCOPConfig).GetOPBaseConfig()
+	s rtn=$p(myBCInfo,"^")
+	q:(+rtn) 104 
+	s RefundInvFlag=$p(myBCInfo,"^",31)  ;为Y，则需要打印负票，否则不打印负票
+	i ((sFlag="S")&(RefundInvFlag="Y")) d
+	.s RefundInvFlag="Y"
+	e  s RefundInvFlag="N"
+	
+	s myINVNo=$p($g(^DHCINVPRT(INVPRTRowid)),"^",14)
+	s myPINVFlag=""
+	i myINVNo'="" d
+	.s myPINVFlag="Y"			;需要发票的支持
+	i $p(myExpStr,"^",2)'=""  s myPINVFlag=$p(myExpStr,"^",2)      ;;;add  by  zhl 20110715  欠费补回需走号
+	;验证票据
+	;s ReceiptNo=##class(web.DHCBillCons).GetreceipNO(rUser)
+	s myFairType=$p($g(^DHCINVPRT(INVPRTRowid)),"^",34)
+	s myINVNoInfo=##class(web.udhcOPBillIF).ReadReceiptNO(rUser, gloc, myFairType)
+	s ReceiptNo = $p(myINVNoInfo,"^",2)
+	if ((ReceiptNo="")&&(RebillFlag="1")&&(myPINVFlag="Y")){
+		quit 109	;没有票据?
+	}
+	
+	;验证发票有了变化
+	s myrtn=##class(web.UDHCOEORDOPIF).CheckOEORDChangeStatus(INVPRTRowid, StopOrdStr, "")
+	
+	q:(+myrtn) myrtn
+	
+	d ##class(web.udhcOPRefEdit).tb()
+	
+	s retvalue=""
+	
+	s rtn=0	
+	
+	d ..UpdateAdmForCancle(INVPRTRowid,rUser)
+	
+	s myCurDate=+$h
+	s myCurTime=$p($h,",",2)
+	
+	;更新原来的票据  , myCurDate, myCurTime
+	if rtn=0 d  s rtn=##class(web.UDHCINVPRT).INVPRTPark(INVPRTRowid,rUser,sFlag)
+	
+	//更新原来的票据
+	//Update :yyx
+	//UpdateDate:2009-04-16
+	//UDHCINVPRT.INVPRTCancel增加参数:myReceiptNo
+	s PrtInsType=$P(^DHCINVPRT(INVPRTRowid),"^",9)
+	s myReceiptNo=""
+    s prtflag=##class(DHCBillCons1).CheckPrtFlag(PrtInsType, gloc, myPINVFlag)
+	i ((+prtflag=0)&(RefundInvFlag="Y")) d
+	.&sql(select inv_lastnum,inv_rowid,inv_EndInv into:myReceiptNo,:rid,:endno from dhc_invoice 
+	     where inv_rowid=(select min(inv_rowid)  from dhc_invoice 
+	     where inv_usr=:rUser and INV_Finalflag='Y' and INV_type='O'))
+	;
+	if rtn=0 d  s parkvalue=##class(web.UDHCINVPRT).INVPRTCancel(INVPRTRowid, rUser, sFlag, myCurDate, myCurTime,$g(myReceiptNo))
+	s rtn=$p(parkvalue,"^",1)
+	s StrikeInvRowID=$p(parkvalue,"^",2)
+	///yyx 
+	///更新发票号
+	i ((rtn=0)&(RefundInvFlag="Y")) d
+	.i +prtflag=0 d
+	..s ReceipNew=+myReceiptNo+1
+	..s rtn=##class(web.udhcOPBill).UpdateReceipNO(rUser,ReceipNew, gloc,myFairType)
+	
+	b	;写票据负单
+	s parkinvrowid=$p(parkvalue,"^",2)
+	s paadminfo=""
+	;写负帐单
+	s conRowid=0 f  s conRowid=$o(^DHCBCI(0,"INV",INVPRTRowid,conRowid)) q:((conRowid="")||(rtn'=0))  d
+	.s adm=$p($g(^DHCBCI(conRowid)),"^",3)
+	.s paadminfo=paadminfo_adm_"^"
+	.s Billno=$p($g(^DHCBCI(conRowid)),"^",2)
+	.s ret=##class(web.UDHCJFPBCANCEL).PBCancel(adm,Billno,rUser,"")
+	.s celret=$p(ret,"^",1)
+	.i celret'=0  d  s rtn=1
+	.q:rtn	 	;;退出这层循环?
+	.s rebillnorid=$p(ret,"^",2)
+	.;写连接表
+	.;parkinvrowid,rebillnorid   负票?负单RowID
+	.&sql(insert into DHC_BillConINV (DHCBCI_ADMDR,DHCBCI_INVDR,DHCBCI_PatBillDR)
+	      values (:adm,:parkinvrowid,:rebillnorid))
+	.s rtn=SQLCODE
+	.q:SQLCODE
+	;写负帐单
+
+	//写负单的支付方式  Input Para :废单RowID，负单RowID	
+	s myDTStr=myCurDate_"^"_myCurTime_"^"_refundFlag_"^"_MulityPayModeFlag
+	if +rtn=0 d  s rtn=##class(web.UDHCINVPRT).INVPRTPayModeCancel(INVPRTRowid, parkinvrowid, ULoadLocDR, RPayModeDR ,rUser,myDTStr)
+	
+	//停止医嘱
+	if +rtn=0 d  s rtn=##class(web.UDHCOEORDOP).UpdateOrderStat(StopOrdStr,INVPRTRowid,rUser)
+	
+	//调用新版检查申请单接口,修改中间表数据
+	i rtn=0 d
+	.f k=1:1:$l(StopOrdStr,"^") q:(+rtn)  d
+	..s stopOrdId=$p(StopOrdStr,"^",k)
+	..s err=##class(web.DHCEMInterface).retInvExaReqNo(stopOrdId,rUser)
+	..s rtn=+err
+	
+	
+	b ;重新计费
+	;获取费别
+	s Instype=""
+	s conRowid=0 f  s conRowid=$o(^DHCBCI(0,"INV",INVPRTRowid,conRowid)) q:((conRowid="")||(Instype'=""))  d
+	.;s adm=$p($g(^DHCBCI(conRowid)),"^",3)
+	.;s paadminfo=paadminfo_adm_"^"
+	.s Billno=$p($g(^DHCBCI(conRowid)),"^",2)
+	.s pbdrowid=0
+	.f  s pbdrowid=$o(^DHCPB(Billno,"O",pbdrowid)) q:(pbdrowid="")  d
+	..q:($D(^DHCPB(Billno,"O",pbdrowid))=10)
+	..s orditmid=$p(^DHCPB(Billno,"O",pbdrowid),"^",4)
+	..s Instype=$p(^OEORD(+orditmid,"I",$p(orditmid,"||",2),11),"^",18)    ;OEORI_BBExtCode
+	
+	b ;;获取原来的支付方式
+	;;获取负单的支付模式=新正单的支付模式
+	s myPayinfo=##class(web.UDHCINVPRT).ReadINVPayMode(parkinvrowid)
+	s Payinfo=$p(myPayinfo,$c(2),1)
+    if (+RPayModeDR'=0) s $p(Payinfo,"^",1)=RPayModeDR     ///update by zhl  20110830   
+	s myAccRowID=$p($p(myPayinfo,$c(2),2),"||",1)
+	
+	;判断是否有收费?同时还有可能是?有未结算得医嘱?
+	;:求出当前的医嘱串
+	
+    ;i $g(NewInsType)'="" s Instype=NewInsType
+	//退费中,=1 生成新的票据;
+	;Version=1  ExpStr="gLoc^LoadCTLoc^AccManRowID^AccPWD^CheckNo"
+	if ((RebillFlag="1")&&(+rtn=0)) d
+	.i Instype="" d  s Instype=##class(web.DHCBillCons).ReadDefInsType()
+	.;求出不在票据中,未结算的医嘱RowID  
+	.;2005-11-15增加严格?把非本票据内的OEORI_RowID都加到字符串中?
+	.s unordrid=##class(web.UDHCOEORDOP).ReadUnINVOrdStr(INVPRTRowid)
+	.s myRoundSum=##class(web.DHCBillConsIF).OPCRound(NInvPay,"")
+	.s myFairType=$p($g(^DHCINVPRT(INVPRTRowid)),"^", 34)		;PRT_FairType
+	.s LocalIPAddress=""
+	.s AdmStayFalg=AdmLGFlag
+	.s myExpStr=gloc_"^"_ULoadLocDR_"^"_myAccRowID_"^"_myPINVFlag_"^"_myFairType
+	.s myExpStr=myExpStr_"^"_myRoundSum_"^0^"_(myRoundSum-NInvPay)_"^"_NewInsType_"^"_LocalIPAddress_"^"_AdmStayFalg
+	.if ((+rtn=0)) d
+	..b ;再收
+	..s retvalue=##class(web.DHCOPINVCons).OPBillCharge(paadminfo,rUser,unordrid,Instype, NInvPay, Payinfo, gloc ,"1", INVPRTRowid, "0", myExpStr)
+	..b ;再收结束
+	..s rtn=$p(retvalue,"^",1)
+	.;Lid 2010-07-07 多种支付方式更新,作废重打时，把新票的支付方式更新为原来的支付方式
+	.i ((+rtn=0)&&(refundFlag=2)&&($g(MulityPayModeFlag)="Y")) d
+	..s newPrtRowid=$p(retvalue,"^",2)
+	..s rtn=##class(web.DHCOPBillManyPaymentLogic).UpdateNewInvPayM(INVPRTRowid,newPrtRowid,rUser)
+	.;退费过程中的写发药接口,在此过程中,只有一张票据RowID
+	.i (+rtn=0) d
+	..s newrowid=$p(retvalue,"^",2)
+	..s rtn=##class(web.udhcOPPHARWIN).InsertNewInv(INVPRTRowid,newrowid)
+	..i +rtn=0 set rtn=##class(web.DHCOutPhReturn).UpdateRetPrt(StopOrdStr) ;yyx 2009-11-06 药房接口 药房更新后放开
+	..i +rtn=0 set rtn=##class(web.DHCOPBillOERefundQty).UpdateRefStauts(StopOrdStr,rUser,newrowid,"") ;Lid 2012-08-23 更新部分退费状态
+    .;yyx 2009-10-13
+	.i (+rtn=0) d
+	..i $g(NewInsType)'="" d
+	...&sql(update dhc_invprt set prt_instype_dr=:NewInsType where prt_rowid=:newrowid)
+	...s rtn=SQLCODE
+	.; 急诊留观病人退费后需要将billflag置成Y退押金
+	.;i (rtn=0) d
+	..;f i=1:1:$l(paadminfo,"^") d
+	...;s EpisodeID=$p(paadminfo,"^",1)
+	...;q:+$g(EpisodeID)=0
+	...;s Stayflag=##class(web.UDHCJFBaseCommon).GetPatAdmStayStat(EpisodeID)
+	...;i $p(Stayflag,"^",1)="Y" d
+	....;s BillFlag=##class(web.DHCOPBillStayCharge).UpdateBillFlag(EpisodeID,"Y","")
+
+	i (retvalue="")&(+rtn=0) d
+	.s $p(retvalue,"^",1)=0
+	s $p(retvalue,"^",3)=StrikeInvRowID
+	s $p(retvalue,"^",4)=RefundInvFlag
+
+	;平台组接口放到事务里面,需要时放开
+	i ((+rtn=0)&(+StopOrdStr'=0)) d ;无退费医嘱则不调用接口(+StopOrdStr'=0)
+	.;获取医嘱Rowid
+	.s returnval=##class(web.DHCENS.EnsHISService).DHCHisInterface("SENDOPREFUNDCHARGEINFO",StopOrdStr)
+	.s rtn=$p(returnval,"^",1)
+	;q:rtn'=0 rtn
+	b ;end
+	b ;end
+	i +rtn=0 d
+		.d ##class(web.udhcOPRefEdit).tc()
+	e  d
+		.TRollBack
+	
+	//增加pac组程序调用
+	s UserName=$p(^SSU("SSUSR",rUser),"^",2)
+	f i=1:1:$l(StopOrdStr,"^") d
+	.s OERowID=$p(StopOrdStr,"^",1)
+	.q:+OERowID=0
+	.s risRtn=##Class(RISService.InvokeRISService).SetOrditemPaidPACS(OERowID,"C") 
+	
+	;退费服务
+	s myFairType=$p($g(^DHCINVPRT(INVPRTRowid)),"^", 34)		;PRT_FairType
+	if (+rtn=0)&&(myFairType="F"){
+		s myPRTRowID=+INVPRTRowid
+		s myServiceName="OPCRefund"
+		s myConDef=##class(web.DHCEntity.CIDefine.ConditionDefine).%New()
+		s myConDef.PRTRowIDStr=myPRTRowID
+		s myConDef.ServiceName="OPCRefund"
+		s myConDef.SFlag=1
+		s mySerInfo=##class(web.DHCBL.CI.Service).Service(myConDef)
+		
+		d myConDef.%Close()
+	}
+	;add by FangT 2018-09-06
+	;京东方添加退费后调用药房接口传递退费处方
+	set precnoStr=""
+	s mylen=$l(StopOrdStr,"^")
+	f i=1:1:mylen  d
+	.q:(+myrtn'=0)
+	.s myOEORDRowID=$p(StopOrdStr,"^",i)
+	.q:(myOEORDRowID="")
+	.s Arcim=$p(^OEORD(+myOEORDRowID,"I",$p(myOEORDRowID,"||",2),1),"^", 2)	;OEORI_ItmMast_DR
+	.s ARCCATRowid=$p(^ARCIM(+Arcim,$p(Arcim,"||",2),1),"^",10)
+	.s ARCOrdType=$p(^ARC("IC",ARCCATRowid),"^",7)
+	.//add by xhm start 收费调用HERP接口
+    .s OeoreSub=""  f  s OeoreSub=$o(^OEORD(+myOEORDRowID,"I",$p(myOEORDRowID,"||",2),"X",OeoreSub)) q:OeoreSub=""  d
+    ..q:OeoreSub=0
+    ..s Flag=##class(web.DHCENS.STBLL.HERP.Method.ZTFISRQRBB).Cansendinfo(myOEORDRowID_"||"_OeoreSub,"OD")
+    ..i Flag="Y" d
+    ...s Hrprtn=##class(web.DHCENS.EnsHISService).DHCHisInterface("S00000081",myOEORDRowID_"||"_OeoreSub)
+    ...s ^SAPBillCheck("S00000081","OPROD",+$h,myOEORDRowID_"||"_OeoreSub,$now())="C"
+    ...//s OEDrtails=##class(web.DHCOEDetails).INSERT(myOEORDRowID_"||"_OeoreSub,+$h,$p($h,",",2),"C","")
+    .//add by xhm end 收费调用HERP接口
+	.i ARCOrdType="R"  d
+	..s Executflag=##class(web.UDHCOEORDOPIF).CheckPhDispRet(myOEORDRowID)
+	..quit:Executflag=1	;已发药的不传
+	..s returnqty=0,PackUOM=""
+	..s dsp=""
+   	..f  s dsp=$o(^DHCOEDISQTY(0,"OEORI",myOEORDRowID,dsp)) q:(dsp="")  d
+   	...s dspstatus=$p(^DHCOEDISQTY(dsp),"^",7)
+   	...quit:dspstatus'="TC"
+	...s returnqty=$p(^DHCOEDISQTY(dsp),"^",5)		;退费申请时未发药的只能退全部数量 此处取打包表数量 
+	...s PackUOMRowid=$p(^DHCOEDISQTY(dsp),"^",6)	 ;整包装单位 
+	...s PackUOM=$p(^CT("UOM",PackUOMRowid),"^",2)
+	..quit:returnqty=0
+	..i precnoStr="" set precnoStr=myOEORDRowID_"^"_returnqty_"^"_PackUOM
+	..else  set precnoStr=precnoStr_"#"_myOEORDRowID_"^"_returnqty_"^"_PackUOM
+	b ;123321
+	set retinfo=##Class(web.DHCSTInterfacePH2).GetPrescnoInfoForRet(precnoStr)
+	;add end
+	
+	b ;返回票据RowID
+	i retvalue'="" d
+		.s rtn=retvalue
+	
+	q rtn
+]]></Implementation>
+</Method>
+
+<Method name="AccPayINVRefund">
+<Description>
+专门用来卡支付的退费
+w ##class(web.udhcOPRefEdit1).AccPayINVRefund(21209, ^TMP("PRTOrdStr"), 4988, "S", 5, 303, 3, 1.04, 1, "^^^^^0")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>APIRowID:%String,PRTOrdStr:%String,rUser:%String,sFlag:%String,gloc:%String,ULoadLocDR:%String,RPayModeDR:%String,RefPaySum:%String,RebillFlag:%String,ExpStr:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	;输入参数：APIRowID, 现在的支付方式RPayModeDR, ULoadLocDR, gloc, rUser,
+	;PRTOrdStr=INVPRTRowid_StopOrdStr_NInvPay_RebillFlag
+	;RefPaySum界面上显示的退款金额   正数表示退款   负数表示收款
+	;57,"51294"_$C(3)_"48993||2"_$C(3)_"1"_$C(3)_"4",1,S,1,639,3,4.00"
+	n (APIRowID, PRTOrdStr, rUser, sFlag, gloc, ULoadLocDR, RPayModeDR, RefPaySum, RebillFlag,ExpStr)
+	
+	s ^TMP("AccPayINVRefund")=APIRowID_", "_rUser_", "_sFlag_", "_gloc_", "_ULoadLocDR_", "_RPayModeDR_", "_RefPaySum_", "_RebillFlag_", "_ExpStr
+	s ^TMP("PRTOrdStr")=PRTOrdStr
+	;q 109
+	s $ZT="ERROR^DHCSSERR"
+	s ReceiptNo=##class(web.DHCBillCons).GetreceipNO(rUser)
+	if ((ReceiptNo="")&&(RebillFlag="1")){
+		quit 109	;没有票据?
+	}
+	
+	d ##class(web.udhcOPRefEdit).tb()
+	
+	;1.作废DHC_INVPRT 表中的记录
+	;2.作废DHC_AccPayINV表
+	;3.写新的DHC_AccPayINV表
+	;Lid 2011-04-02 设置设置作废重打或部分退费标志
+	//0:全退,1:部分退,2:作废重打
+	i +RebillFlag=1 d
+	.s tmpInvCount=$L(PRTOrdStr,$c(2))
+	.f i=1:1:tmpInvCount d  q:(tmpFlag=1)  
+	..s singleInvStopOrdInfo=$p(PRTOrdStr,$c(2),i)
+	..s stopOrdStr=$p(singleInvStopOrdInfo,$c(3),2)
+	..i +stopOrdStr=0 s tmpFlag=0
+	..e  s tmpFlag=1
+	.i tmpFlag=0 s refundFlag=2
+	.e  s refundFlag=1
+	e  s refundFlag=0
+	;end
+	;add hujunbin 14.12.5
+	;i refundFlag=2 s NewAutoFlag=1
+	;e  s NewAutoFlag=0
+	;2017-09-20 ZhYW 结算实时医保分解的, 不往账户返钱
+	s AutoYBFlag=$p(^DHCINVPRTAP(APIRowID),"^",25)
+	s NewAutoFlag=AutoYBFlag
+	;
+	s myNewAccRIDStr=""
+	s myAPIStr=""
+ 	
+	s myTFRIDSTR=""
+	s myNPRTRStr=""
+
+	s rtn=0
+	s mylen=$l(PRTOrdStr,$c(2))
+	f i=1:1:mylen q:(rtn'=0)  d
+	.s myPrtInfo=$p(PRTOrdStr,$c(2),i)
+	.s myINVPRTRowid=$p(myPrtInfo,$c(3),1)				;OldPrtRowID
+	.s myStopOrdStr=$p(myPrtInfo,$c(3),2)				;需要退费的医嘱串
+	.i (myStopOrdStr="") d
+	..s myAPIStr=myAPIStr_myINVPRTRowid_"^"
+	..s myNPRTRStr=myNPRTRStr_myINVPRTRowid_"^"			;不用退费的DHC_INVPRT串
+	.q:(myStopOrdStr="")								;不退费的小票，退出
+	.;获取参与退费小票RowID
+	.s myTFRIDSTR=myTFRIDSTR_myINVPRTRowid_"^"
+	.s myRebillFlag=$p(myPrtInfo,$c(3),3)				;部分退费标志
+	.s myPatPaySum=$p(^DHCINVPRT(myINVPRTRowid),"^",16)
+	.s myNInvPay=$p(myPrtInfo,$c(3),4)					;新票据的支付额
+	.s myNInvPay=$g(myPatPaySum)-$g(myNInvPay)
+	.s myrtn=..RefundSinglePRT(myINVPRTRowid, rUser, sFlag, myStopOrdStr, myNInvPay, gloc, myRebillFlag, ULoadLocDR, RPayModeDR)
+	.//b   ;RefundSinglePRT
+	.s rtn=+$p(myrtn,"^",1)
+	.s myNewPrtRowID=$p(myrtn,"^",2)			;newPrtRowID
+	.i (myNewPrtRowID'="") d
+	..s myNewAccRIDStr=myNewAccRIDStr_myNewPrtRowID_"^"
+	
+	s myAPIStr=myAPIStr_"^"_myNewAccRIDStr
+	
+	b  ;按照帐户直接退钱；放到退费字段中
+	;退费方式：卡帐户
+	;现金；医保等
+	;需要查看废单的支付方式才成；分别写CardPaySum
+	;如果帐户已经结算返款按照现金返；
+	;把作废的发票支付方式分为：帐户支付，现金，医保，以及退款额
+	s CardPaySum=0
+	s CashSum=0
+	s RefundSum=0
+	s myInsType=0
+	if (+rtn=0) d
+	.;modify hujunbin 14.12.5 添加扩展串
+	.s myrtn=##class(web.UDHCAccPrtPayFoot).CancleAPayINV(APIRowID, rUser, sFlag, myTFRIDSTR, myNPRTRStr,ExpStr)
+	.s rtn=+myrtn
+	s myTMPGID=$i(^DHCTMPACCColPRT)
+	b  ;如果不是全部退，则生成新的发票
+	;1。解析
+	;2。保存数据
+	;把数据分解开
+	s myTMPStr=""
+	if ((+rtn=0)&(+RebillFlag=1)) d
+	.;增加一个Global  ID
+	.s myrtn=##class(web.UDHCAccPrtPayFoot).ParPrtToAPINV(myAPIStr, myTMPGID, "")
+	.s rtn=$p(myrtn,$c(2),1)
+	.q:(+rtn)
+	.s myAPIInfo=$p(myrtn,$c(2),2)
+	.;生成新的发票
+	.;(APINVInfo, UserDR, AccMDR, PAPMIDR, ExpStr)
+	.s myAccDR=$p(^DHCINVPRTAP(APIRowID),"^",12)
+	.s myPAPMIDR=$p(^DHCINVPRTAP(APIRowID),"^",11)
+	.s HospDR=""
+	.s myExpStr=ULoadLocDR_"^"_gloc_"^"_HospDR_"^"_APIRowID
+	.;modify hujunbin 14.12.5  NewAutoFlag
+	.s myExpStr=myExpStr_"^^"_NewAutoFlag
+	.s myrtn=##class(web.UDHCAccPrtPayFoot).AccINVPayInsert(myAPIInfo,rUser, myAccDR, myPAPMIDR,myExpStr)
+	.s rtn=+$p(myrtn,"^",1)
+	.s mylen=$l(myrtn)
+	.s myTMPStr=$e(myrtn,3,mylen)
+	;删除Global
+	d ##class(web.UDHCACINVColPrt).KillINVTMP(myTMPGID)
+	;为了医保提供接口，一张发票作废一定出来一张发票
+	s myTMPGID=""
+	s myAPINRowID=$p(myTMPStr,"^",1)
+	i ((+rtn=0)&(myAPINRowID'="")) d
+	.;查看废票是否是医保发票
+	.s myOldAPIDR=$p($g(^DHCINVPRTAP(+myAPINRowID)),"^",22)			;API_OldAPINV_DR
+	.s myInsDivDR=$p($g(^DHCINVPRTAP(myOldAPIDR)),"^",19)			;API_InsDiv_DR
+	.s aciamt=$p($g(^DHCINVPRTAP(+myAPINRowID)),"^",13)
+	.q:(myInsDivDR="")
+	.s myTMPGID=$i(^DHCTMPACCColPRT)
+	.s myACPRowID=0
+	.f  s myACPRowID=$o(^DHCINVPRTCAPi(0,"APINVDR",myAPINRowID,myACPRowID)) q:(myACPRowID="")  d
+	..s myPRTRowID=$p($g(^DHCINVPRTCAP(myACPRowID)),"^",1)
+	..s myINSTypeDR=$p(^DHCINVPRT(myPRTRowID),"^",9)
+	..s ^DHCTMPACCColPRT("IP",myTMPGID,myINSTypeDR,1,"PrtRowID",myPRTRowID)=myPRTRowID
+	..s ^DHCTMPACCColPRT("IP",myTMPGID,myINSTypeDR,1,"APIRowID")=myAPINRowID
+	..s ^DHCTMPACCColPRT("IP",myTMPGID,myINSTypeDR,1,"PatPaySum")=aciamt
+	s myAPINRowID=$p(myTMPStr,"^",1)
+	s Aconinvstr=""
+	i ((+rtn=0)&(myAPINRowID'="")) d
+	.s myACPRowID=0
+	.f  s myACPRowID=$o(^DHCINVPRTCAPi(0,"APINVDR",myAPINRowID,myACPRowID)) q:(myACPRowID="")  d
+	..s myPRTRowID=$p($g(^DHCINVPRTCAP(myACPRowID)),"^",1)
+	..i Aconinvstr=""  s Aconinvstr=myPRTRowID
+	..e  s Aconinvstr=Aconinvstr_"^"_myPRTRowID
+
+	i +rtn=0 d
+		.d ##class(web.udhcOPRefEdit).tc()
+	e  d
+		.TRollBack
+	b ;;end
+	q rtn_$c(2)_myTMPStr_$c(2)_myTMPGID_$c(2)_Aconinvstr
+]]></Implementation>
+</Method>
+
+<Method name="RefundSinglePRT">
+<Description>
+作废一张单个的INVPRT记录</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>INVPRTRowid:%String,rUser:%String,sFlag:%String,StopOrdStr:%String,NInvPay:%String,gloc:%String,RebillFlag:%String,ULoadLocDR:%String,RPayModeDR:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (INVPRTRowid, rUser,sFlag,StopOrdStr,NInvPay,gloc,RebillFlag, ULoadLocDR, RPayModeDR)
+	
+	s $ZT="ERROR^DHCSSERR"
+	
+	;此类方法的维护方式：RefundReceipt方法调试完成后，直接替换就行；
+		
+	s retvalue=""
+	
+	d ..UpdateAdmForCancle(INVPRTRowid,rUser)
+	
+	s rtn=0
+
+	s myCurDate=+$h
+	s myCurTime=$p($h,",",2)
+	
+	;更新原来的票据
+	if rtn=0 d  s rtn=##class(web.UDHCINVPRT).INVPRTPark(INVPRTRowid, rUser, sFlag)
+
+	//更新原来的票据
+	
+	if rtn=0 d  s parkvalue=##class(web.UDHCINVPRT).INVPRTCancel(INVPRTRowid, rUser, sFlag, myCurDate, myCurTime)
+	s rtn=$p(parkvalue,"^",1)
+	
+	//写票据负单
+	
+	s parkinvrowid=$p(parkvalue,"^",2)
+	s paadminfo=""
+	;写负帐单
+	s conRowid=0 f  s conRowid=$o(^DHCBCI(0,"INV",INVPRTRowid,conRowid)) q:((conRowid="")||(rtn'=0))  d
+	.s adm=$p($g(^DHCBCI(conRowid)),"^",3)
+	.s paadminfo=paadminfo_adm_"^"
+	.s Billno=$p($g(^DHCBCI(conRowid)),"^",2)
+	.s ret=##class(web.UDHCJFPBCANCEL).PBCancel(adm,Billno,rUser,"")
+	.s celret=$p(ret,"^",1)
+	.i celret'=0  d  s rtn=1
+	.q:rtn	 	//退出这层循环?
+	.s rebillnorid=$p(ret,"^",2)
+	.;写连接表
+	.;parkinvrowid,rebillnorid   负票?负单RowID
+	.&sql(insert into DHC_BillConINV (DHCBCI_ADMDR,DHCBCI_INVDR,DHCBCI_PatBillDR)
+	      values (:adm,:parkinvrowid,:rebillnorid))
+	.s rtn=SQLCODE
+	.q:SQLCODE
+	
+	//写负帐单
+	
+	;写负单的支付方式  Input Para :废单RowID，负单RowID
+	;INVPRTRowid ,  parkinvrowid
+	;(OldINVRowID , ParkINVRowID , AccPLDR , PayModeDR , ExpStr 
+	;OldINVRowID, ParkINVRowID, PayRecLocDR, PayModeDR, UserDR, ExpStr
+	//写负单的支付方式
+	s myDTStr=myCurDate_"^"_myCurTime
+	if +rtn=0 d  s rtn=##class(web.UDHCINVPRT).INVPRTPayModeCancel(INVPRTRowid, parkinvrowid, ULoadLocDR, RPayModeDR ,rUser, myDTStr)
+	
+	//停止医嘱
+	if +rtn=0 d  s rtn=##class(web.UDHCOEORDOP).UpdateOrderStat(StopOrdStr,INVPRTRowid,rUser)
+	
+	//+2017-07-06 ZhYW 调用新版检查申请单接口,修改中间表数据
+	i (rtn=0) d
+	.f k=1:1:$l(StopOrdStr,"^") q:(+rtn)  d
+	..s stopOrdId=$p(StopOrdStr,"^",k)
+	..s err=##class(web.DHCEMInterface).retInvExaReqNo(stopOrdId, rUser)
+	..s rtn=+err
+	//
+	;重新计费
+	;获取费别
+	s Instype=""
+	s conRowid=0 f  s conRowid=$o(^DHCBCI(0,"INV",INVPRTRowid,conRowid)) q:((conRowid="")||(Instype'=""))  d
+	.;s adm=$p($g(^DHCBCI(conRowid)),"^",3)
+	.;s paadminfo=paadminfo_adm_"^"
+	.s Billno=$p($g(^DHCBCI(conRowid)),"^",2)
+	.s pbdrowid=0
+	.f  s pbdrowid=$o(^DHCPB(Billno,"O",pbdrowid)) q:(pbdrowid="")  d
+	..q:($d(^DHCPB(Billno,"O",pbdrowid))=10)
+	..s orditmid=$p(^DHCPB(Billno,"O",pbdrowid),"^",4)
+	..s Instype=$p(^OEORD(+orditmid,"I",$p(orditmid,"||",2),11),"^",18)    //OEORI_BBExtCode
+	
+	;;获取原来的支付方式
+	;;获取负单的支付模式=新正单的支付模式
+	s myPayinfo=##class(web.UDHCINVPRT).ReadINVPayMode(parkinvrowid)
+	
+	s Payinfo=$p(myPayinfo,$c(2),1)
+	s myAccRowID=$p($p(myPayinfo,$c(2),2),"||",1)
+	;判断是否有收费?同时还有可能是?有未结算得医嘱?
+	;:求出当前的医嘱串
+	
+	;退费中,=1 生成新的票据;
+	;Version=1  ExpStr="gLoc^LoadCTLoc^AccManRowID^AccPWD^CheckNo"
+	if ((RebillFlag="1")&&(+rtn=0)) d
+	.;求出不在票据中,未结算的医嘱RowID  
+	.;2005-11-15增加严格?把非本票据内的OEORI_RowID都加到字符串中?
+	.s unordrid=##class(web.UDHCOEORDOP).ReadUnINVOrdStr(INVPRTRowid)
+	.s myRoundSum=##class(web.DHCBillConsIF).OPCRound(NInvPay,"")
+	.s NewInsType=""
+	.s LocalIPAddress=""
+	.s AdmStayFalg=""
+	.s myExpStr=gloc_"^"_ULoadLocDR_"^"_myAccRowID_"^N^F"
+	.s myExpStr=myExpStr_"^"_myRoundSum_"^0^"_(myRoundSum-NInvPay)_"^"_NewInsType_"^"_LocalIPAddress_"^"_AdmStayFalg
+	.if ((rtn=0)) d
+		..s retvalue=##class(web.DHCOPINVCons).OPBillCharge(paadminfo,rUser,unordrid,Instype, NInvPay, Payinfo, gloc ,"1", INVPRTRowid, "0", myExpStr)
+		..b ;;;retvalue
+		..s rtn=$p(retvalue,"^",1)
+	    ..i (+rtn=0) d
+	    ...;Lid 2012-04-20 确认完成	
+	    ...s newrowid=$p(retvalue,"^",2)
+	    ...s rtn=##class(web.DHCBillConsIF).CompleteCharge("6",rUser,Instype,newrowid,"1",INVPRTRowid,myExpStr)
+	.;退费过程中的写发药接口,在此过程中,只有一张票据RowID
+	.i (rtn=0) d
+	..s newrowid=$p(retvalue,"^",2)
+	..s rtn=##class(web.udhcOPPHARWIN).InsertNewInv(INVPRTRowid,newrowid)
+	..i (rtn=0)&&(newrowid'="") set rtn=##class(web.DHCOPBillOERefundQty).UpdateRefStauts(StopOrdStr,rUser,newrowid,"") ;Lid 2012-08-23 更新部分退费状态
+
+	b ;返回票据RowID
+	i retvalue'="" d
+		.s rtn=retvalue
+	
+	q rtn
+]]></Implementation>
+</Method>
+
+<Method name="CancleRefundINVPRT">
+<Description>
+取消错误的作废发票</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>INVPRTRowid:%String,rUser:%String,gloc:%String,ULoadLocDR:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	;INVPRTRowid  
+	;w ##class(web.udhcOPRefEdit1).CancleRefundINVPRT()
+	n (INVPRTRowid, rUser, gloc, ULoadLocDR)
+	
+	s $ZT="ERROR^DHCSSERR"
+	
+	s myrtn=0
+	
+	s myINVFlag=$p(^DHCINVPRT(INVPRTRowid),"^",8)
+	q:(myINVFlag="N") 117
+	
+	s myRefundRowID=$o(^DHCINVPRT(0,"InitInvDR", INVPRTRowid,0))
+	q:(myRefundRowID="") 115
+	
+	s myHandFlag=$p(^DHCINVPRT(myRefundRowID),"^",10)
+	s myRepHandStatus=$p(^DHCINVPRT(myRefundRowID),"^",61)
+	q:(myHandFlag="Y")&&(myRepHandStatus="N") 116
+	
+	;
+	s myINVNo=$p($g(^DHCINVPRT(INVPRTRowid)),"^",14)
+	s myPINVFlag=""
+	i myINVNo'="" d
+	.s myPINVFlag="Y"			;需要发票的支持
+	
+	;验证发票有了变化
+	
+	q:(+myrtn) myrtn
+	
+	d ##class(web.udhcOPRefEdit).tb()
+	
+	s retvalue=""
+	
+	s rtn=0
+	
+	s myCurDate=+$h
+	s myCurTime=$p($h,",",2)
+	
+	s mysFlag="N"
+	if rtn=0 d  s rtn=##class(web.UDHCINVPRT).INVPRTPark(INVPRTRowid,rUser,mysFlag)
+	
+	b  ;更新原来的票据
+	
+	;撤销对帐单的作废
+	i +rtn=0 d
+	.s myNormalPBRowID=""
+	.s myNormalBCIRowID=0
+	.f  s myNormalBCIRowID=$o(^DHCBCI(0,"INV",INVPRTRowid, myNormalBCIRowID))  q:(myNormalBCIRowID="")||(+rtn'=0)  d
+	..s myNormalPBRowID=$p(^DHCBCI(myNormalBCIRowID),"^", 2)
+	..s rtn=##class(web.UDHCJFPB).SELECT(myNormalPBRowID)
+	..q:(+rtn)
+	..s PLIST(18)=""		;;PB_RefundFlag
+	..s rtn=##class(web.UDHCJFPB).UPDATE(myNormalPBRowID)
+	..q:(+rtn)
+	
+	//撤销对帐单的作废
+	if +rtn=0 d  s rtn=##class(web.UDHCOEORDOPIF).CancleStopOrdItemStatus(INVPRTRowid, "")
+	
+	//撤销对停止的医嘱
+	;if rtn=0 d  s parkvalue=##class(web.UDHCINVPRT).INVPRTCancel(INVPRTRowid, rUser, sFlag, myCurDate, myCurTime)
+	;s rtn=$p(parkvalue,"^",1)
+	
+	;^DHCINVPRT(0,"InitInvDR",{PRT_initInv_DR},{PRT_Rowid})
+	s myRefundRowID=$o(^DHCINVPRT(0,"InitInvDR", INVPRTRowid,0))
+	i myRefundRowID="" d  s rtn=115
+	if +rtn=0 d  s rtn=##class(web.DHCOPInvoice).DELETE(myRefundRowID)
+	
+	i +rtn=0 d
+	.s myRefPBRowID=""
+	.s myRefBCIRowID=0
+	.f  s myRefBCIRowID=$o(^DHCBCI(0,"INV",myRefundRowID, myRefBCIRowID))  q:(myRefBCIRowID="")||(+rtn'=0)  d
+	..s myRefPBRowID=$p(^DHCBCI(myRefBCIRowID),"^", 2)
+	..s rtn=##class(web.UDHCJFPB).DELETE(myRefPBRowID)
+	..q:(+rtn)
+	..q:(myRefPBRowID="")
+	..s rtn=##class(web.DHCBillConINV).DELETE(myRefBCIRowID)
+	..q:(+rtn)
+	.
+	
+	b	;删除原发票对应的负票据
+	
+	s myNewINVRowID=""
+	;^DHCINVPRT(0,"OldINV",{PRT_OldINV_DR},{PRT_Rowid})
+	s myNewINVRowID=$o(^DHCINVPRT(0,"OldINV",INVPRTRowid,0))
+	
+	i (+rtn=0)&&(myNewINVRowID'="")  d
+	.s rtn=##class(web.UDHCINVPRT).CancleNewPRTINVStatus(myNewINVRowID)
+	
+	;写负单的支付方式  Input Para :废单RowID，负单RowID
+	;INVPRTRowid ,  parkinvrowid
+	;(OldINVRowID , ParkINVRowID , AccPLDR , PayModeDR , ExpStr 
+	;OldINVRowID, ParkINVRowID, PayRecLocDR, PayModeDR, UserDR, ExpStr
+	
+	s myDTStr=myCurDate_"^"_myCurTime
+		
+	i +rtn=0 d
+		.d ##class(web.udhcOPRefEdit).tc()
+	e  d
+		.TRollBack
+	
+	;返回票据RowID
+	i retvalue'="" d
+		.s rtn=retvalue
+	
+	q rtn
+]]></Implementation>
+</Method>
+
+<Method name="UpdateAdmForCancle">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>INVPRTRowID:%String,UserDR:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (INVPRTRowID, UserDR)
+	
+	s $ZT="ERROR^DHCSSERR"
+	
+	q 0
+	
+	s myrtn=0
+	s myFairType=$p(^DHCINVPRT(INVPRTRowID),"^",34)		;PRT_FairType
+	
+	q:(myFairType'="R") 0
+	
+	s myUserName=$P(^SSU("SSUSR",UserDR),"^",2)
+	
+	;^DHCBCI(0,"INV",{DHCBCI_INVDR},{DHCBCI_Rowid})
+	s myBCIRowID=$o(^DHCBCI(0,"INV",INVPRTRowID,0))
+	q:(myBCIRowID="") 0
+	
+	s AdmDR=$p(^DHCBCI(myBCIRowID),"^",3)
+	q:(AdmDR="") 0
+	
+	s myADMStatus=$p(^PAADM(AdmDR),"^",20)
+	
+	q:(myADMStatus'="A") 0
+	
+	s vis="C",read="Y",admdate=$P($H,",",1),admtime=$P($H,",",2)  
+	&sql(update SQLUser.PA_Adm
+	set PAADM_VisitStatus=:vis,
+	PAADM_ReadOnly=:read,
+	PAADM_UpDateDate=:admdate,
+	PAADM_UpDateTime=:admtime,
+	PAADM_SocialWorkerName=:myUserName
+	where PAADM_RowID=:AdmDR)
+	
+	q myrtn
+]]></Implementation>
+</Method>
+
+<Method name="tb">
+<ClassMethod>1</ClassMethod>
+<CodeMode>code</CodeMode>
+<Implementation><![CDATA[
+	n SQLCODE
+	TSTART  s SQLCODE=$zu(34)
+	q
+]]></Implementation>
+</Method>
+
+<Method name="tc">
+<ClassMethod>1</ClassMethod>
+<CodeMode>code</CodeMode>
+<Implementation><![CDATA[
+ n SQLCODE
+ TCOMMIT  s SQLCODE=$zu(34)
+ q
+]]></Implementation>
+</Method>
+
+<Method name="OPRefundTest">
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+	///n (ad)
+	;w ##class(web.udhcOPRefEdit1).OPRefundTest()
+	;(INVPRTRowid, rUser,sFlag,StopOrdStr,NInvPay,gloc,RebillFlag, ULoadLocDR, RPayModeDR)
+	///s ^TMPRef=INVPRTRowid_"::"_rUser_"::"_sFlag_"::"_StopOrdStr_"::"_NInvPay_"::"_gloc_"::"_RebillFlag_"::"_ULoadLocDR_"::"_RPayModeDR_"::"_NewInsType_"::"_myExpStr
+	s INVPRTRowid=$p(^TMPRef,"::",1)
+	s rUser=$p(^TMPRef,"::",2)
+	s sFlag=$p(^TMPRef,"::",3)
+	s StopOrdStr=$p(^TMPRef,"::",4)
+	s NInvPay=$p(^TMPRef,"::",5)
+	s gloc=$p(^TMPRef,"::",6)
+	s RebillFlag=$p(^TMPRef,"::",7)
+	s ULoadLocDR=$p(^TMPRef,"::",8)
+	s RPayModeDR=$p(^TMPRef,"::",9)
+	s NewInsType=$p(^TMPRef,"::",10)
+	s myExpStr=$p(^TMPRef,"::",11)
+	b	;
+	d ..RefundReceipt(INVPRTRowid, rUser,sFlag,StopOrdStr,NInvPay,gloc,RebillFlag, ULoadLocDR, RPayModeDR,NewInsType,myExpStr)
+	q 0
+]]></Implementation>
+</Method>
+
+<Method name="UpDateRepInvPayM">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>OldInv,NewInv</FormalSpec>
+<Implementation><![CDATA[
+	;q 0
+	s $ZT="ERROR^DHCSSERR"
+	s:NewInv["^" NewInv=$p(NewInv,"^",2)
+	s:NewInv'="" InitInv=$p(^DHCINVPRT(NewInv),"^",29)
+	q:($g(InitInv)'="")&&(OldInv'=InitInv) "-1"
+	i NewInv=""  s NewInv=$o(^DHCINVPRT(0,"OldINV",OldInv,""),-1)
+	
+	s User=$p(^DHCINVPRT(NewInv),"^",21)
+	s PDate=$p(^DHCINVPRT(NewInv),"^",5)
+	s PTime=$p(^DHCINVPRT(NewInv),"^",20)
+	q:(OldInv="")||(NewInv="") "-1"
+	d ##class(web.udhcOPRefEdit).tb()
+	
+	s InsDiv=$p(^DHCINVPRT(OldInv),"^",30)
+	s InsType=$p(^DHCINVPRT(OldInv),"^",9)
+	s OldAccount=$p(^DHCINVPRT(OldInv),"^",1)
+	s OldYBPaysum=$p(^DHCINVPRT(OldInv),"^",31)
+	
+	s rtn=##class(web.DHCOPInvoice).SELECT(NewInv)
+	s PLIST(31)=InsDiv
+	s PLIST(22)=InsType
+	s PLIST(32)=OldYBPaysum
+	i +rtn=0 d
+	.s rtn=##class(web.DHCOPInvoice).UPDATE(NewInv)
+
+	s NewPaySub=$o(^DHCINVPRT(NewInv,"P","0"))
+	
+	
+	/// Creator:ZhanMingChao 
+	/// Description:insu_divide表Rowid更新医保结算表发票指针 
+	/// Input：INSUDIVDR:insu_divide表Rowid ,新发票rowid
+	/// Output: 失败:-1 成功:0 
+	/// CreatDate:20161101 
+	/// Others:计费组过号重打时调用
+	/// Others: w ##class(web.DHCINSUPort).UpdateInsuPrtDr("81","15","")
+	i +rtn=0 d
+	.s rtn=##class(web.DHCINSUPort).UpdateInsuPrtDr(InsDiv,NewInv,"")
+	
+	/*
+	i (rtn=0)&&($d(^DHCINVPRT(NewInv,"P",NewPaySub)))  d
+	.s DelPayModeID=NewInv_"||"_NewPaySub
+	.s NewAccPLDr=$p(^DHCINVPRT(NewInv,"P",NewPaySub),"^",8)
+	.s rtn=##class(web.UDHCINVPayMode).DELETE(DelPayModeID)
+	*/
+	
+	s NewAccPLDr=""
+	i (rtn=0)  d
+	.set sub="0" 
+	.for  set sub=$o(^DHCINVPRT(NewInv,"P",sub)) quit:sub=""  do
+	..s DelPayModeID=NewInv_"||"_sub
+	..s paymdr=$p(^DHCINVPRT(NewInv,"P",sub),"^",1)
+	..s paymcode=$p(^CT("CTPM",paymdr),"^",1)
+	..i (paymcode="CPP")!(paymcode="INTEGRAL") d
+	...s NewAccPLDr=$p(^DHCINVPRT(NewInv,"P",sub),"^",8)
+	..s rtn=##class(web.UDHCINVPayMode).DELETE(DelPayModeID)
+	
+	;
+	s paysub="0",PayNum=0
+	f  s paysub=$o(^DHCINVPRT(OldInv,"P",paysub))   q:(paysub="")||(rtn'=0)   d
+	.s myINVPMRowID=OldInv_"||"_paysub
+	.s rtn=##class(web.UDHCINVPayMode).SELECT(myINVPMRowID)
+	.i +rtn=0 d
+	..s PLIST(0)=NewInv             ;IPM_PRT_ParRef
+	..k PLIST(1)
+	..k PLIST(2)
+	..s PLIST(8)=PDate			
+	..s PLIST(9)=PTime
+	..s PayNum=PayNum+1	
+	..i PayNum=1 d
+	...s PLIST(10)=NewAccPLDr
+	...s myAccPLDR=PLIST(10)  ;消费指针
+	...s myPatSum=PLIST(5)
+	..s rtn=##class(web.UDHCINVPayMode).INSERT()
+	
+	
+	s:myAccPLDR'="" AccBal=$p(^DHCACD("AccM",+myAccPLDR),"^",8)
+	i (+rtn=0)&&(myAccPLDR'="") d
+	.lock ^DHCACD("AccM",+myAccPLDR)
+	.s myrtn=##class(web.UDHCAccPayList).SELECT(myAccPLDR) 
+	.s InitSum=PLIST(10)
+	.s PLIST(10)=+$G(myPatSum)
+	.s ReturnMoney=OldAccount-myPatSum
+	.s LastLeft=PLIST(11)
+	.i LastLeft=""   s PLIST(11)=AccBal-myPatSum
+	.e   s PLIST(11)=PLIST(11)+ReturnMoney
+	.i +myrtn=0 d
+	..s myrtn=##class(web.UDHCAccPayList).UPDATE(myAccPLDR)
+	..i +myrtn'=0  lock -^DHCACD("AccM",+myAccPLDR)
+	.q:+myrtn'=0
+	.i LastLeft=""   d
+	..s myrtn=##class(web.DHCACPayList).UpdateAM(+myAccPLDR,(0-myPatSum))
+	..s myrtn=$p(myrtn,"^",1)
+	.e      d
+	..s myrtn=##class(web.DHCACPayList).UpdateAM(+myAccPLDR,ReturnMoney)
+	..s myrtn=$p(myrtn,"^",1)
+	.lock -^DHCACD("AccM",+myAccPLDR)
+    
+    
+	i +rtn=0 d
+		.d ##class(web.udhcOPRefEdit).tc()
+	e  d
+		.TRollBack
+	
+	q rtn
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// add hujunbin 14.12.5
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+// create by zhl 20140227
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+// 集中打印发票部分退费后没掉上医保接口需补掉时使用，给医保生成临时数据
+
+]]></Content>
+</UDLText>
+
+<Method name="BuildInsuTmp">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>myAPINRowID</FormalSpec>
+<Implementation><![CDATA[
+	s myTMPGID=""
+	i (myAPINRowID'="") d
+	.;查看废票是否是医保发票
+	.s myOldAPIDR=$p($g(^DHCINVPRTAP(+myAPINRowID)),"^",22)			;API_OldAPINV_DR
+	.s myInsDivDR=$p($g(^DHCINVPRTAP(myOldAPIDR)),"^",19)			;API_InsDiv_DR
+	.
+	.q:(myInsDivDR="")
+	.s myTMPGID=$i(^DHCTMPACCColPRT)
+	.;^DHCTMPACCColPRT("IP",myTMPGID,费别,1,"PrtRowID",1030)=1030
+	.;^DHCINVPRTCAPi(0,"APINVDR",{ACP_APINV_DR},{ACP_RowID}) 
+	.s myACPRowID=0
+	.f  s myACPRowID=$o(^DHCINVPRTCAPi(0,"APINVDR",myAPINRowID,myACPRowID)) q:(myACPRowID="")  d
+	..s myPRTRowID=$p($g(^DHCINVPRTCAP(myACPRowID)),"^",1)
+	..s myINSTypeDR=$p(^DHCINVPRT(myPRTRowID),"^",9)
+	..s ^DHCTMPACCColPRT("IP",myTMPGID,myINSTypeDR,1,"PrtRowID",myPRTRowID)=myPRTRowID
+	..s ^DHCTMPACCColPRT("IP",myTMPGID,myINSTypeDR,1,"APIRowID")=myAPINRowID
+
+   q myTMPGID
+]]></Implementation>
+</Method>
+
+<Method name="GetInsDivDrByPrtRowid">
+<Description>
+Lid
+2016-01-21
+根据发票rowid获取医保结算指针</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>prtRowid</FormalSpec>
+<Implementation><![CDATA[
+	new (prtRowid)
+	quit:+prtRowid=0 ""
+	set myINSDivDR=$p($g(^DHCINVPRT(prtRowid)),"^",30)     ;PRT_InsDiv_DR	
+	quit myINSDivDR
+]]></Implementation>
+</Method>
+</Class>
+</Export>

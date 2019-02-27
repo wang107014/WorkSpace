@@ -43,3 +43,25 @@
 		xlApp = null;
 		xlsheet = null;	
 	}
+
+
+
+##润乾导出
+
+	10.146.9.24 服务器
+	账户：administrator
+	密码：HisServer24!
+    写润乾报表的方法
+	function Export_Click(){
+		var stDate=getParam('stDate');
+		var endDate=getParam('endDate');
+		var transType=getParam('transType');
+		var payChannel=getParam('payChannel');
+		var result=getParam('result');
+		var hospDR=getParam('hospDR');
+		var fileName = 'DHCJudgeTradePay-第三方对账结果表.raq' + '&stDate=' + stDate + '&endDate=' + endDate + '&transType=' + transType;
+		fileName += '&payChannel=' + payChannel + '&result=' + result + '&hospDR=' + hospDR ;
+		var maxHeight = ($(window).height() || 550) * 0.8;
+		var maxWidth = ($(window).width() || 1366) * 0.8;
+		DHCCPM_RQPrint(fileName, maxWidth, maxHeight);	  //DHCCPMRQCommon.js
+	}
