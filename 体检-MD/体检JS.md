@@ -10,7 +10,7 @@
 		xlBook= xlApp.Workbooks.Add(Templatefilepath); //固定
 		xlsheet= xlBook.WorkSheets("Sheet1"); //Excel下标的名称
 		
-		var Objtbl = document.getElementById('tDHCPEIReport');
+		var Objtbl = document.getElementById('tDHC_OPReg_RegQuery');
 		var Rows = Objtbl.rows.length;
 		var j=1;
 		for (i = 1; i <= Rows - 1; i++) {

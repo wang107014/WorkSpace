@@ -1,0 +1,362 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-03-07 09:10:27">
+<CSP name="scripts/dhcbill/dhcopbill/dhcbill.opbill.CRMCoupon.js" application="/dthealth/web/" default="1"><![CDATA[
+/**
+ * FileName: dhcbill.opbill.CRMCoupon.js
+ * Anchor: ZhYW
+ * Date: 2018-01-18
+ * Description: 选择优惠政策
+ */
+var PUBLIC_CONSTANT = {
+	SESSION: {
+		GUSER_ROWID: session['LOGON.USERID'],
+		GROUP_ROWID: session['LOGON.GROUPID'],
+		CTLOC_ROWID: session['LOGON.CTLOCID'],
+		HOSP_ROWID: session['LOGON.HOSPID']
+	},
+	METHOD: {
+		CLS: 'DHCBillCRMPay.OPBillPay'
+	}
+};
+
+$(document).ready(function () {
+	initQueryMenu();
+	initCouponGrid();
+	initOEItmGrid();
+	initpaymodeCombo();
+});
+
+function initQueryMenu() {
+	$HUI.linkbutton('#btn-calc', {
+		onClick: function () {
+			calc_Click();
+		}
+	});
+
+	$HUI.linkbutton('#btn-save', {
+		onClick: function () {
+			save_Click();
+		}
+	});
+
+	$HUI.linkbutton('#btn-cancel', {
+		onClick: function () {
+			cancel_Click();
+		}
+	});
+}
+
+function initCouponGrid() {
+	$HUI.datagrid('#couponList', {
+		fit: true,
+		striped: true,
+		iconCls: 'icon-paper',
+		headerCls: 'panel-header-gray',
+		singleSelect: true,
+		selectOnCheck: true,
+		checkOnSelect: true,
+		fitColumns: false,
+		autoRowHeight: false,
+		pageSize: 999999999,
+		toolbar: [],
+		data: [],
+		columns: [[{
+					title: 'couponId',
+					field: 'couponId',
+					hidden: true
+				}, {
+					title: '优惠名称',
+					field: 'couponName',
+					width: 150
+				}, {
+					title: '优惠卡号',
+					field: 'couponNo',
+					width: 100
+				}, {
+					title: '有期期至',
+					field: 'expireDate',
+					width: 100
+				}, {
+					title: '优惠金额',
+					field: 'couponAmt',
+					align: 'right',
+					width: 80
+				}, {
+					title: '折扣',
+					field: 'couponDiscount',
+					align: 'right',
+					width: 80
+				}, {
+					title: 'couponTypeDR',
+					field: 'couponTypeDR',
+					hidden: true
+				}, {
+					title: '优惠类型',
+					field: 'couponType',
+					width: 80
+				}, {
+					title: 'preferentialWayDR',
+					field: 'preferentialWayDR',
+					hidden: true
+				}, {
+					title: '优惠方式',
+					field: 'preferentialWay',
+					width: 80
+				}
+			]],
+		onSelect: function (rowIndex, rowData) {
+			loadOEItmGrid(rowData);
+		},
+		onUnselect: function (rowIndex, rowData) {
+			loadOEItmGrid(rowData);
+		}
+	});
+	//加载数据
+	loadCouponGrid();
+}
+
+function initOEItmGrid() {
+	$HUI.datagrid('#oeitmList', {
+		fit: true,
+		striped: true,
+		iconCls: 'icon-paper-tri',
+		headerCls: 'panel-header-gray',
+		checkOnSelect: false, //如果为false, 当用户仅在点击该复选框的时候才会被选中或取消
+		autoRowHeight: false,
+		pageSize: 999999999,
+		toolbar: '#oeitmBar',
+		data: [],
+		columns: [[{
+					title: 'ck',
+					field: 'ck',
+					checkbox: true
+				}, {
+					title: '医嘱',
+					field: 'arcimDesc',
+					width: 150
+				}, {
+					title: '金额',
+					field: 'pboAmt',
+					align: 'right',
+					width: 80
+				}, {
+					title: 'arcim',
+					field: 'arcim',
+					hidden: true
+				}, {
+					title: 'oeitm',
+					field: 'oeitm',
+					hidden: true
+				}, {
+					title: 'arcimCode',
+					field: 'arcimCode',
+					hidden: true
+				}, {
+					title: 'pboRowId',
+					field: 'pboRowId',
+					hidden: true
+				}, {
+					title: 'prtRowId',
+					field: 'prtRowId',
+					hidden: true
+				}, {
+					title: 'checked',
+					field: 'checked',
+					hidden: true
+				}, {
+					title: 'disabled',
+					field: 'disabled',
+					hidden: true
+				}
+			]],
+		onLoadSuccess: function (data) {
+			$.each(data.rows, function (index, row) {
+				var checked = row.checked;
+				var disabled = row.disabled;
+				setOrdItmRowChecked(index, ((+checked == 1) ? true : false));
+				$('input:checkbox[name="ck"]')[index].disabled = (+disabled == 1) ? true : false;
+			});
+		},
+		onCheck: function (rowIndex, rowData) {
+			if (+rowData.disabled == 1) {
+				$('#oeitmList').datagrid("uncheckRow", index);
+			}
+			setCouponValue(rowIndex, rowData);
+		},
+		onUncheck: function (rowIndex, rowData) {
+			setCouponValue(rowIndex, rowData);
+		},
+		onCheckAll: function (rows) {
+			$.each(rows, function (index, row) {
+				if (+row.disabled == 1) {
+					$('#oeitmList').datagrid("uncheckRow", index);
+				}
+				setCouponValue(index, row);
+			});
+		},
+		onUncheckAll: function (rows) {
+			$.each(rows, function (index, row) {
+				setCouponValue(index, row);
+			});
+		}
+	});
+}
+
+function loadCouponGrid() {
+	var queryParams = {
+		ClassName: PUBLIC_CONSTANT.METHOD.CLS,
+		QueryName: 'FindCouponList',
+		guser: getParam('guser'),
+		prtRowIdStr: getParam('prtRowIdStr'),
+		rows: 999999999
+	};
+	loadDataGridStore('couponList', queryParams);
+}
+
+function loadOEItmGrid(row) {
+	var couponId = row.couponId;
+	var queryParams = {
+		ClassName: PUBLIC_CONSTANT.METHOD.CLS,
+		QueryName: 'FindOrdItm',
+		guser: getParam('guser'),
+		couponId: couponId,
+		prtRowIdStr: getParam('prtRowIdStr'),
+		rows: 999999999
+	};
+	loadDataGridStore('oeitmList', queryParams);
+}
+
+function setCouponValue(index, row) {
+	var arcimCode = row.arcimCode;
+	if ($('input:checkbox[name="ck"]')[index].disabled) {
+		return;
+	}
+	var pboId = row.pboRowId;
+	var couponRow = $('#couponList').datagrid('getSelected');
+	if (!couponRow) {
+		return;
+	}
+	var couponId = couponRow.couponId;
+	var check = getOrdItmRowChecked(index) ? 1 : 0;
+	$.m({
+		ClassName: PUBLIC_CONSTANT.METHOD.CLS,
+		MethodName: 'SetArcimValue',
+		guser: getParam('guser'),
+		prtRowIdStr: getParam('prtRowIdStr'),
+		couponId: couponId,
+		arcimCode: arcimCode,
+		pboId: pboId,
+		check: check
+	});
+}
+
+/**
+ * 获取医嘱明细datagrid勾选/不勾选状态
+ */
+function getOrdItmRowChecked(index) {
+	return getColumnValue(index, 'ck', 'oeitmList') == 1 ? true : false;
+}
+
+/**
+ * 设置医嘱明细datagrid勾选/不勾选状态
+ */
+function setOrdItmRowChecked(index, checked) {
+	setColumnValue(index, 'ck', checked, 'oeitmList');
+}
+
+function calc_Click() {
+	var selfPayAmt = parseFloat(getSelfPayAmt()).toFixed(2);
+	var couponAmt = parseFloat(getCouponAmt()).toFixed(2);
+	couponAmt = (couponAmt - selfPayAmt > 0) ? selfPayAmt : couponAmt;
+	var newPayAmt = selfPayAmt - couponAmt;
+	$('#couponAmt').val((couponAmt));
+	$('#newPayAmt').val(newPayAmt.toFixed(2));
+}
+
+function getCouponAmt() {
+	return $.m({
+		ClassName: PUBLIC_CONSTANT.METHOD.CLS,
+		MethodName: 'CalcCouponAmt',
+		guser: getParam('guser'),
+		prtRowIdStr: getParam('prtRowIdStr')
+	}, false);
+}
+
+function getSelfPayAmt() {
+	return $.m({
+		ClassName: PUBLIC_CONSTANT.METHOD.CLS,
+		MethodName: 'GetPatSelfPayAmt',
+		prtRowIdStr: getParam('prtRowIdStr')
+	}, false);
+}
+function initpaymodeCombo() {
+		//var url = $URL + "?ClassName=web.UDHCOPGSConfig&QueryName=ReadPMConfig&GPRowID="+PUBLIC_CONSTANT.SESSION.GROUP_ROWID+"&ResultSetType=array";
+		$HUI.combobox('#paymodeCombo', {
+		panelHeight: 'auto',
+		editable: false,
+		multiple: false,
+		url: $URL,
+		valueField: 'CTPMRowID',
+		textField: 'CTPMDesc',
+		onBeforeLoad: function (param) {
+			param.ClassName = 'web.UDHCOPGSConfig';
+			param.QueryName = 'GetPayModeListByGroupID';
+			param.GPRowID= PUBLIC_CONSTANT.SESSION.GROUP_ROWID
+			param.ResultSetType = 'array';
+		},
+		
+	});
+	
+}
+
+function save_Click() {
+	var expStr = PUBLIC_CONSTANT.SESSION.GUSER_ROWID + '^' + PUBLIC_CONSTANT.SESSION.GROUP_ROWID;
+	var payMode=getValueById("paymodeCombo")
+	$.m({
+		ClassName: PUBLIC_CONSTANT.METHOD.CLS,
+		MethodName: 'SaveCouponPayInfo',
+		guser: getParam('guser'),
+		prtRowIdStr: getParam('prtRowIdStr'),
+		payMode:payMode,
+		expStr: expStr
+	}, function (jsonStr) {
+		var jsonObj = JSON.parse(jsonStr);
+		$.messager.alert('提示', jsonObj.msg, 'info', function () {
+			if (jsonObj.success == 0) {
+				$.m({
+					ClassName: PUBLIC_CONSTANT.METHOD.CLS,
+					MethodName: 'DelCRMPayGlobal',
+					guser: getParam('guser'),
+					prtRowIdStr: getParam('prtRowIdStr')
+				}, function (rtn) {
+					window.returnValue = 0;
+					window.close();
+				});
+			}
+		});
+	});
+}
+
+function cancel_Click() {
+	$.messager.confirm('提示', '没有使用优惠，是否确认结算？', function (r) {
+		if (!r){
+		}else{
+			$.m({
+				ClassName: PUBLIC_CONSTANT.METHOD.CLS,
+				MethodName: 'DelCRMPayGlobal',
+				guser: getParam('guser'),
+				prtRowIdStr: getParam('prtRowIdStr')
+			}, function (rtn) {
+				window.returnValue = 0;
+				window.close();
+			});
+		}
+	});
+}
+/*
+window.onbeforeunload = function () {
+	window.event.returnValue= '您确定要离开此界面吗？';
+	window.returnValue = 0;
+}
+*/]]></CSP>
+</Export>

@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-03-07 09:11:10">
+<CSP name="csp/dhcbill.opbill.CRMCoupon.csp" application="/dthealth/web/" default="1"><![CDATA[
+<!-- 
+ * FileName: dhcbill.opbill.CRMCoupon.csp
+ * Anchor: ZhYW
+ * Date: 2018-12-18
+-->
+<!DOCTYPE html>
+<csp:method name=OnPreHTTP arguments="" returntype=%Boolean>
+ if ##class(websys.SessionEvents).SessionExpired() quit 1
+ quit 1
+</csp:method>
+<html>
+<head>
+	<TITLE><EXTHEALTH:TRANSLATE id=title>##(%session.Get("TITLE"))##</EXTHEALTH:TRANSLATE></TITLE>
+	<EXTHEALTH:HEAD></EXTHEALTH:HEAD>
+	<HISUI/>
+	<link rel='stylesheet' type='text/css' href='../scripts/dhcbill/themes/default/dhcbill.css'/>
+	<script type='text/javascript' src='../scripts/dhcbill/dhcjs/loader.js'></script>
+	<script type='text/javascript' src='../scripts/dhcbill/dhcbill.common.js'></script>
+	<script type='text/javascript' src='../scripts/hisui/websys.hisui.js'></script>
+</head>
+
+<body style="padding:10px;">
+	<div class="hisui-layout" data-options="fit:true,border:false">
+	 	<div data-options="region:'center',border:false" style="padding-bottom: 20px;">
+			<table class="hisui-datagrid" title="优惠政策" id="couponList"></table>
+	 	</div>
+	 	<div data-options="region:'east',border:false" style="width:530px;padding:0 0 20px 10px;">
+			<table class="hisui-datagrid" title="医嘱" id="oeitmList"></table>
+	   	</div>
+	</div>
+	<div id="oeitmBar">
+		<div style="padding:5px 0 5px 0;">
+			<span style="padding-left:5px;">优惠金额</span>
+			<input id="couponAmt" class="textbox" style="width:70px;color:#ff0000;" disabled>
+			<span style="padding-left:5px;">需支付</span>
+			<input id="newPayAmt" class="textbox" style="width:70px;color:#ff0000;" disabled>
+			<tr>
+			<td>支付方式</td>
+			<td>
+				<select id="paymodeCombo" style="width:140px;"></select>	
+			</td>
+			<td class="tdspace"></td>
+			<td class="tdspace"></td>
+			</tr>
+			<a href="javascript:;" class="hisui-linkbutton" id="btn-calc" style="margin-left:5px;">优惠计算</a>
+			<a href="javascript:;" class="hisui-linkbutton" id="btn-save" style="margin-left:5px;">确认</a>
+			<a href="javascript:;" class="hisui-linkbutton" id="btn-cancel" style="margin-left:5px;">取消</a>
+		</div>
+	</div>
+	<script type="text/javascript" src="../scripts/dhcbill/dhcopbill/dhcbill.opbill.CRMCoupon.js"></script>
+</body>
+</html>]]></CSP>
+</Export>

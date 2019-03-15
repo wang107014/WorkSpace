@@ -422,3 +422,15 @@
 	
 	//科室医护人员归属RB_Resource
 	SELECT * FROM RB_Resource
+
+	//医院
+	SELECT * FROM CT_Hospital WHERE HOSP_RowId=2
+
+##多表查询
+
+	SELECT ALT_Arc_Dr->ARCIM_Desc,ALT_Part_Dr->AP_Desc,ALT_Tar_Dr->TARI_Desc,c.TP_Price FROM DHC_AppArcLinkTar a,DHC_TarItem b,DHC_TarItemPrice c WHERE a.ALT_Tar_Dr=b.TARI_RowId AND b.TARI_RowId=c.TP_TARI_ParRef
+
+
+##检查申请单中间表
+
+	SELECT * FROM DHC_AppRepTarItm

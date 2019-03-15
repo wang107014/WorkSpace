@@ -76,7 +76,6 @@
 	//套餐产品表
 	SELECT * FROM BS_Bill.Pkg_Product
 	
-	
 	//套餐产品明细表
 	SELECT * FROM BS_Bill.Pkg_ProductDetails
 	
@@ -88,3 +87,24 @@
 	
 	//套餐加项
 	SELECT * FROM BS_Bill.Pkg_AdditionalPackage
+
+
+##结算订单
+
+	//订单表
+	SELECT bill_statuscode,* FROM BS_Bill.Pkg_PatientBill WHERE bill_rowid=16
+
+	//收费表
+	SELECT * FROM BS_Bill.Pkg_InvPrt
+
+
+##套餐日结
+
+	//套餐日结账表
+	SELECT * FROM BS_Bill.Pkg_Reports
+
+	//更新收费表中的结算标志，结算时间，结算日期，日结表的关联id等字段
+	SELECT * FROM BS_Bill.Pkg_InvPrt WHERE prt_date="2019-03-01"
+
+	//更新定金表中的结算标志，结算时间，结算日期，日结表的关联id，结算人员等字段
+	SELECT * FROM BS_Bill.Pkg_Deposit

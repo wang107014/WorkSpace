@@ -194,3 +194,7 @@
 	SELECT * FROM DHC_PE_PreGADM WHERE PGADM_RowId IN ('374','375','376','406')
 	
 	SELECT * FROM DHC_PE_PreGBaseInfo WHERE PGBI_RowId=233
+
+
+##延迟体检标志
+	SELECT  * FROM DHC_PE_PreIOrdItem WHERE PIOI_PostponedFlag="Y"
