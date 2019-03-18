@@ -31,6 +31,9 @@
 	
 	//医嘱表
 	SELECT OEORI_ItmMast_DR->ARCIM_Desc,* FROM OE_OrdItem WHERE OEORI_OEORD_ParRef=877
+
+	//医嘱扩展表
+	SELECT * FROM OE_OrdItemExt
 	
 	//医嘱项表
 	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId IN ('2108||1')
