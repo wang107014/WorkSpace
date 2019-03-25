@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-01-11 18:50:03">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-03-18 10:18:50">
 <CSP name="scripts/udhcINVQuery.js" application="/dthealth/web/" default="1"><![CDATA[
 ///udhcINVQuery.js
 var myCombNameAry = new Array();
@@ -39,7 +39,13 @@ function BodyLoadHandler() {
 		obj.multiple = false;
 		obj.onchange = INVPRTFlag_OnChange;
 	}
-
+	//增加票据类型 add by mn 2019-01-26
+    var obj = document.getElementById("stypeFlag");
+	if (obj) {
+		obj.size = 1;
+		obj.multiple = false;
+		obj.onchange = stypeFlag_OnChange;
+	}
 	var obj = document.getElementById("INVFootFlagList");
 	if (obj) {
 		obj.size = 1;
@@ -359,7 +365,18 @@ function IntDoc() {
 		DHCWeb_SetListDefaultValue("INVPRTFlag", myINVStatus, "^", 0)
 	}
 	INVPRTFlag_OnChange();
-
+	//增加票据类型 add by mn 2019-01-26
+   DHCWebD_ClearAllListA("stypeFlag");
+	var encmeth = DHCWebD_GetObjValue("ReadsFlagBroker");  //ReadsFlagBroker
+	if (encmeth != "") {
+		var rtn = cspRunServerMethod(encmeth, "DHCWeb_AddToListA", "stypeFlag");
+	}
+	var myINVStatus = DHCWebD_GetObjValue("sFlag");
+	if (myINVStatus != "") {
+		DHCWeb_SetListDefaultValue("stypeFlag", myINVStatus, "^", 0)
+	}
+	stypeFlag_OnChange();
+	
 	DHCWebD_ClearAllListA("INVFootFlagList");
 	var encmeth = DHCWebD_GetObjValue("ReadFootEncrypt");
 	if (encmeth != "") {
@@ -498,7 +515,15 @@ function INVPRTFlag_OnChange() {
 		obj.value = myary[0];
 	}
 }
-
+	//增加票据类型 add by mn 2019-01-26
+function stypeFlag_OnChange() {
+	var myINVFlag = DHCWeb_GetListBoxValue("stypeFlag");
+	var myary = myINVFlag.split("^");
+	var obj = document.getElementById("sFlag");
+	if (obj) {
+		obj.value = myary[0];
+	}
+}
 function INVFootFlag_OnChange() {
 	var myINVFlag = DHCWeb_GetListBoxValue("INVFootFlagList");
 	var myary = myINVFlag.split("^");
@@ -600,16 +625,22 @@ function BodyUnLoadHandler() {
 function Reprint_Click(){
 	var Prtstr = PrtSite.join("^");
 	var APIStr = APISite.join("^");
-	var INVstr = Prtstr + "#" + APIStr;
-	var encmeth = DHCWebD_GetObjValue('getSendtoPrintinfo');
-	var Printinfo = cspRunServerMethod(encmeth, INVstr);
-	if (Printinfo == "") {
-		alert("请选择数据进行打印!");
-		return;
-	}
+	
 	var PDlime=String.fromCharCode(2);
+	var APIinfo=APIStr.split("^")
+	var prtRowidStr=""
+	if (APIinfo.length>1)
+	{
+		var prtRowidStr=tkMakeServerCall("web.udhcOPQUERY","GetPrtRowIDStrByAPI",APIStr)
+	}
+	if (prtRowidStr!="")
+	{
+		Prtstr=Prtstr+"^"+prtRowidStr
+	}
 	var INVinfo=Prtstr.split("^")
-	var INVstr=INVinfo[1]; //取prtrowid
+	for (len=1;len<INVinfo.length;len++)
+	{
+		var INVstr=INVinfo[len]; //取prtrowid
 	//alert(PDlime)
 	var Group = session['LOGON.GROUPID'];
 	var myExpStr = Group + "^^^";
@@ -637,24 +668,28 @@ function Reprint_Click(){
 		for(var j=0;j<RecLocStrList.length;j++){
 		var OrdType=RecLocStrList[j]  //
 		if(OrdType=="药品"){
-			var DurgDepLoc=RecLocStrList[j+1].split("\u0005")[0].split("^")[0] //药品科室
-			var Dispensing=RecLocStrList[j+1].split("\u0005")[0].split("^")[4] //发药窗口
-			var MedicineSite=DurgDepLoc
-			var medtxt="请到"+Dispensing+"窗口取药"       //导诊单显示取药窗口超常，放到第二行
-			//alert(medtxt)
-			//inlist="取药地点"+"^"+MedicineSite+PDlime+medtxt+"^"+""+PDlime+"药品名称"+"^"+""+PDlime
-			inlist="取药地点"+"^"+"^"+PDlime+medtxt+"^"+""+PDlime+"药品名称"+"^"+""+PDlime
-			var DurgInfo=RecLocStrList[j+1].split("\u0005")[1].split("!")   //药品信息
-			var DurgList=[]
-			for(var i=0;i<DurgInfo.length;i++){
-				var DurgName=DurgInfo[i].split("^")[0]  //药品名称
-				var DurgQty=DurgInfo[i].split("^")[1]	//药品数量
-				var DurgPrice=DurgInfo[i].split("^")[2]	//药品单价
-				var DurgPackUOM=DurgInfo[i].split("^")[3]	//药品单位
-				var PhyAcount=DurgInfo[i].split("^")[5]		//序号
-				inlist=inlist+"^"+PhyAcount+DurgName+PDlime
+			for (var index=0;index<RecLocStrList[j+1].split("\u0004").length;index++)
+			{
+				var DurgListInfo=RecLocStrList[j+1].split("\u0004")[index]
+				var DurgDepLoc=DurgListInfo.split("\u0005")[0].split("^")[0] //药品科室
+				var Dispensing=DurgListInfo.split("\u0005")[0].split("^")[4] //发药窗口
+				var MedicineSite=DurgDepLoc
+				var medtxt="请到"+Dispensing+"窗口取药"       //导诊单显示取药窗口超常，放到第二行
+				//alert(medtxt)
+				//inlist="取药地点"+"^"+MedicineSite+PDlime+medtxt+"^"+""+PDlime+"药品名称"+"^"+""+PDlime
+				inlist=inlist+"取药地点"+"^"+"^"+PDlime+medtxt+"^"+""+PDlime+"药品名称"+"^"+""+PDlime
+				var DurgInfo=DurgListInfo.split("\u0005")[1].split("!")   //药品信息
+				var DurgList=[]
+				for(var i=0;i<DurgInfo.length;i++){
+					var DurgName=DurgInfo[i].split("^")[0]  //药品名称
+					var DurgQty=DurgInfo[i].split("^")[1]	//药品数量
+					var DurgPrice=DurgInfo[i].split("^")[2]	//药品单价
+					var DurgPackUOM=DurgInfo[i].split("^")[3]	//药品单位
+					var PhyAcount=DurgInfo[i].split("^")[5]		//序号
+					inlist=inlist+"^"+PhyAcount+DurgName+PDlime
+				}
+				inlist=inlist+"-----------------------------------------"+"^"+""+PDlime
 			}
-			inlist=inlist+"--------------------------------------------------"+"^"+""+PDlime
 		}
 		if(OrdType=="检查"){
 			var InspectInfo=RecLocStrList[j+1].split("\u0004") //检查科室
@@ -679,7 +714,7 @@ function Reprint_Click(){
 						inlist=inlist+""+"^"+JCAcount+InspectInfoName+PDlime   //检查医嘱(注意事项为空时不显示此行)
 					}
 				}
-				inlist=inlist+"--------------------------------------------------"+"^"+""+PDlime
+				inlist=inlist+"-----------------------------------------"+"^"+""+PDlime
 				}	
 			
 		}	
@@ -699,16 +734,11 @@ function Reprint_Click(){
 				var InspectInfoStr=InspectSinge[1].split("!") //检验医嘱
 				inlist=inlist+"检验地点"+"^"+""+PDlime+InspectDepName+"^"+""+PDlime+"检验项目"+"^"+""+PDlime
 				for(var m=0;m<InspectInfoStr.length;m++){
-					var InspectInfoName=InspectInfoStr[m].split("^")[0]  //检验医嘱名称
-						var BookedNote=InspectInfoStr[m].split("^")[8]  //注意事项
-						if(BookedNote!=""){
-							BookedNote="  "+BookedNote;
-							inlist=inlist+""+"^"+InspectInfoName+PDlime+""+"^"+BookedNote+PDlime    //检验医嘱和注意事项
-						}else{
-							inlist=inlist+""+"^"+InspectInfoName+PDlime   //检验医嘱(注意事项为空时不显示此行)
-							}	
+						var InspectInfoName=InspectInfoStr[m].split("^")[0]  //检验医嘱名称
+						inlist=inlist+""+"^"+InspectInfoName+PDlime   //检验医嘱
+						
 					}
-				inlist=inlist+"--------------------------------------------------"+"^"+""+PDlime
+				inlist=inlist+"-----------------------------------------"+"^"+""+PDlime
 				}	
 			
 		}	
@@ -732,7 +762,7 @@ function Reprint_Click(){
 					*/
 					inlist=inlist+""+"^"+ZLAcount+InspectInfoName+PDlime   //治疗医嘱(注意事项为空时不显示此行)
 					}
-				inlist=inlist+"--------------------------------------------------"+"^"+""+PDlime
+				inlist=inlist+"----------------------------------------"+"^"+""+PDlime
 				}	
 			
 		}	
@@ -750,6 +780,7 @@ function Reprint_Click(){
 	var MyPara=MyPara+"^"+"AccLeftSum"+PDlime+AccLeftSum+"元"    //账户余额 wml
 	var myobj=document.getElementById("ClsBillPrint");
 	PrintFun(myobj,MyPara,inlist);
+}
 }
 function PrintFun(PObj,inpara,inlist){
 	////DHCPrtComm.js
@@ -905,6 +936,25 @@ function SelectRowHandler() {
 
 }
 
+//点击读卡查询 add by wangminglong 2019-1-22 start
+function ReadMagCard_Click(){
+	var myoptval = combo_CardType.getSelectedValue();    //dhtmlXCombo.js
+	var myrtn = DHCACC_GetAccInfo(m_SelectCardTypeDR, myoptval);    //DHCWeb.OPCommonManageCard.JS
+	var myary = myrtn.split("^");
+	var rtn = myary[0];
+	if (rtn == '0') {
+		DHCWebD_SetObjValueB("CardNo", myary[1]);
+		DHCWebD_SetObjValueB("PatientNO", myary[5]);
+		//CardVerify=myary[2];
+		//m_CardValidateCode=myary[2];
+		//m_CardSecrityNo=myary[2];
+		//GetValidatePatbyCard();
+		Find_click();
+	}
+}
+
+
+/*
 function ReadMagCard_Click() {
 	//m_CCMRowID  == HardType
 	//var rtn = DHCACC_ReadMagCard(m_CCMRowID, "R", "23","","");
@@ -927,7 +977,7 @@ function ReadMagCard_Click() {
 		Find_click();
 	}
 }
-
+*/
 function CheckPrint_OnChange() {
 	var eSrc = window.event.srcElement;
 	var rowobj = getRow(eSrc);

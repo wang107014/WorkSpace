@@ -198,3 +198,16 @@
 
 ##延迟体检标志
 	SELECT  * FROM DHC_PE_PreIOrdItem WHERE PIOI_PostponedFlag="Y"
+
+
+##已检未检标志
+
+	//OEORI_ItemStat_DR为6时表示已执行
+	SELECT OEORI_ItemStat_DR, * FROM OE_OrdItem WHERE OEORI_OEORD_ParRef="2984"
+ 
+	SELECT * FROM OEC_OrderStatus 
+
+
+
+
+##根据登记号查找项目名称,是否体检,是否延迟,是否放弃

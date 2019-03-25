@@ -1,0 +1,2897 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-03-25 14:20:43">
+<Class name="web.DHCPE.DHCPEIAdm">
+<Description>
+Created by MLH 2006/4
+Description:
+-----------------------
+Modified by SongDeBo 2006/5/25
+Description: Add parameter "IncludeRegisterec" in GetDataFromCRM
+			 add function "IAdmArrived()" 
+-------------------------
+modified by SongDeBo 2006/4/20
+Description: Nofity CRMSystem when audit in function "AuditUpdate"
+-----------------------------------</Description>
+<ClassType/>
+<Import>SQLUser</Import>
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%RegisteredObject</Super>
+<TimeChanged>65093,50250.605933</TimeChanged>
+<TimeCreated>60348,71947.496608</TimeCreated>
+
+<Query name="IAdm">
+<Description>
+Created by MLH   </Description>
+<Type>%Query</Type>
+<FormalSpec>PAPMINo:%String="",IADMName:%String="",AuditDateBegin:%String="",AuditDateEnd:%String="",STatusIsCheched:%String="",STatusIsCharged:%String=""</FormalSpec>
+<Parameter name="ROWSPEC" value="TRowId:%String,TPAADM:%String,TName:%String,TRegDate:%String,TAsCharged:%String,TStatus:%String,TAccountAmount:%String,TDiscountedAmount:%String,TFactAmount:%String,TAuditUser:%String,TAuditDate:%String,TPapmiNo:%String"/>
+</Query>
+
+<Method name="IAdmExecute">
+<Description>
+													登记号				姓名							审核人姓名						登记起始日期							登记截止日期					显示已审核的单位					显示已结算</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,PAPMINo:%String="",IADMName:%String="",AuditDateBegin:%String="",AuditDateEnd:%String="",STatusIsCheched:%String="",STatusIsCharged:%String=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	Set repid=$I(^CacheTemp)
+ 	s ind=1
+ 	s id=0
+   
+	s ^lisatest("IAdmQuery")=PAPMINo_"^"_IADMName_"^"_AuditDateBegin_"^"_AuditDateEnd_"^"_STatusIsCheched_"^"_STatusIsCharged
+	
+ 	i ("1" = STatusIsCheched)  d //显示已审核
+ 	.s STatusList="REGISTERED"_"CHECKED"
+ 	e  d 
+ 	.s STatusList="REGISTERED"
+ 	i ("1" = STatusIsCharged)  d //显示已结算
+ 	.s STatusList=STatusList_"CHARGED"
+
+	f  s id=$o(^DHCPEIADM(id)) q:id=""  d   //体检人员表ADM DHC_PE_IADM
+	.s CurData=$g(^DHCPEIADM(id))
+	.
+	.s ADM=$p(CurData,"^",1)				//IADM_PAADM_DR Medtrak的ADM号
+	.q:ADM=""
+	.s PapmiNo=$p($g(^PAPER($p(^PAADM(ADM),"^",1),"PAT",1)),"^",1)
+	.
+	.s PapmiNo=$p($g(^PAADM(ADM)),"^",1)	//取患者信息
+	.q:((PAPMINo'=PapmiNo)&(PAPMINo'=""))
+	.
+	.s Name=$p(^PAPER(PapmiNo,"ALL"),"^",1)	//姓名
+	.q:(('(Name[IADMName))&(IADMName'=""))
+	.
+	.s GADM=$p(CurData,"^",2)		
+	.q:(""'=GADM)							//不为空，则是团体患者
+	.
+	.s GTeam=$p(CurData,"^",3)				//
+	.
+	.s RegDate=$p(CurData,"^",5)			//登记日期 
+	.s ^lisatest("aRegDate")=RegDate
+	.q:(""'=AuditDateBegin)&(RegDate<AuditDateBegin)	
+	.q:(""'=AuditDateEnd)&(RegDate>AuditDateEnd)
+	.i (""'=RegDate) d
+	..s RegDate=$ZD(RegDate,3)
+	.
+	.s AsCharged=$p(CurData,"^",7)			//视同收费
+	.i ("Y"=AsCharged)  d
+	..s AsCharged="是"
+	.e  d
+	..s AsCharged="否"
+	.
+	.s Status=$p(CurData,"^",9)				//状态 PREREG 预挂号REGISTERED　登记(在HIS中) CHECKED 审批CHARGED　收费COMPLETED 完成(报告完成)
+	.q:('(STatusList[Status)&(PAPMINo="")&(IADMName=""))
+	.
+	.s AccountAmount=$p(CurData,"^",10)		//应收金额
+	.
+	.s DiscountedAmount=$p(CurData,"^",11)	//打折后金额 
+	.
+	.s FactAmount=$p(CurData,"^",12)		//最终金额 
+	.
+	.s AuditDate=$p(CurData,"^",14)	//审核日期
+	.i (""'=AuditDate) d
+	..s AuditDate=$ZD(AuditDate,3)
+    .
+    .d IAdmBuild
+	Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+IAdmBuild
+	//							姓名   登记日期  视同收费     状态     应收金额        打折后金额          最终金额      审核人      审核日期  
+	//			 TRowId  TPAADM TName TRegDate TAsCharged TStatus TAccountAmount TDiscountedAmount TFactAmount TAuditUser TAuditDate
+	set Data=$lb( $g(id), ADM,   Name, RegDate, AsCharged, Status, AccountAmount, DisCountedAmount, FactAmount, AuditUser, AuditDate, PapmiNo)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+ 	q
+]]></Implementation>
+</Method>
+
+<Method name="IAdmFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>IAdmExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="IAdmClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>IAdmExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// **************************************************************************
+
+]]></Content>
+</UDLText>
+
+<Query name="PAADMList">
+<Description>
+患者列表 </Description>
+<Type>%Query</Type>
+<Parameter name="ROWSPEC" value="TName:%String,TPAADM:%String,TRowId:%String"/>
+</Query>
+
+<Method name="PAADMListExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$I(^CacheTemp)
+ 	s ind=1
+ 	s id=0
+	f  s id=$o(^DHCPEIADM(id)) q:id=""  d   //体检人员表ADM DHC_PE_IADM
+	.s CurData=$g(^DHCPEIADM(id))
+	.s ADM=$p(CurData,"^",1)				//IADM_PAADM_DR Medtrak的ADM号
+	.q:(""=ADM)
+	.s PapmiNo=$p($g(^PAADM(ADM)),"^",1)
+	.s Name=$p(^PAPER(PapmiNo,"ALL"),"^",1)	//
+    .d PAADMListBuild
+	Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+PAADMListBuild
+	set Data=$lb( Name, ADM, $g(id) )
+	s ^lisatest("IAdmData")=Data
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+ 	q
+]]></Implementation>
+</Method>
+
+<Method name="PAADMListFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>PAADMListExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="PAADMListClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>PAADMListExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="AuditUpdate">
+<Description>
+审批状态   Created by MLH
+return: 0-正常 ,  else-有错</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>itmjs:%Library.String="",itmjsex:%Library.String="",IRowId:%Library.String="",IStatus:%Library.String="",AuditAmount:%Library.String="",AuditUser:%Library.String=""</FormalSpec>
+<Implementation><![CDATA[
+	s ^lisatest("AuditUpdate",IRowId)=IStatus_"!"_AuditAmount_"!"_AuditUser
+	s AuditDate=+$h
+	s crmAdmId=""
+	&sql(select IADM_CRMADM  into :crmAdmId  from dhc_pe_iadm where IADM_RowId=:IRowId)
+	q:crmAdmId="" -1
+	
+	s CurData=$g(^DHCPEIADM(IRowId))
+	s AsCharged=$p(CurData,"^",7)
+	//i AsCharged="Y"     //视同收费
+	s PAADM=$p(CurData,"^",1)
+	q:PAADM="" -1
+	
+	if IStatus="CHECKED"  d
+	.//通过审核，处理视同收费(医嘱Billed状态TB->P,视同收费表插入,状态O)
+	.i AsCharged="Y" d
+	..s OrdId=0
+	..f  s OrdId=$o(^OEORD(0,"Adm",PAADM,OrdId)) q:OrdId=""  d
+	...s OrdItem=0
+	...f  s OrdItem=$o(^OEORD(OrdId,"I",OrdItem)) q:OrdItem=""  d
+	....s OriData=$g(^OEORD(OrdId,"I",OrdItem,3))
+	....s BillFlag=$p(OriData,"^",5)
+	....i ((BillFlag="TB")!(BillFlag="B")) d
+	.....s OriRowId=OrdId_"||"_OrdItem
+	.....&sql(insert into DHC_PE_AsChargedOrder(ACO_PAADM_DR,ACO_OEORI_DR,ACO_BillStatus)values(:PAADM,:OriRowId,'O'))
+	.....&sql(update OE_OrdItem set Oeori_Billed='P' where oeori_rowid=:OriRowId)
+	.//
+	.&sql(update DHC_PE_IAdm set IADM_Status=:IStatus where IADM_RowId=:IRowId)
+	e  d
+	.//取消审核，处理视同收费(已挂帐的核实医嘱Billed状态P->TB,视同收费表删除该记录)
+	.i AsCharged="Y" d
+	..s AsChargeOrd=0
+	..f  s AsChargeOrd=$o(^DHCPEACO(0,"PAADM",PAADM,AsChargeOrd)) q:AsChargeOrd=""  d
+	...s AsChargeStatus=$p(^DHCPEACO(AsChargeOrd),"^",3)
+	...i AsChargeStatus="O" d //医嘱是挂帐
+	....s OrdRowId=$p(^DHCPEACO(AsChargeOrd),"^",2)
+	....s OrdId=$p(OrdRowId,"||",1)
+	....s OrdItem=$p(OrdRowId,"||",2)
+	....s OriData=$g(^OEORD(OrdId,"I",OrdItem,1))
+	....s OrdStat=$p(OriData,"^",13)
+	....i (OrdStat=1) d //医嘱状态是核实
+	.....&sql(update OE_OrdItem set Oeori_Billed='TB' where oeori_rowid=:OrdRowId)
+	.....&sql(delete from DHC_PE_AsChargedOrder where ACO_RowId=:AsChargeOrd)
+	.//
+	.&sql(update DHC_PE_IAdm set IADM_Status=:IStatus where IADM_RowId=:IRowId)
+	
+	s gatewayCRM=##class(web.DHCPE.CRM.Factory).GetGateway()
+	s rtn=gatewayCRM.ExamStatusNotify("PERSON",crmAdmId,IStatus,"")
+	
+	q 0
+]]></Implementation>
+</Method>
+
+<Method name="IBilled">
+<Description>
+结算 Create by MLH
+test w ##Class(web.DHCPE.DHCPEIAdm).IBilled</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>itmjs:%Library.String="",itmjsex:%Library.String="",RowId:%Library.String="",PAADM:%Library.String="",UserId:%Library.String="",PaymodeType:%Library.String="",ChequeNo:%Library.String="",Instype:%Library.String="",gloc:%Library.String="",FactAmount:%Library.String="",PayAmount:%Library.String="",GDelegate:%Library.String="",GRowId:%Library.String=""</FormalSpec>
+<Implementation><![CDATA[
+	//s ^Bob("temp","IBilled's param()")="itmjs="_itmjs_"; itmjsex="_itmjsex_"; RowId="_RowId_"; PAADM="_PAADM _"; UserId="_UserId _"; PaymodeType="_PaymodeType _"; ChequeNo="_ChequeNo _"; Instype="_Instype _"; gloc="_gloc _"; FactAmount="_ FactAmount
+	//q 101
+	s BilledDate=+$h
+	s BilledTime=$p($H,",",2)
+	s billret=1
+	s qflag=0
+	
+	//是团体代表,取视同收费状态
+	i GDelegate="Y" d 
+	.i GRowId="" s qflag=1
+	.s AsCharged=$p($g(^DHCPEGADM(GRowId)),"^",15)
+	e  d
+	.i RowId="" s qflag=1
+	.s CurData=$g(^DHCPEIADM(RowId))
+	.s AsCharged=$p(CurData,"^",7)
+
+	q:qflag=1 -1
+	
+	q:PAADM="" -1
+	//视同收费处理，医嘱Billed状态P->TB(真正收费时->P),视同收费表修改状态为O->P
+
+	i AsCharged="Y" d    //视同收费
+	.s AsChargeOrd=0
+	.f  s AsChargeOrd=$o(^DHCPEACO(0,"PAADM",PAADM,AsChargeOrd)) q:AsChargeOrd=""  d
+	..s AsChargeStatus=$p(^DHCPEACO(AsChargeOrd),"^",3)
+	..i AsChargeStatus="O" d //医嘱是挂帐
+	...s OrdRowId=$p(^DHCPEACO(AsChargeOrd),"^",2)
+	...s OrdId=$p(OrdRowId,"||",1)
+	...s OrdItem=$p(OrdRowId,"||",2)
+	...s OriData=$g(^OEORD(OrdId,"I",OrdItem,3))
+	...s BillFlag=$p(OriData,"^",5)
+	...i ((BillFlag="P")) d //挂帐医嘱
+	....&sql(update OE_OrdItem set Oeori_Billed='TB' where oeori_rowid=:OrdRowId)
+	....&sql(update DHC_PE_AsChargedOrder set ACO_BillStatus='P' where ACO_RowId=:AsChargeOrd)
+	//
+	
+	s ordId="", ordIChd="0",totalAmount=0
+	s ordId=$o(^OEORD(0,"Adm",PAADM,ordId)) 
+	q:ordId=""  
+	s patType=$p(^PAADM(PAADM),"^",3)
+	s Instype1=$p(^PAADM(PAADM,1),"^",7)	//PAADM_AdmReason_DR 
+	
+	f  s ordIChd=$o(^OEORD(ordId,"I",ordIChd)) q:ordIChd=""  d
+	.s billFlag=$p(^OEORD(ordId,"I",ordIChd,3),"^",5)
+	.s arcItm=$p(^OEORD(ordId,"I",ordIChd,1),"^",2)
+	.s sstDate=$p(^OEORD(ordId,"I",ordIChd,1),"^",9)
+	.i ((billFlag="TB")!(billFlag="B"))  d
+	..//s itmPrice=##class(web.UDHCJFPRICE).GetOrderPrice(patType,"",arcItm,sstDate,"",Instype1,"","") 
+	..s PIADM=$p(CurData,"^",4)
+	..s itmPrice=##class(web.DHCPE.PreItemList).GetOrderPrice(arcItm,PIADM)
+	..s totalAmount=totalAmount+(+itmPrice)
+	
+	s Paymode=PaymodeType_"^"_ChequeNo_"^"  
+	//parameter:  Paadminfo,Userid,UnBillOrdStr,Instype,PatPaySum,Payinfo,gloc,SFlag,OldINVRID,InsPayCtl)
+	//s ^lisatest(PAADM,"IBILLED-par")=RowId_"!"_PAADM_"!"_UserId_"!"_Instype_"!"_totalAmount_"!"_Paymode_"!"_gloc_"!"_PayAmount
+	//                                 //197!64071!10137!2!1000!1^^!47!800 
+	s ret=##class(web.DHCOPINVCons).OPBillCharge(PAADM,UserId,"",Instype,totalAmount,Paymode,gloc,"0","","0",PayAmount) 
+	//s ^lisatest("retretret")=ret
+	i ($p(ret,"^",1)=0) d
+	.//&sql(update DHC_PE_IAdm set IADM_Status='CHARGED',IADM_DischargedAmount=:PayAmount where IADM_RowId=:RowId)
+	.s billret=ret
+	q billret
+]]></Implementation>
+</Method>
+
+<Method name="GetReceiptPrtDetail">
+<Description>
+////////////////////////////////////
+Created by MLH 
+Print Receipt</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>JSFunName:%String,InvRowID:%String,UseID:%String,PayMode:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s ^lisatest("GetReceiptPrtDetail")=JSFunName_"^"_InvRowID_"^"_UseID_"^"_PayMode
+	s ^lisatest("GetReceiptPrtDetail","$ZN","$j")=$ZN_"^"_$j
+	Quit:$g(InvRowID)="" ""
+	s SelectPrtDr=InvRowID
+		
+	Set PatDr=$p(^DHCINVPRT(SelectPrtDr),"^",15)
+	Quit:$g(PatDr)="" ""
+	
+	Set PatName=$p(^PAPER(PatDr,"ALL"),"^",1)
+	Set PatNo=$p(^PAPER(PatDr,"PAT",1),"^",2)
+	Set Date=$p(^DHCINVPRT(SelectPrtDr),"^",5)
+	s myInvNo=$p(^DHCINVPRT(SelectPrtDr),"^",14)
+	Set DetailStr="PatName"_$C(2)_PatName_"^"_"RegNo"_$C(2)_PatNo_"^"_"Date"_$C(2)_$zd(Date,3)
+	s DetailStr=DetailStr_"^"_"OpenID"_$c(2)_UseID
+	s DetailStr=DetailStr_"^"_"PayMode"_$c(2)_PayMode
+	s DetailStr=DetailStr_"^"_"InvNo"_$c(2)_myInvNo
+	
+	Kill ^TMP($ZN,$j)
+	
+	;Add an Index for RecLoc
+	s INVLinkDr=0
+	For  Set INVLinkDr=$o(^DHCBCI(0,"INV",SelectPrtDr,INVLinkDr)) Quit:INVLinkDr=""  Do
+	.Set Bill=$p(^DHCBCI(INVLinkDr),"^",2)
+	.Quit:'$D(^DHCPB(Bill))
+	.Set Ord=0 For  Set Ord=$o(^DHCPB(Bill,"O",Ord)) Quit:Ord=""  Do
+	..q:($d(^DHCPB(Bill,"O",Ord))=10)		
+	..s Prescno=""
+	..s OEIMDR=$p(^DHCPB(Bill,"O",Ord),"^",4)
+	..s Arcim=$p(^DHCPB(Bill,"O",Ord),"^",3) ;DHC_PatBillOrder->PBO_ARCIM_DR
+	..s ARCCATRowid=$p(^ARCIM(+Arcim,$p(Arcim,"||",2),1),"^",10)
+	..s OrderType=$p(^ARC("IC",ARCCATRowid),"^",7)
+	..s myPresNo=$p(^OEORD(+OEIMDR,"I",$p(OEIMDR,"||",2),1),"^",14)
+	..s recdepDR=$p($g(^OEORD(+OEIMDR,"I",+$p(OEIMDR,"||",2),3)),"^",6) ;接收科室
+	..s loctype=$p(^CTLOC(recdepDR),"^",13)
+	..i loctype="" s loctype="Z"	;放在最后?
+	..s ^TMP($ZN,$j,"PBID",loctype,recdepDR,Bill_"||"_Ord)=""		;;;Index
+	..s ^TMP($ZN,$j,"PBO",Bill_"||"_Ord)=Bill_"^"_Ord_"^"_myPresNo_"^"_OrderType
+	;
+	;
+	;
+	s myLocType=""
+	f  s myLocType=$o(^TMP($ZN,$j,"PBID",myLocType)) q:myLocType=""  d
+	.s myRecDR=""
+	.f  s myRecDR=$o(^TMP($ZN,$j,"PBID",myLocType,myRecDR)) q:myRecDR=""  d
+	..s myPBORID=""
+	..f  s myPBORID=$o(^TMP($ZN,$j,"PBID",myLocType,myRecDR,myPBORID)) q:myPBORID=""  d
+	...s Bill=+myPBORID
+	...s Ord=$p(myPBORID,"||",2)
+	...s OEIMDR=$p(^DHCPB(Bill,"O",Ord),"^",4)
+	...s myPresNo=$p(^OEORD(+OEIMDR,"I",$p(OEIMDR,"||",2),1),"^",14)
+	...;
+	...d AddToDetails(Bill,Ord)
+	
+	s PatientShare=$p(^DHCINVPRT(SelectPrtDr),"^",16)
+	d AddToPLIST(PatientShare)
+	
+	;b	;	
+	s prtTxtInfo=$$GetTxtInfo()
+	;w prtTxtInfo,!
+	;b 
+	s prtListInfo=$$GetDetails()
+	;w prtListInfo
+	;b
+	s prtTxtInfo=DetailStr_"^"_prtTxtInfo
+	s ^lisatest("prtTxtInfo+prtListInfo")=prtTxtInfo_"@@@@@@"_prtListInfo
+	s rtnval=JSFunName_"('"_$ZCVT($g(prtTxtInfo),"O","JS")_"','"_$ZCVT($g(prtListInfo),"O","JS")_"');"
+	&javascript<#(rtnval)#>
+	
+	//KILL ^TMP($ZN,$j)
+	Quit "0"
+	;
+	;
+AddToPLIST(PatientShare)
+	s OPCatCode="TJF"
+	
+	Set $p(^TMP($ZN,$j,"CAT",OPCatCode),"^",1)="体检费"
+	Set $p(^TMP($ZN,$j,"CAT",OPCatCode),"^",2)=PatientShare
+	Set $p(^TMP($ZN,$j,"CAT",OPCatCode),"^",3)=PatientShare
+	Set $p(^TMP($ZN,$j,"CAT",OPCatCode),"^",4)=PatientShare
+	Set $p(^TMP($ZN,$j,"CAT",OPCatCode),"^",5)=PatientShare
+
+	Quit
+GetTxtInfo()
+	s OPCSInfo=""
+	s myTxtInfo=""
+	s myPatientShare=0
+	f  s OPCSInfo=$o(^TMP($ZN,$j,"CAT",OPCSInfo)) q:OPCSInfo=""  d
+	.i myTxtInfo="" d
+	..s myTxtInfo=OPCSInfo_$C(2)_$fn($p($g(^TMP($ZN,$j,"CAT",OPCSInfo)),"^",4),"",2)
+	.e  d
+	..s myTxtInfo=myTxtInfo_"^"_OPCSInfo_$C(2)_$fn($p($g(^TMP($ZN,$j,"CAT",OPCSInfo)),"^",4),"",2)
+	.s myPatientShare=+myPatientShare+$p(^TMP($ZN,$j,"CAT",OPCSInfo),"^",4)
+	
+	s mypayinfo="PaySum"_$C(2)_""_$fn(myPatientShare,"",2)
+	s myTxtInfo=myTxtInfo_"^"_mypayinfo
+	s myRMB=##class(web.DHCOPINVCons).RMBConvert(myPatientShare)
+	s mypayinfo="PaySumPY"_$C(2)_""_myRMB
+	s myTxtInfo=myTxtInfo_"^"_mypayinfo
+	
+	;b	;GetTxtInfo
+	q myTxtInfo
+AddDWin(myPresNo)
+	;^DHCPHARi("PRT",{PHA_PRT_DR},{PHA_ROWID})
+	;b  ;;myPresNo
+	s myWinDR=""
+	s myCTLoc=""
+	s UseFlag=0
+	q:myPresNo=""
+	Q:$d(^DHCPHARi("PRT",InvRowID))=0
+	f  s myWinDR=$o(^DHCPHARi("PRT",InvRowID,myWinDR)) q:myWinDR=""  d
+	.;b
+	.q:myPresNo'=$p($g(^DHCPHARW(myWinDR)),"^",16)
+	.q:UseFlag=1
+	.s myphloc=$p($g(^DHCPHARW(myWinDR)),"^",3)
+	.q:myphloc=""
+	.s myCTLoc=$p(^DHCPHLOC(myphloc),"^",1)
+	.s myCount=+$g(^TMP($ZN,$j,"WD"))
+	.f i=1:1:myCount  d
+	..i $g(^TMP($ZN,$j,"WD",i))=myCTLoc  d
+	...s UseFlag=1
+	.;^TMP($ZN,$j,"WD")
+	
+	q:UseFlag=1
+	q:myCTLoc=""
+
+	s ^TMP($ZN,$j,"WD")=$g(^TMP($ZN,$j,"WD"))+1
+	s Idx=$g(^TMP($ZN,$j,"WD"))
+	s ^TMP($ZN,$j,"WD",Idx)=myCTLoc
+	
+	s myrtn=##class(web.DHCMZYFXTYW02).GetCurrWin(myCTLoc)
+	;
+	;
+	s ^TMP($ZN,$j,"D")=$g(^TMP($ZN,$j,"D"))+1
+	s Idx=$g(^TMP($ZN,$j,"D"))
+
+	s ^TMP($ZN,$j,"D",Idx)=$p(myrtn,"^",3)_"^^^^"
+	quit
+	;
+AddToDetails(myBill,myOrd)
+	;ArcimDesc_"^"_OEORI_"^"_recdepcode_"^"_recdepdesc_"^"_PBOrderRowid_"^"_OrderUnitPrice_"^"_OrderBillQty_"^"_OrderSum_"^"_OrderType_"^"_Prescno_"^"_ORCATDesc_"^"_ItemGroup_"^"_loctype_"^"_bill_"^"_OrdPatShare
+	;i PackQty="" s PackQty=1
+	q:'$d(^DHCPB(myBill,"O",myOrd))
+	
+	s ArcimRowid=$p(^DHCPB(myBill,"O",myOrd),"^",3)
+	s ArcimDesc=##class(web.DHCPE.DHCPECommon).GetArcDesc(ArcimRowid) ;名称
+	
+	s ^TMP($ZN,$j,"D")=$g(^TMP($ZN,$j,"D"))+1
+	s Idx=$g(^TMP($ZN,$j,"D"))
+	
+	s ^TMP($ZN,$j,"D",Idx)=$p($g(ArcimDesc),"-",1,19)
+	quit
+	
+GetDetails()
+	s myidx=""
+	s myList=""
+	f  s myidx=$o(^TMP($ZN,$j,"D",myidx)) q:myidx=""  d
+	.i myList="" d
+	..s myList=^TMP($ZN,$j,"D",myidx)
+	.e  d
+	..s myList=myList_""_$c(2)_^TMP($ZN,$j,"D",myidx)
+	;s myList=myList_""_$c(2)_"备注:   # 无自付;   & 有自付;   * 全自付;^^^^"
+	q myList
+]]></Implementation>
+</Method>
+
+<Method name="GetDataFromCRMClose">
+<Description>
+////////////////////////////////////</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>GetDataFromCRMExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="GTeamList">
+<Description>
+实现按团体组查询患者项目
+传入参数:团体RowId 　获取当前团体组的列表</Description>
+<Type>%SQLQuery</Type>
+<FormalSpec>ParRef:%Library.String=""</FormalSpec>
+<SqlQuery> select GT_ParRef ,GT_RowId, GT_ChildSub, GT_Desc, GT_CRMTeam 
+ from DHC_PE_GTeam
+ where  GT_ParRef=:ParRef</SqlQuery>
+<Parameter name="ROWSPEC" value="GT_ParRef:%String, GT_RowId:%String, GT_ChildSub:%String, GT_Desc :%String, GT_CRMTeam :%String"/>
+</Query>
+
+<Query name="SreachIAdm">
+<Description>
+----------------------------------------------------
+察看团体患者的检验项目信息	
+sType:为空或"G" ParRef为团体号，查询团体所有的患者
+sType:为"GT" ParRef为团体组号，查询当前团体组的患者</Description>
+<Type>%Query</Type>
+<FormalSpec>ParRef:%Library.String="",sType:%Library.String=""</FormalSpec>
+<Parameter name="ROWSPEC" value="TRowId:%String,TPAADM:%String,TName:%String"/>
+</Query>
+
+<Method name="SreachIAdmExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,ParRef:%Library.String="",sType:%Library.String=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$I(^CacheTemp)
+ 	s ind=1
+ 	s id=""
+ 	i (""=sType) s sType="G"		//默认按团体查询
+ 	i ("GT"'=sType) d
+ 	.q:(""=ParRef)					//查询团体的所有患者	ParRef:团体RowId
+	.f  s id=$o(^DHCPEIADM(0,"GADM",ParRef,id)) q:id=""  d
+	..s CurData=$g(^DHCPEIADM(id))
+	..s ADM=$p(CurData,"^",1)
+	..q:(ADM="")
+	..s PapmiNo=$p($g(^PAADM(ADM)),"^",1)
+	..s Name=$p(^PAPER(PapmiNo,"ALL"),"^",1)
+    ..d SreachIAdmBuild
+ 	e  d
+ 	.q:(""=ParRef)					//按团体组查询			ParRef:团体组RowId
+	.f  s id=$o(^DHCPEIADM(0,"GTeam",ParRef,id)) q:id=""  d
+	..s CurData=$g(^DHCPEIADM(id))	//
+	..s ADM=$p(CurData,"^",1)		//DHC_PE_IADM	:IADM_PAADM_DR
+	..q:(ADM="")
+	..s PapmiNo=$p($g(^PAADM(ADM)),"^",1)	//PA_ADM	:PAADM_PAPMI_DR
+	..s Name=$p($g(^PAPER(PapmiNo,"ALL")),"^",1)	//患者姓名			:
+    ..d SreachIAdmBuild	
+	Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+SreachIAdmBuild
+	set Data=$lb($g(id),ADM,Name)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+ 	q
+]]></Implementation>
+</Method>
+
+<Method name="SreachIAdmClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>SreachIAdmExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="SreachIAdmFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>SreachIAdmExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="GetDataFromCRM">
+<Description>
+d ##class(%ResultSet).RunQuery("web.DHCPE.DHCPEIAdm","GetDataFromCRM","HISCARDID","00000175","1","","")
+PATNAME$$0$24$</Description>
+<Type>%Query</Type>
+<FormalSpec>queryType:%String,queryValue:%String,IncludeRegistered:%String="",gadm:%String="",gteam:%String="",Depart:%String=""</FormalSpec>
+<Parameter name="ROWSPEC" value="TRegID:%String,TPatCardId:%String,TPatNAME:%String,TPreRegDate:%String,TRecordDate:%String,TIsAsCharged:%String,TStatus:%String,TCountAmount:%String,TDiscountAmount:%String,TFinalAmount:%String,TStatusDesc:%String,TGADM:%String,TGADMDesc:%String,TTeam:%String,TTeamDesc:%String,TSort:%String"/>
+</Query>
+
+<Method name="GetDataFromCRMExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,queryType:%String,queryValue:%String,IncludeRegistered:%String="",gadm:%String="",gteam:%String="",Depart:%String=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	//RegID^PatCardId^PreRegDate^RecordDate^IsAsCharged^Status^CountAmount^DiscountAmount^FinalAmount^PatNAME
+	Set repid=$I(^CacheTemp)
+	i (queryType="")&&(queryValue="")&&(IncludeRegistered="")&&(gadm="")&&(gteam="")
+	{
+		Set qHandle=$lb(0,repid,0)
+		Quit $$$OK
+	}
+	s queryValue=##class(web.DHCPE.DHCPECommon).UnEscape(queryValue)
+	s Depart=##class(web.DHCPE.DHCPECommon).UnEscape(Depart) 
+	i queryType=""  d
+	.s queryType="PATNAME"
+	.s queryValue=""
+	s flag="UNCOMPLETED"
+	s StatusList=",PREREGED,REGISTERED,"
+	if IncludeRegistered="1"  d
+	.s flag="ALL"
+	.s StatusList=",PREREGED,REGISTERED,ARRIVED,"
+	s job=$j
+	s Ret=##class(web.DHCPE.CRM.Gateway).GetRegIADM(queryType,queryValue,flag,job)
+	//s Ret=""
+	b //0606-1
+	Set repid=$I(^CacheTemp)
+	
+ 	s ind=1
+ 	s id=0
+	;Set ICount=$L(Ret,$C(1))
+	;For i=1:1:ICount Do
+	;.Set Item=$p(Ret,$c(1),i)
+	s PreIADM=0
+	f  s PreIADM=$o(^DHCPERegisterTempData(job,PreIADM)) q:PreIADM=""  d
+	.s cDepart=$G(^DHCPEDataEx("DHCPEPreIADM","Position",PreIADM))
+	.q:(Depart'="")&&(Depart'=cDepart)
+	.Set Item=$G(^DHCPERegisterTempData(job,PreIADM))
+	.Quit:Item=""
+	.//s result=##class(web.DHCPE.CRM.Gateway).CheckPEDate(PreIADM,"I",+$H)
+	.//q:(result'=0)
+	.//preIAdmId_"^"_preIBId_"^"_PNo_"^"_PName_"^"_PSex_5"^"_PDOB_"^"_PGADMDR_"^"_PGTeamDR_"^"_BookDateBegin_"^"_BookDateEnd_10"^"_BookTime_"^"_PEDeskClerkDR_"^"_Status_"^"_AsCharged_"^"_AddOrdItem_15"^"_AddOrdItemLimit_"^"_AddOrdItemAmount_"^"_AddPhcItem_"^"_AddPhcItemLimit_"^"_AddPhcItemAmount_20"^"_IReportSend_"^"_DisChargedMode_"^"_Vip_"^"_DelayDate_"^"_Remark_25"^"_UpdateUserDR_"^"_UpdateDate
+	.Set Status=$p(Item,"^",13)
+	.quit:(StatusList'[(","_Status_","))
+	.Set StatusDesc=##Class(web.DHCPE.Public.Common).strGetMatchVal("PREREG^PREREGED^MODIFIED^REGISTERED^ARRIVED^CHARGED^COMPLETED","预约^预约完成^修改^登记^到达^收费^完成",Status,"^")
+	.Set RegId=$p(Item,"^",1)
+	.Set PatCardId=$p(Item,"^",3)
+	.Set PatNAME=$p(Item,"^",4)
+	.//080917  by zhouli
+	.Q:(queryValue'="")&(PatNAME'[queryValue)&(queryType="PATNAME") 
+	.// 080917
+	.Set PreRegDate=$p(Item,"^",9)
+	.Set RecordDate=$p(Item,"^",27)
+	.Set IsAsCharged=$p(Item,"^",14)
+	.i IsAsCharged="N" s IsAsCharged="否" //N"
+	.e  s IsAsCharged="是"	//Y"
+	.Set CountAmount=""
+	.Set DiscountAmount=""
+	.Set FinalAmount=""
+	.Set GADM=$p(Item,"^",7)
+	.q:((gadm'="")&(gadm'=GADM))
+	.s GADMDesc=""
+	.i GADM'="" s GADMDesc=$p($g(^DHCPEPreGADM(GADM)),"^",1)
+	.i GADMDesc'="" s GADMDesc=$p($g(^DHCPEPreGBI(GADMDesc)),"^",2)
+	.s TTeam=$p(Item,"^",8)
+	.q:((gteam'="")&(gteam'=TTeam))
+	.s TTeamDesc=""
+	.i TTeam'="" s TTeamDesc=$p($g(^DHCPEPreGADM(GADM,"Team",$p(TTeam,"||",2))),"^",1)
+    .d GetDataFromCRMBuild
+    
+	k ^DHCPERegisterTempData(job)
+	Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+GetDataFromCRMBuild
+	set Data=$lb($g(RegId),$g(PatCardId),$g(PatNAME),$g(PreRegDate),$g(RecordDate),$g(IsAsCharged),$g(Status),$g(CountAmount),$g(DiscountAmount),$g(FinalAmount),$g(StatusDesc),$g(GADM),$g(GADMDesc),$g(TTeam),$g(TTeamDesc),$g(ind))
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+ 	q
+]]></Implementation>
+</Method>
+
+<Method name="GetDataFromCRMFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>GetDataFromCRMExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="DietStatus">
+<Description>
+就餐/取消就餐 Created by MLH</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>IADM:%Library.String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	q:IADM=""
+	s Diet=$p($g(^DHCPEIADM(IADM)),"^",17)
+	i Diet="Y" d
+	.s Diet="N"
+	e  d
+	.s Diet="Y"
+	
+	&sql(Update DHC_PE_IADM set IADM_Diet=:Diet where IADM_RowId=:IADM)
+	
+	quit SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="GetIADMPAADMDR">
+<Description>
+通过 TRegID 取得 IADM_PAADM_DR 
+2006.03.28 xuwm
+组件 DHCPEIRegister 菜单 个人项目查询</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RegID:%Library.String=""</FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s IADMPAADMDR=0
+	&sql(select IADM_PAADM_DR into :IADMPAADMDR
+		from DHC_PE_IADM 
+		where IADM_CRMADM=:RegID
+		)
+	
+	quit IADMPAADMDR
+]]></Implementation>
+</Method>
+
+<Query name="GroupIAdm">
+<Description>
+传入参数:团体RowId 　获取当前团体的所有病人列表，以便察看患者的检验项目信息 被SreachIAdm替代　现未使用</Description>
+<Type>%Query</Type>
+<FormalSpec>ParRef:%Library.String=""</FormalSpec>
+<Parameter name="ROWSPEC" value="TRowId:%String,TPAADM:%String,TName:%String"/>
+</Query>
+
+<Method name="GroupIAdmExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,ParRef:%Library.String=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$I(^CacheTemp)
+ 	s ind=1
+ 	s id=""
+ 	i (""=ParRef) d
+ 	.w ParRef,!
+	.f  s id=$o(^DHCPEIADM(id)) q:id=""  d
+	..s CurData=$g(^DHCPEIADM(id))
+	..s ADM=$p(CurData,"^",1)
+	..i (ADM'="") d
+	...s PapmiNo=$p($g(^PAADM(ADM)),"^",1)
+	...s Name=$p(^PAPER(PapmiNo,"ALL"),"^",1)
+	...s GADM=$p(CurData,"^",2)
+	...s GTeam=$p(CurData,"^",3)
+	...s RegDate=$p(CurData,"^",5)
+	...s AsCharged=$p(CurData,"^",8)
+	...s Status=$p(CurData,"^",9)
+	...s AccountAmount=$p(CurData,"^",10)
+	...s DiscountedAmount=$p(CurData,"^",11)
+    ...d GroupIAdmBuild
+    e  d
+	.f  s id=$o(^DHCPEIADM(0,"GADM",ParRef,id)) q:id=""  d
+	..s CurData=$g(^DHCPEIADM(id))
+	..s ADM=$p(CurData,"^",1)
+	..i (ADM'="") d
+	...s PapmiNo=$p($g(^PAADM(ADM)),"^",1)
+	...s Name=$p(^PAPER(PapmiNo,"ALL"),"^",1)
+	...s GADM=$p(CurData,"^",2)
+	...s GTeam=$p(CurData,"^",3)
+	...s RegDate=$p(CurData,"^",5)
+	...s AsCharged=$p(CurData,"^",8)
+	...s Status=$p(CurData,"^",9)
+	...s AccountAmount=$p(CurData,"^",10)
+	...s DiscountedAmount=$p(CurData,"^",11)
+    ...d GroupIAdmBuild
+	
+	Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+GroupIAdmBuild
+	set Data=$lb($g(id),ADM,Name)
+	s ^lisatest("IAdmData")=Data
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+ 	q
+]]></Implementation>
+</Method>
+
+<Method name="GroupIAdmClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>GroupIAdmExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GroupIAdmFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>GroupIAdmExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="IAdmArrived">
+<Description>
+Add By SongDeBo 2006/5/25
+return: "0"-正常 ,  else-有错
+test: 	d ##class(web.DHCPE.DHCPEIAdm).IAdmArrived("203")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>CrmAdmId:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+   
+	s result=##class(web.DHCPE.CRM.Gateway).CheckPEDate(CrmAdmId,"I",+$h)
+	s LimitDate=$g(^DHCPESetting("DHCPE","BookDateLimit"))
+	i LimitDate="Yes"
+	{
+		if result'=0
+		{
+			if result=-1 q "还没有到预约日期!"
+			q "预约已经过期!"
+		}
+	}
+	
+	s result=##class(web.DHCPE.CRM.Gateway).CheckCanArrive(CrmAdmId,"I")
+	if result'=0  q result
+	s PIADMStatus=$p($g(^DHCPEPreIADM(CrmAdmId)),"^",8)
+	quit:PIADMStatus'="REGISTERED" 0
+	s objIAdm=##class(web.DHCPE.HandlerIAdm).GetAdmByCrmAdm(CrmAdmId)
+
+	q:(objIAdm.%Id()="") "The crmIAdm is not exists in HIS System. CrmAdmId="_CrmAdmId
+	b //2
+
+	s ret=..ArrivedUpdate(objIAdm.%Id(),"ARRIVED")
+	;s PAADM=$p($g(^DHCPEIADM(objIAdm.%Id())),"^",1)    //add by 20100308
+	;i PAADM'=""  d ##class(web.DHCPE.CRM.RisGateway).GetPAADM(PAADM,"ARRIVED") 
+	;d ##class(web.DHCPE.AdmRecordManager).Insert(CrmAdmId,"P","Arrived","","")
+
+	if (ret=0)
+	{
+		s PAADM=$p($g(^DHCPEIADM(objIAdm.%Id())),"^",1)    //add by 20100308
+		i PAADM'=""  d ##class(web.DHCPE.CRM.RisGateway).GetPAADM(PAADM,"ARRIVED") 
+		//记录到达日期
+		d ##class(web.DHCPE.AdmRecordManager).Insert(CrmAdmId,"P","Arrived","","")
+		//记录体检项目
+		d ##class(web.DHCPE.ItemDetailRecord).InsertByAdm(PAADM,"",0)
+		//修改日期
+		d ##class(web.DHCPE.TransAdmInfo).UpdateAdmDate(CrmAdmId,$ZD(+$H,4))
+		/*
+		s userId=%session.Get("LOGON.USERID")
+		s:$d(%session) LocID=%session.Get("LOGON.CTLOCID")
+
+		d ##class(web.DHCPE.TransAdmInfo).IsArrivedInsertItems(PAADM, userId, locId)
+		*/
+		//s ret=##class(web.DHCPE.TransAdmInfo).CheckGAdmCreated(CrmAdmId) //Modified by MLH20080423
+		s PGAdmID=$p($g(^DHCPEPreIADM(CrmAdmId)),"^",2)
+		i $g(PGAdmID)="" q 0    //个人不需要处理
+		set ret=##class(web.DHCPE.CRM.Gateway).ExamStatusNotify("GROUP", PGAdmID, "ARRIVED")
+	}
+	//s ^zl("ArrivedUpdate",objIAdm.%Id(),2)=ret
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="CheckResult">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>IADM</FormalSpec>
+<Implementation><![CDATA[
+	s PAADM=$p(^DHCPEIADM(IADM),"^",1)
+	s RLID=$o(^DHCPERLT(0,"ADM",PAADM,0))
+	i RLID="" q 0
+	q 1
+]]></Implementation>
+</Method>
+
+<Method name="ArrivedUpdate">
+<Description>
+add by jdl
+return: 0-正常 ,  else-有错
+[Previously private]</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>IRowId:%Library.String="",IStatus:%Library.String=""</FormalSpec>
+<Implementation><![CDATA[
+	;d ##class(web.DHCPE.DHCPEIAdm).ArrivedUpdate
+	s AuditDate=+$h
+	s AuditTime=$p($h,",",2)
+	if IStatus="CANCELARRIVED"
+	{
+		s rtn= ##class(web.DHCPE.Cashier).CheckPayed("I",IRowId)
+		if rtn=1  q "该客户已经有收费记录，不能取消到达!"
+		
+		s rtn=..CheckResult(IRowId)
+		if rtn=1  q "该客户已经做过检查,不能取消到达!"
+		
+		//取消到达更新为登记状态  wrz  2012-01-11
+		s IStatus="REGISTERED"
+		s crmAdmId=$p($g(^DHCPEIADM(IRowId)),"^",4)
+		q:crmAdmId="" "crmAdmId为空"
+		&sql(update DHC_PE_IAdm set IADM_Status=:IStatus,IADM_AdmDate=:AuditDate,IADM_AdmTime=:AuditTime where IADM_RowId=:IRowId)
+		if SQLCODE q "更新体检登记状态失败!"
+		s CheckFlag=0  ;0不判断登记时的一些判断
+		s SQLCODE=##class(web.DHCPE.PreIADM).CancelAdm("","",crmAdmId_"^"_IStatus_"^"_CheckFlag)
+		if SQLCODE q "更新体检登记状态失败!"
+		s PAADM=$p($g(^DHCPEIADM(IRowId)),"^",1)
+		d ##class(web.DHCPE.ItemDetailRecord).InsertDByAdm(PAADM,"",0)
+		q SQLCODE
+		//&
+	}
+	else
+	{
+		s rtn= ##class(web.DHCPE.Cashier).CheckPayed("I",IRowId)
+		//if (rtn'=2)&&(rtn'=1)  q "该客户有未收费记录，不能到达!"   //add 20180720  
+		
+		
+		}
+	s crmAdmId=$p($g(^DHCPEIADM(IRowId)),"^",4)
+	q:crmAdmId="" "crmAdmId为空"
+	s PAADM=$p($g(^DHCPEIADM(IRowId)),"^",1)
+	s err= ##class(web.DHCPE.OEOrdItem).TransOrder(IRowId,IStatus)
+	if err'="" q err
+	b  //dhc1
+	&sql(update DHC_PE_IAdm set IADM_Status=:IStatus,IADM_AdmDate=:AuditDate,IADM_AdmTime=:AuditTime where IADM_RowId=:IRowId)
+	if SQLCODE q "更新体检登记状态失败!"
+	&sql(update PA_ADM set PAADM_AdmDate=:AuditDate,PAADM_AdmTime=:AuditTime where PAADM_RowID=:PAADM)
+	if SQLCODE q "更新体检登记状态失败!"
+    s IADMStatus=$p(^DHCPEIADM(IRowId),"^",8)
+	s PAADM=$p($g(^DHCPEIADM(IRowId)),"^",1)                //add by 20100308
+	i PAADM'=""  d ##class(web.DHCPE.CRM.RisGateway).GetPAADM(PAADM,IADMStatus) 
+	b  //dhc2
+	//070424  更新预约状态
+	s CheckFlag=0  ;0不判断登记时的一些判断
+	s SQLCODE=##class(web.DHCPE.PreIADM).CancelAdm("","",crmAdmId_"^"_IStatus_"^"_CheckFlag)
+	if SQLCODE q "更新体检登记状态失败!"
+	//end
+	s rtn=##Class(web.DHCPE.CRM.Gateway).ExamStatusNotify("PERSON",crmAdmId,IStatus,"")
+	d ##class(User.DHCPECurDateAdmInfo).Insert(PAADM)
+	;d ##Class(web.DHCPE.RoomManager).InsertRoomRecord(PAADM)
+	s UpdateStat=##class(web.DHCPE.OEOrdItem).UpdateOEStat(PAADM)
+	i UpdateStat'=0 s rtn="更新医嘱状态错误"
+	q rtn
+]]></Implementation>
+</Method>
+
+<Query name="ICashier">
+<Description>
+Created by MLH</Description>
+<Type>%Query</Type>
+<FormalSpec>PAPMINo:%String="",IADMName:%String="",AuditDateBegin:%String="",AuditDateEnd:%String="",IDCard:%String=""</FormalSpec>
+<Parameter name="ROWSPEC" value="TRowId:%String,TPAADM:%String,TName:%String,TRegDate:%String,TAsCharged:%String,TStatus:%String,TAccountAmount:%String,TDiscountedAmount:%String,TFactAmount:%String,TDischargedAmount:%String,TPayAmount:%String,TPapmiNo:%String,TGAdm:%String,TGAdmDesc:%String,TTeam:%String,TTeamDesc:%String,TRemark:%String,TNewHPNo:%String,TConfirmStatus:%String"/>
+</Query>
+
+<Method name="ICashierExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,PAPMINo:%String="",IADMName:%String="",AuditDateBegin:%String="",AuditDateEnd:%String="",IDCard:%String=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s ^tmplx("ICashierExecute")=IDCard
+	;d ##class(%ResultSet).RunQuery("web.DHCPE.DHCPEIAdm","ICashier","","","","","110101199503070675")
+	Set repid=$I(^CacheTemp)
+ 	s ind=1
+ 	i (PAPMINo="")&&(IADMName="")&&(AuditDateBegin="")&&(AuditDateEnd="")&&(IDCard=""){
+	 	Set qHandle=$lb(0,repid,0)
+		Quit $$$OK
+ 	}
+ 	i PAPMINo'="" s PAPMINo=##class(web.DHCPE.DHCPECommon).RegNoMask(PAPMINo)
+	//s IADMName=##class(web.DHCPE.DHCPECommon).UnEscape(IADMName)	
+	
+	i AuditDateBegin'=""  s AuditDateBegin=##class(websys.Conversions).DateHtmlToLogical(AuditDateBegin)
+ 	i AuditDateEnd'="" s AuditDateEnd=##class(websys.Conversions).DateHtmlToLogical(AuditDateEnd)
+ 	
+ 	i AuditDateBegin=""  s AuditDateBegin=1
+ 	i AuditDateEnd="" s AuditDateEnd=+$H
+ 	i PAPMINo'="" d
+ 	.s IBI=$O(^DHCPEPreIBI(0,"PAPMINo",PAPMINo,0))
+ 	.q:IBI=""
+ 	.s PreIADM=0
+ 	.f  s PreIADM=$o(^DHCPEPreIADM(0,"PIBI",IBI,PreIADM)) q:PreIADM=""  d
+	..s iAdmId=$o(^DHCPEIADM(0,"CRMADM",PreIADM,0))
+	..q:iAdmId=""
+	..d DoOneInfo
+	e  i IDCard'=""  d
+	.s IBI=""
+	.f  s IBI=$O(^DHCPEPreIBI(0,"IDCard",IDCard,IBI)) q:IBI=""  d
+ 	..s PreIADM=0
+ 	..f  s PreIADM=$o(^DHCPEPreIADM(0,"PIBI",IBI,PreIADM)) q:PreIADM=""  d
+	...s iAdmId=$o(^DHCPEIADM(0,"CRMADM",PreIADM,0))
+	...q:iAdmId=""
+	...d DoOneInfo
+ 	e  i IADMName'=""  d
+ 	.S IADMNameUC=$$ALPHAUP^SSUTIL4(IADMName)
+ 	.s desc=$o(^DHCPEPreIBI(0,"Name",IADMNameUC),-1)
+	.f  s desc=$o(^DHCPEPreIBI(0,"Name",desc)) q:(desc="")||(desc'[IADMNameUC)  d
+	..s IBI=0
+	..f  s IBI=$o(^DHCPEPreIBI(0,"Name",desc,IBI)) q:IBI=""  d
+	...s PreIADM=0
+	...f  s PreIADM=$o(^DHCPEPreIADM(0,"PIBI",IBI,PreIADM)) q:PreIADM=""  d
+	....s iAdmId=$o(^DHCPEIADM(0,"CRMADM",PreIADM,0))
+	....q:iAdmId=""
+	....d DoOneInfo
+ 	e  d
+ 	.s Date=AuditDateBegin-1
+ 	.f  s Date=$O(^DHCPEIADM(0,"AdmDateTime",Date)) q:(Date="")||(Date>AuditDateEnd)  d
+ 	..s Time=""
+ 	..f  s Time=$O(^DHCPEIADM(0,"AdmDateTime",Date,Time)) q:(Time="")  d
+ 	...s iAdmId=0
+ 	...f  s iAdmId=$O(^DHCPEIADM(0,"AdmDateTime",Date,Time,iAdmId)) q:(iAdmId="")  d
+ 	....s PreIADM=$p($g(^DHCPEIADM(iAdmId)),"^",4)
+ 	....d DoOneInfo
+ 	/*
+ 	s iAdmId=0
+ 	s IADMName=##class(web.DHCPE.DHCPECommon).UnEscape(IADMName)	
+	f  s iAdmId=$o(^DHCPEIADM(iAdmId)) q:iAdmId=""  d
+	.q:##class(web.DHCPE.DHCPEGAdm).HadUsedAudit("I","",iAdmId)
+	.s hospCode=$G(^DHCPESetting("DHCPE","HospitalCode"))
+	.q:(0=+$G(^DHCPEDataEx("DHCPECharge","Person",iAdmId)))&&(hospCode="SHHS")
+	.d ICashierSetData
+	.q:hasData=0
+    .d ICashierBuild
+    */
+	Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+DoOneInfo
+	q:##class(web.DHCPE.DHCPEGAdm).HadUsedAudit("I","",iAdmId)
+	s hospCode=$G(^DHCPESetting("DHCPE","HospitalCode"))
+	q:(0=+$G(^DHCPEDataEx("DHCPECharge","Person",iAdmId)))&&(hospCode="SHHS")
+	s ConfirmStatus=##class(web.DHCPE.PreItemList).GetItemName(PreIADM,"PERSON")
+	i ConfirmStatus["确认加项"  S ConfirmStatus="是"
+	e  S ConfirmStatus="否"
+
+	d ICashierSetData
+	q:hasData=0
+    d ICashierBuild
+	q
+ICashierBuild
+	set Data=$lb( $g(iAdmId), ADM,    Name,  RegDate,  AsCharged,  Status,  AccountAmount,  DisCountedAmount,  FactAmount,    DischargedAmount,  PayAmount,RegNo,GADM,GADMDesc,GTeam,GTeamDesc,TRemark,NewHPNo,ConfirmStatus)
+ 	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+ 	q
+	
+ICashierSetData
+	s hasData=0
+	s LocFlag=##class(web.DHCPE.PreCommon).GetLocFlag("PEADM",iAdmId)
+  	q:LocFlag=1 
+	s CurData=$g(^DHCPEIADM(iAdmId))
+	s GADMDR=$p(CurData,"^",2)				//对应团体的ADM
+	//q:(""'=GADMDR)							//不为空，则是团体患者	
+	q:((PAPMINo="")&&(IADMName=""))&&($G(^DHCPESetting("DHCPE","HospitalCode"))="SYYD")
+	s ADM=$p(CurData,"^",1)
+	q:(""=ADM)
+	s PapmiNo=$p($g(^PAADM(ADM)),"^",1)	//取患者信息
+	q:PapmiNo=""
+	s RegNo=$p(^PAPER($p(^PAADM(ADM),"^",1),"PAT",1),"^",1)
+	q:(RegNo'[PAPMINo)
+	s Name=$p($g(^PAPER(PapmiNo,"ALL")),"^",1)	//姓名
+	q:(IADMName'="")&&('(Name[IADMName))
+	s GADM=$p(CurData,"^",2)				
+	s GTeam=$p(CurData,"^",3)				
+	s RegDate=$p(CurData,"^",5)			//登记日期 
+	i PAPMINo=""
+	{
+		q:(""'=AuditDateBegin)&(RegDate<AuditDateBegin)	
+		q:(""'=AuditDateEnd)&(RegDate>AuditDateEnd)
+	}
+	i (""'=RegDate) d
+	.s RegDate=##class(websys.Conversions).DateLogicalToHtml(RegDate)
+	s AsCharged=$p(CurData,"^",7)			//视同收费 
+	i (AsCharged="Y") s AsCharged="是"
+	else  s AsCharged="否"
+	s Status=$p(CurData,"^",8)				//状态 PREREG 预挂号REGISTERED　登记(在HIS中)CHECKED 审批CHARGED　收费COMPLETED 完成(报告完成)
+	q:(Status'="ARRIVED")&&(Status'="REGISTERED")
+	s AddOrdItem=$p(CurData,"^",9)
+	s AddOrdItemLimit=$p(CurData,"^",10)
+	s AddOrdItemAmount=$p(CurData,"^",11)
+	s AddPhcItem=$p(CurData,"^",12)
+	s AddPhcItemLimit=$p(CurData,"^",13)
+	s AddPhcItemAmount=$p(CurData,"^",14)
+	s IReportSend=$p(CurData,"^",15)
+	s DisChargedMode=$p(CurData,"^",16)
+	s Diet=$p(CurData,"^",17)
+	s AccountAmount=""		//应收金额
+	s DiscountedAmount=""	//打折后金额 
+	s FactAmount=""		//最终金额 
+	s GADMDesc=##Class(web.DHCPE.DHCPEGAdm).GetGAdmDesc(GADM)
+	s GTeamDesc=##Class(web.DHCPE.DHCPEGAdm).GetGTeamDesc(GTeam)
+	s TRemark=""
+	i GADM'=""  s TRemark=$p($g(^DHCPEGADM(GADM)),"^",17)
+	s hasData=1	
+	s PIADMRowId=$p(CurData,"^",4)
+	s NewHPNo=$p($g(^DHCPEPreIADM(PIADMRowId)),"^",27) 
+	
+	q
+]]></Implementation>
+</Method>
+
+<Method name="ICashierFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>ICashierExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				// if there are no more rows, finish fetching
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else      {			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="ICashierClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>ICashierExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="UpdateArriveDate">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>IRowId,Date</FormalSpec>
+<Implementation><![CDATA[
+	i Date="" s AuditDate=+$h
+	i Date'="" s AuditDate=$zdh(Date,4)
+	s crmAdmId=$p($g(^DHCPEIADM(IRowId)),"^",4)
+	q:crmAdmId="" "crmAdmId为空"
+	s PAADM=$p($g(^DHCPEIADM(IRowId)),"^",1)
+	TSTART
+	&sql(update DHC_PE_IAdm set IADM_AdmDate=:AuditDate where IADM_RowId=:IRowId)
+	if SQLCODE{
+		TROLLBACK
+		q "更新体检登记状态失败!"
+	}
+	&sql(update PA_ADM set PAADM_AdmDate=:AuditDate where PAADM_RowID=:PAADM)
+	if SQLCODE{
+		TROLLBACK
+		q "更新体检登记状态失败!"
+	}
+	s SQLCODE=..UpdateOEORIDate(PAADM,AuditDate)
+	if SQLCODE{
+		TROLLBACK
+		q "医嘱时间失败!"
+	}
+	TCOMMIT
+	q "0"
+]]></Implementation>
+</Method>
+
+<Method name="GetIADMbyPreIADM">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PreIADM</FormalSpec>
+<Implementation><![CDATA[
+	q:PreIADM=""
+	s IAdmId=""
+	s IAdmId=$o(^DHCPEIADM(0,"CRMADM",PreIADM,IAdmId))
+	q IAdmId
+]]></Implementation>
+</Method>
+
+<Method name="GetPAADMbyPreIADM">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PreIADM</FormalSpec>
+<Implementation><![CDATA[
+	q:PreIADM=""
+	s IAdmId=""
+	s IAdmId=$o(^DHCPEIADM(0,"CRMADM",PreIADM,IAdmId)) 
+	q:IAdmId=""
+	s CurData=$g(^DHCPEIADM(IAdmId)) 
+	s PAADMId=$p(CurData,"^",1)
+	q PAADMId
+]]></Implementation>
+</Method>
+
+<Method name="UpdateOEORIDate">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PAADM,curDate</FormalSpec>
+<Implementation><![CDATA[
+	s SQLCODE=0
+	s OEORDID=$O(^OEORD(0,"Adm",PAADM,0))
+	q:OEORDID="" SQLCODE
+	s OrdItem=0
+	f  s OrdItem=$o(^OEORD(OEORDID,"I",OrdItem)) q:((OrdItem="")||(SQLCODE'=0))  d
+	.s OrdStat=$p($g(^OEORD(OEORDID,"I",OrdItem,1)),"^",13)
+	.q:OrdStat'="1"
+	.s OriRowId=OEORDID_"||"_OrdItem
+	.&sql(update sqluser.OE_OrdItem set OEORI_SttDat=:curDate where oeori_rowid=:OriRowId)
+	q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="HaveNoPayedItem">
+<Description>
+0   已经收费或者视同收费
+1   存在未付部分
+##class(web.DHCPE.DHCPEIAdm).HaveNoPayedItem(IADM)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>IADM</FormalSpec>
+<Implementation><![CDATA[
+	s Flag=0
+	s PIADM=$P(^DHCPEIADM(IADM),"^",4)
+	s LocID=$P(^DHCPEPreIADM(PIADM),"^",26)
+	q:$G(^DHCPESetting("DHCPE","AllowPrint",LocID))="Y" Flag
+	
+	s CRMOID=0
+	f  s CRMOID=$o(^DHCPECRMO(0,"IADM",IADM,CRMOID)) q:(CRMOID="")||(Flag=1)  d
+	.s PreItemID=$p(^DHCPECRMO(CRMOID),"^",2)
+	.s ItemStatus=$p(^DHCPEPreIADM(+PreItemID,"ORDITEM",$p(PreItemID,"||",2)),"^",16)
+	.q:ItemStatus'="1"
+	.s PayStatus=$p(^DHCPECRMO(CRMOID),"^",4)
+	.s:(PayStatus="NP") Flag=1   //未付费或者部分付费
+	q Flag
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// Type 1:预约完成  2：登记  3：到达
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+/*ClassMethod UpdateTeamInfo(TeamID, Type)
+{
+	;d ##class(web.DHCPE.DHCPEIAdm).UpdateTeamInfo("111||1",2)
+	s SQLCODE=0
+	s i=0
+	s ErrNum=0
+	s PreIADMID=0
+	f  s PreIADMID=$O(^DHCPEPreIADM(0,"PGTeam",TeamID,PreIADMID)) q:(PreIADMID="")||(i>20)  d
+	.s Status=$P(^DHCPEPreIADM(PreIADMID),"^",8)
+	.q:(Status'="PREREG")&&(Type="1")
+	.q:(Status'="REGISTERED")&&(Type="3")
+	.q:((Status'="PREREG")&&(Status'="PREREGED"))&&(Type="2")
+	.;s ^wrzUpdateTeamInfo(PreIADMID,1)=$H
+	.TSTART
+	.s SQLCODE=..UpdateIADMInfo(PreIADMID, Type,0)
+	.TCOMMIT:SQLCODE=0
+	.TROLLBACK:SQLCODE'=0
+	.s:SQLCODE'=0 ErrNum=ErrNum+1
+	.;s:SQLCODE'=0 
+	.s:SQLCODE=0 i=i+1
+	.;s ^wrzUpdateTeamInfo(PreIADMID,2)=$H
+	q SQLCODE_"^"_i_"^"_ErrNum
+}
+*/
+]]></Content>
+</UDLText>
+
+<Method name="UpdateTeamInfo">
+<Description>
+W ##class(web.DHCPE.DHCPEIAdm).UpdateTeamInfo("343||2",2,19,"") </Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>TeamID,Type,OneNum:%Integer=19,CurUser:%String=""</FormalSpec>
+<Implementation><![CDATA[
+	;d ##class(web.DHCPE.DHCPEIAdm).UpdateTeamInfo("111||1",2)
+	s SQLCODE=0
+	;s:CurUser="" CurUser=%session.Get("LOGON.USERID")
+	s:CurUser="" CurUser=7058
+	s i=0
+	s ErrNum=0
+	s PreIADMID=0
+	f  s PreIADMID=$O(^DHCPEPreIADM(0,"PGTeam",TeamID,PreIADMID)) q:(PreIADMID="")||(i>OneNum)  d
+	.s Status=$P(^DHCPEPreIADM(PreIADMID),"^",8)
+	.q:(Status'="PREREG")&&(Type="1")
+	.q:(Status'="REGISTERED")&&(Type="3")
+	.q:((Status'="PREREG")&&(Status'="PREREGED"))&&(Type="2")
+	.TSTART
+	.;s SQLCODE=..UpdateIADMInfo(PreIADMID, Type,0)
+	.s SQLCODE=..UpdateIADMInfo(PreIADMID, Type,0,CurUser,0)
+	.TCOMMIT:SQLCODE=0
+	.TROLLBACK:SQLCODE'=0
+	.s:SQLCODE'=0 ErrNum=ErrNum+1
+	.s:SQLCODE=0 i=i+1
+	i PreIADMID="" d
+	.d ##class(web.DHCPE.PreIADM).UpdateGroupAuditAmount(+TeamID)
+	i SQLCODE=0 d
+	.s:Type="2" GType="TeamRegister"
+	.s:Type="3" GType="TeamArrived"
+	.d ##class(web.DHCPE.GAdmRecordManager).Insert(+TeamID,"P",GType,CurUser,TeamID) 
+	q SQLCODE_"^"_i_"^"_ErrNum
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// 
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+// d ##class(web.DHCPE.DHCPEIAdm).AutoArrivedByCardNo("00000365")
+
+]]></Content>
+</UDLText>
+
+<Method name="AutoArrivedByCardNo">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RegNo</FormalSpec>
+<Implementation><![CDATA[
+ 
+    s:$d(%session) LocID=%session.Get("LOGON.CTLOCID")
+    s:'$d(%session) LocID=572
+    //S LocID="152"
+    s ArriveFlag=$p(^DHCPESetting("DHCPE","AutoArrived",LocID),"^",3)
+    q:ArriveFlag="N" "0"
+	s ret="0"
+	s:$d(%session) CurUser=%session.Get("LOGON.USERID")
+	s:'$d(%session) CurUser=5918
+	//S CurUser=1
+	i RegNo'="" s RegNo=##class(web.DHCPE.DHCPECommon).RegNoMask(RegNo)	
+	s PIBI=$o(^DHCPEPreIBI(0,"PAPMINo",RegNo,0))
+	q:PIBI="" "无到达操作的记录!"
+	s PIADM=0
+	s PIADMStr=""
+	s i=0
+	f  s PIADM=$o(^DHCPEPreIADM(0,"PIBI",PIBI,PIADM)) q:PIADM=""  d
+	.s PIADMStutas=$P(^DHCPEPreIADM(PIADM),"^", 8)
+	.q:(PIADMStutas'="REGISTERED")&&(PIADMStutas'="PREREGED")
+	.s i=i+1
+	.s PIADMStr=PIADMStr_"^"_PIADM
+	 q:i>1 "此人存在多条体检记录,预约请选择进行操作!"
+	 q:i<1 "无到达操作的记录!"
+	 s PIADM=$P(PIADMStr,"^",2)	
+     s PIADMStutas=$P(^DHCPEPreIADM(PIADM),"^", 8)
+
+	 i PIADMStutas="REGISTERED"  d
+	 .s ret=..IAdmArrived(PIADM)
+
+
+	 i PIADMStutas="PREREGED"   d
+	 .s ret=##class(web.DHCPE.TransAdmInfo).main(PIADM,CurUser)
+	 .q:ret'=""  
+	 .s ret=..IAdmArrived(PIADM)
+  
+    
+	q ret
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+/*
+ClassMethod AutoArrivedByCardNo(RegNo)
+{ 
+    s:$d(%session) LocID=%session.Get("LOGON.CTLOCID")
+    //S LocID="152"
+    s ArriveFlag=$p(^DHCPESetting("DHCPE","AutoArrived",LocID),"^",3)
+    q:ArriveFlag="N" "0"
+	s ret="0"
+	s:$d(%session) CurUser=%session.Get("LOGON.USERID")
+	//S CurUser=1
+	i RegNo'="" s RegNo=##class(web.DHCPE.DHCPECommon).RegNoMask(RegNo)	
+	s PIBI=$o(^DHCPEPreIBI(0,"PAPMINo",RegNo,0))
+    Q:PIBI="" "0"
+	s PIADM=0
+	s PIADMStr=""
+	s i=0
+	f  s PIADM=$o(^DHCPEPreIADM(0,"PIBI",PIBI,PIADM)) q:PIADM=""  d
+	.s PIADMStutas=$P(^DHCPEPreIADM(PIADM),"^", 8)
+	.q:(PIADMStutas'="REGISTERED")&&(PIADMStutas'="PREREGED")
+	.s i=i+1
+	.s PIADMStr=PIADMStr_"^"_PIADM
+
+	
+   
+    
+	q i_"$"_PIADMStr
+}
+*/
+]]></Content>
+</UDLText>
+
+<Method name="UpdateIADMInfo">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PreIADMID,Type,TransFlag:%String=1,CurUser:%String="",FeeFlag:%String=1</FormalSpec>
+<Implementation><![CDATA[
+	
+	q:PreIADMID="" "没有预约记录"
+	s Status=$P(^DHCPEPreIADM(PreIADMID),"^",8)
+	s ret=0
+	i CurUser="" d
+	.s:$d(%session) CurUser=%session.Get("LOGON.USERID")
+	.s:'$d(%session) CurUser=5918
+	//PREREG,PREREGED,REGISTERED,ARRIVED,CANCELARRIVED,CANCELPE
+	i Type=1
+	{
+		q:Status'="PREREG" "此人已经预约完成过，状态为"_Status
+		d PreOver
+	}
+	i Type=2
+	{
+		q:(Status'="PREREG")&&(Status'="PREREGED") "此人已经登记过，状态为"_Status
+		i Status="PREREG" d PreOver
+		i ret'=0 q ret
+		d Register
+		i ret'="" q ret
+		;s RecheckFlag=$P(^DHCPEPreIADM(PreIADMID),"^",28)
+		;i RecheckFlag="Y" d
+		;.s ret=..IAdmArrived(PreIADMID)
+		q 0
+	}
+	i Type=3
+	{
+		q:(Status="ARRIVED")||(Status="CANCELPE") "此人已经到达过，状态为"_Status
+		i (Status="PREREG")||(Status="PREREGED")
+		{
+			s ret=..UpdateIADMInfo(PreIADMID,2)
+			q:ret'=0 ret
+		}
+		i Status="CANCELARRIVED"
+		{
+			s IADMID=$O(^DHCPEIADM(0,"CRMADM",PreIADMID,0))
+			s ret=..ArrivedUpdate(IADMID,"ARRIVED")
+		}
+		else
+		{
+			s ret=..IAdmArrived(PreIADMID)
+		}
+		q ret
+	}
+	
+PreOver
+	s ret=##class(web.DHCPE.PreIADM).CancelAdm("","",PreIADMID_"^PREREGED^")
+	q
+Register
+	;s ret=##class(web.DHCPE.TransAdmInfo).main(PreIADMID,CurUser,TransFlag)
+	s ret=##class(web.DHCPE.TransAdmInfo).main(PreIADMID,CurUser,TransFlag,FeeFlag)
+	s:ret="" ret=0
+	q
+]]></Implementation>
+</Method>
+
+<Method name="GetRecPaper">
+<Description>
+w ##class(web.DHCPE.DHCPEIAdm).GetRecPaper(18005,"20/12/2012") 
+add by rxb 20121021</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RegNo,ReportDate,SendMethod</FormalSpec>
+<Implementation><![CDATA[
+	s:$d(%session) LocID=%session.Get("LOGON.CTLOCID")
+	s:'$d(%session) LocID=117
+	s:ReportDate'="" ReportDate=##class(websys.Conversions).DateHtmlToLogical(ReportDate)
+	s:ReportDate="" ReportDate=+$h
+	s PIADMInfo=..GetPIADMByRegNo(RegNo)
+	s Flag=$P(PIADMInfo,"^",1)
+	s PIADMStr=$P(PIADMInfo,"^",2)
+	q:Flag'=0 PIADMStr
+	q:PIADMStr="" "不存在预约纪录"
+	s PIADM=PIADMStr
+	q:$d(^DHCPEDataEx("ConfirmRecPaper",PIADM)) "已经收表"
+	s Time=$P($H,",",2)
+	s ^DHCPEDataEx("ConfirmRecPaper",PIADM)=..IAdmRecived(Time) 
+	s ^DHCPEDataEx("ConfirmRecPaper","Date",+$h,PIADM)=""
+	s ^DHCPEDataEx("ConfirmRecPaper","DateTime",+$h,Time,PIADM)=""
+	s ^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM)=ReportDate
+	s ^DHCPEDataEx("ConfirmRecPaper","SendReport",PIADM)=SendMethod
+	q:ReportDate="" 0
+	s ^DHCPEDataEx("DHCPEPreIADM","GetReportDateTime","I",PIADM)=ReportDate_"^"_Time
+	s ^DHCPEDataExi("DHCPEPreIADM","GetReportDateTime","I",ReportDate,Time,PIADM)=""
+	//CRM推送
+	//d ##class(web.DHCPE.CRM.Handler.Main).PushGroupMemberInfo(PIADM)    //团体中个人订单推送，wangguoying 2019-01-02
+	s GID=$P(^DHCPEPreIADM(PIADM),"^",2)
+	i GID'="" d ##class(web.DHCENS.EnsHISService).DHCHisInterface("S00000083",PIADM_"^HG")
+	//q:str'="" str
+	q 0
+]]></Implementation>
+</Method>
+
+<Method name="GetPAADMByPADM">
+<Description>
+w ##class(web.DHCPE.DHCPEIAdm).GetPAADMByPADM("49106")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PADM</FormalSpec>
+<Implementation><![CDATA[
+	s ^sxt("cacasd",1)=PADM
+	q:(PADM="") ""
+	s IADM=$o(^DHCPEIADM(0,"CRMADM",PADM,0))
+	q:(IADM="") ""
+	s PAADM=""
+	s PAADM=$p(^DHCPEIADM(IADM),"^")
+	s ^sxt("cacasd",2)=PAADM
+	q PAADM
+]]></Implementation>
+</Method>
+
+<Method name="GetPIADMByRegNo">
+<Description>
+w ##class(web.DHCPE.DHCPEIAdm).GetPIADMByRegNo(RegNo)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RegNo</FormalSpec>
+<Implementation><![CDATA[
+	i RegNo'="" s RegNo=##class(web.DHCPE.DHCPECommon).RegNoMask(RegNo)	
+	q:('($L(RegNo)>0)) "-1^请输入正确的登记号"
+	s PIBI=$o(^DHCPEPreIBI(0,"PAPMINo",RegNo,0))
+	q:PIBI="" "_1^无该人员的基本信息!"
+	s PIADM=""
+	s PIADMStr="" 
+	s PIADMStutas=""
+	f  s PIADM=$o(^DHCPEPreIADM(0,"PIBI",PIBI,PIADM),-1) q:(PIADM="")||(PIADMStr'="")  d
+	.s LocFlag=##class(web.DHCPE.PreCommon).GetLocFlag("PreADM",PIADM)         //Add by 090702
+    .q:LocFlag=1  
+	.s PIADMStutas=$P(^DHCPEPreIADM(PIADM),"^", 8)
+	.q:"ARRIVED"'=PIADMStutas
+	.s ReCheck=$P(^DHCPEPreIADM(PIADM),"^", 28)
+	.q:ReCheck="Y"
+	.s PIADMStr=PIADM
+	q "0^"_PIADMStr
+]]></Implementation>
+</Method>
+
+<Method name="CancelRecPaper">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PIADM</FormalSpec>
+<Implementation><![CDATA[
+	 q:'$d(^DHCPEDataEx("ConfirmRecPaper",PIADM)) "-1"
+	 s KData=""
+	 s KTime=""
+	 s KData=$p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",1)
+	 s KTime=$p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",2)
+	 k ^DHCPEDataEx("ConfirmRecPaper","Date",KData,PIADM)
+	 k ^DHCPEDataEx("ConfirmRecPaper","DateTime",KData,KTime,PIADM)
+	 k ^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM)
+	 s KReportDate=""
+	 s KKTime=""
+	 s KReportDate=$p($G(^DHCPEDataEx("DHCPEPreIADM","GetReportDateTime","I",PIADM)),"^",1)
+	 s KKTime=$p($G(^DHCPEDataEx("DHCPEPreIADM","GetReportDateTime","I",PIADM)),"^",2)
+	 k:KReportDate'="" ^DHCPEDataExi("DHCPEPreIADM","GetReportDateTime","I",KReportDate,KKTime,PIADM)
+	 k ^DHCPEDataEx("DHCPEPreIADM","GetReportDateTime","I",PIADM)
+	 k ^DHCPEDataEx("ConfirmRecPaper",PIADM)
+	 q 0
+]]></Implementation>
+</Method>
+
+<Method name="IAdmRecived">
+<Description>
+add by rxb 20121021</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Time</FormalSpec>
+<Implementation><![CDATA[
+	s:$d(%session) LocID=%session.Get("LOGON.CTLOCID")
+	s:'$d(%session) LocID=572
+	s:$d(%session) CurUser=%session.Get("LOGON.USERID")
+	s:'$d(%session) CurUser=5918
+	s CurDate=$p($h,",",1)	
+	s CurTime=$p($h,",",2)
+	s ret=CurDate_"^"_Time_"^"_CurUser_"^"_LocID
+	//s ret=CurDate_"^"_CurTime
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="GetNoPaidItems">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PIADM</FormalSpec>
+<Implementation><![CDATA[
+	s IAdmId=0
+	s str=""
+	s IAdmId=$o(^DHCPEIADM(0,"CRMADM",PIADM,IAdmId))
+	s PAADM=$p(^DHCPEIADM(IAdmId),"^",1)
+	s OEORDRowId=0 
+    s OEORDRowId=$O(^OEORD(0,"Adm",PAADM,OEORDRowId))  //oe_order表
+    q:""=OEORDRowId
+    s OEORIChildsub=0
+    f  s OEORIChildsub=$O(^OEORD(OEORDRowId,"I",OEORIChildsub)) Q:(""=OEORIChildsub)  d
+    .s OEORIRowId=OEORDRowId_"||"_OEORIChildsub  //oe_order表 ID
+    .s BilledStatus=$p($g(^OEORD(OEORDRowId,"I",OEORIChildsub,3)),"^",5)  //oe_orditem 付费状态
+    .s:"P"'=BilledStatus str="收表成功，但存在未收费项目，请前台人员确认！"
+    Q str
+]]></Implementation>
+</Method>
+
+<Query name="SearchPaperByRecDate">
+<Description>
+add by rxb 20121114
+查询个人套餐已收表名单
+d ##class(%ResultSet).RunQuery("web.DHCPE.DHCPEIAdm","SearchPaperByRecDate",62838,62838)</Description>
+<Type>%Query</Type>
+<FormalSpec>RecBegDate:%String,RecEndDate:%String,txtRegNo:%String,ArrivedFlag:%String=""</FormalSpec>
+<Parameter name="ROWSPEC" value="TAdmNo:%String, TPatNAME:%String, TSex:%String,TAge:%String, TOrdSet:%String, TReceiver:%String, TReceivedDate:%String, TTel:%String,TReportDate:%String,PIADM:%String"/>
+</Query>
+
+<Method name="SearchPaperByRecDateExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,RecBegDate:%String,RecEndDate:%String,txtRegNo:%String,ArrivedFlag:%String=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+ 
+	k ^DHCPETMPRECPAPERData("RowData","I") 
+	Set repid=$I(^CacheTemp)
+	If $g(ind)="" Set ind=2
+	//add
+	i ArrivedFlag="" s ArrivedFlag="N"
+	else  s ArrivedFlag="Y"
+	//
+	s TotalPerson=0
+	s:$d(%session) LocID=%session.Get("LOGON.CTLOCID")
+	s:'$d(%session) LocID=572
+	s:$d(%session) CurUser=%session.Get("LOGON.USERID")
+	s:'$d(%session) CurUser=5918
+	i RecBegDate="" s RecBegDate=+$h
+	i RecEndDate="" s RecEndDate=+$h 
+	s AdmDate=RecBegDate-1
+	
+	
+	i (RecBegDate>RecEndDate)
+	{
+		Set qHandle=$lb(0,repid,0) 
+		Quit $$$OK
+	}
+	
+	//add
+	
+	i ""'=txtRegNo d
+	.d Clear
+	.s txtRegNo=##class(web.DHCPE.DHCPECommon).RegNoMask(txtRegNo)
+	.s PIBIDR=$o(^DHCPEPreIBI(0,"PAPMINo",txtRegNo,0))
+	.Quit:PIBIDR=""
+	.d GetPersonInfo
+	.s PIADM=0
+	.f  s PIADM=$o(^DHCPEPreIADM(0,"PIBI",PIBIDR,PIADM))  Quit:PIADM=""  Do 
+	..q:(""'=$p(^DHCPEPreIADM(PIADM),"^",2))                      //非团体
+	..i ArrivedFlag="Y" d
+	...i $d(^DHCPEDataEx("ConfirmRecPaper",PIADM))=0 d
+	....d OutPut
+	..e  d
+	...i $d(^DHCPEDataEx("ConfirmRecPaper",PIADM)) d
+	....s RecievedDate=$zd($p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",1),3)                //_" "_$zt($p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",2),1)
+	....s RecieverID=$p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",3)
+	....s:$d(^SSU("SSUSR",RecieverID)) RecieverName=$p(^SSU("SSUSR",RecieverID),"^",2) 
+	...i $d(^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM)) d
+	....s TotalPerson=TotalPerson+1
+	....s ReportDate=$zd($p(^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM),"^",1),3)
+	...q:""=RecieverName
+	...d OutPut  
+	e  d
+	.s PIADM=""
+	.i ArrivedFlag="Y" d
+	..f  s AdmDate=$o(^DHCPEIADM(0,"AdmDateTime",AdmDate))  q:(AdmDate="")||(AdmDate>RecEndDate)  d
+	...s Date=$ZD(AdmDate,3)
+	...s AdmTime=0
+    ...f  s AdmTime=$o(^DHCPEIADM(0,"AdmDateTime",AdmDate,AdmTime))  q:AdmTime=""  d
+    ....s IADMRowID=0
+    ....f  s IADMRowID=$o(^DHCPEIADM(0,"AdmDateTime",AdmDate,AdmTime,IADMRowID)) q:IADMRowID=""  d
+	.....s Status=$P($g(^DHCPEIADM(IADMRowID)),"^",8)
+	.....Q:"ARRIVED"'=Status
+	.....s PIADM=$p(^DHCPEIADM(IADMRowID),"^",4)
+	.....q:($d(^DHCPEDataEx("ConfirmRecPaper",PIADM))=1) 
+	.....s LocFlag=##class(web.DHCPE.PreCommon).GetLocFlag("PreADM",PIADM)         //Add by 090702
+    .....q:LocFlag=1  
+	.....q:(""'=$p(^DHCPEPreIADM(PIADM),"^",2))
+	.....d Clear 
+	.....s PIBIDR=$p(^DHCPEPreIADM(PIADM),"^",1)
+	.....q:PIBIDR=""
+	.....d GetPersonInfo
+	.....s TotalPerson=TotalPerson+1
+	.....d OutPut
+	.e  d
+	..s PIADM=""
+	..s RecDate=RecBegDate-1  
+	..f  s RecDate=$o(^DHCPEDataEx("ConfirmRecPaper","DateTime",RecDate)) q:(RecDate="")||(RecDate>RecEndDate)  d
+	...s Time=""
+	...f  s Time=$O(^DHCPEDataEx("ConfirmRecPaper","DateTime",RecDate,Time),-1) q:Time=""  d
+	....f  s PIADM=$o(^DHCPEDataEx("ConfirmRecPaper","DateTime",RecDate,Time,PIADM)) q:PIADM=""  d 
+	.....s LocFlag=##class(web.DHCPE.PreCommon).GetLocFlag("PreADM",PIADM)         //Add by 090702
+    .....q:LocFlag=1   
+	.....q:(""'=$p(^DHCPEPreIADM(PIADM),"^",2)) 
+	.....d Clear 
+	.....s PIBIDR=$p(^DHCPEPreIADM(PIADM),"^",1)
+	.....q:PIBIDR="" 
+	.....d GetPersonInfo 
+	.....i $d(^DHCPEDataEx("ConfirmRecPaper",PIADM)) d
+	......s TotalPerson=TotalPerson+1
+	......s RecievedDate=$zd($p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",1),3)               //_" "_$zt($p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",2),1)
+	......s RecieverID=$p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",3) 
+	......s:$d(^SSU("SSUSR",RecieverID)) RecieverName=$p(^SSU("SSUSR",RecieverID),"^",2) 
+	.....i $d(^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM)) d
+	......s ReportDate=$zd($p(^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM),"^",1),3)
+	.....q:""=RecieverName 
+	.....d OutPut  
+	d Clear
+	s ind=1
+	s RegNo="总计："
+ 	s PatName=TotalPerson_"人"
+ 	d OutPut 
+	Set qHandle=$lb(0,repid,0) 
+	Quit $$$OK
+GetPersonInfo
+	s RegNo=$p($g(^DHCPEPreIBI(PIBIDR)),"^",1)
+	s PatName=$p($g(^DHCPEPreIBI(PIBIDR)),"^",2)
+	s SexDR=$p($g(^DHCPEPreIBI(PIBIDR)),"^",3)
+	s Sex=$p($g(^CT("SEX",SexDR)),"^",2)
+	s Age=$p($g(^DHCPEPreIBI(PIBIDR)),"^",4) 
+	s:Age'="" Age=$P(##class(web.DHCLCNUREXCUTE).CalAge(Age,+$H),"Y",1) 
+	s TelNo=$p($g(^DHCPEPreIBI(PIBIDR)),"^",6)
+	s:TelNo="" TelNo=$p($g(^DHCPEPreIBI(PIBIDR)),"^",7)
+	s:TelNo="" TelNo=$p($g(^DHCPEPreIBI(PIBIDR)),"^",8)
+	q
+Clear
+	s (RegNo,PatName,Sex,Age,OrdSetDesc,RecieverName,RecievedDate,TelNo,ReportDate)=""
+	q 
+OutPut
+	set Data=$lb(RegNo,PatName,Sex,Age,OrdSetDesc,RecieverName,RecievedDate,TelNo,ReportDate,PIADM)  
+	set ^DHCPETMPRECPAPERData("RowData","I",ind)=RegNo_"^"_PatName_"^"_Sex_"^"_Age_"^"_OrdSetDesc_"^"_RecieverName_"^"_RecievedDate_"^"_TelNo_"^"_ReportDate
+	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+ 	q
+]]></Implementation>
+</Method>
+
+<Method name="SearchPaperByRecDateFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>SearchPaperByRecDateExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else{			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind) 
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="SearchPaperByRecDateClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>SearchPaperByRecDateExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="SearchGPaperByRecDate">
+<Description>
+add by rxb 20121121
+查询团体已收表名单
+d ##class(%ResultSet).RunQuery("web.DHCPE.DHCPEIAdm","SearchGPaperByRecDate",63128,63128,"","","^NOR^")</Description>
+<Type>%Query</Type>
+<FormalSpec>RecBegDate:%String,RecEndDate:%String,txtRegNo:%String,ArrivedFlag:%String="",VIPType:%String="",VIPLevel:%String="",ALLPerson:%String="",ALLGroup:%String=""</FormalSpec>
+<Parameter name="ROWSPEC" value="TSort:%String,TAdmNo:%String, TPatNAME:%String, TSex:%String,TAge:%String, TOrdSet:%String, TReceiver:%String, TReceivedDate:%String, TTel:%String, TGDesc:%String,TPosition:%String,TTeam:%String,TReportDate:%String,PIADM:%String,TVip:%String,TGroupTel1:%String,TSendMethod:%String,TAmount:%String"/>
+</Query>
+
+<Method name="SearchGPaperByRecDateExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,RecBegDate:%String,RecEndDate:%String,txtRegNo:%String,ArrivedFlag:%String="",VIPType:%String="",VIPLevel:%String="",ALLPerson:%String="",ALLGroup:%String=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+   
+	k ^DHCPETMPRECPAPERData("RowData","I") 
+	
+	Set repid=$I(^CacheTemp)
+	s Job=$J
+	If $g(ind)="" Set ind=1
+	 s TVip=""
+	i VIPType="^VIP^"  s VIPType="2"
+    i VIPType="^NOR^"  s VIPType="1"
+    i VIPType="^VIP^NOR^"  s VIPType=""
+	
+	i ArrivedFlag="" s ArrivedFlag="N"
+	else  s ArrivedFlag="Y"
+	
+	i ALLPerson="" s ALLPerson="N"
+	else  s ALLPerson="Y"
+	
+	i ALLGroup="" s ALLGroup="N"
+	else  s ALLGroup="Y"
+
+	s TotalPerson=0
+	s:$d(%session) LocID=%session.Get("LOGON.CTLOCID")
+	s:'$d(%session) LocID=572
+	s:$d(%session) CurUser=%session.Get("LOGON.USERID")
+	s:'$d(%session) CurUser=5918
+	i RecBegDate'="" s RecBegDate=##class(websys.Conversions).DateHtmlToLogical(RecBegDate) 
+	i RecEndDate'="" s RecEndDate=##class(websys.Conversions).DateHtmlToLogical(RecEndDate) 
+	 
+	i RecBegDate="" s RecBegDate=+$h
+	i RecEndDate="" s RecEndDate=+$h 
+	i (RecBegDate>RecEndDate)
+	{
+		Set qHandle=$lb(0,repid,0) 
+		Quit $$$OK 
+	}
+	s sort=0,flag=0
+	i ""'=txtRegNo d
+	.d Clear
+	.s txtRegNo=##class(web.DHCPE.DHCPECommon).RegNoMask(txtRegNo)
+	.s PIBIDR=$o(^DHCPEPreIBI(0,"PAPMINo",txtRegNo,0))
+	.Quit:PIBIDR=""
+	.d GetPersonInfo
+	.s PIADM=0
+	.f  s PIADM=$o(^DHCPEPreIADM(0,"PIBI",PIBIDR,PIADM))  Quit:PIADM=""  Do 
+	..q:(0=$d(^DHCPEDataEx("ConfirmRecPaper",PIADM)))
+	..;q:(""=$p(^DHCPEPreIADM(PIADM),"^",2))
+	..s LocFlag=##class(web.DHCPE.PreCommon).GetLocFlag("PreADM",PIADM)         //Add by 090702
+	..q:LocFlag=1  
+	..s Amount=+##class(web.DHCPE.HandlerPreOrds).IGetAmount4Person(PIADM)
+	..s Depart=$G(^DHCPEDataEx("DHCPEPreIADM","Position",PIADM))
+	..s GroupDesc="",flag=0
+	..s TVip=$p(^DHCPEPreIADM(PIADM),"^",18)
+	..q:(VIPLevel'="")&&(VIPLevel'=TVip)
+	..s PGADMDR=$p(^DHCPEPreIADM(PIADM),"^",2)
+	..i PGADMDR'="" d
+	...s PGBIDR=$p(^DHCPEPreGADM(PGADMDR),"^",1)
+	...s GroupDesc=$p(^DHCPEPreGBI(PGBIDR),"^",2)
+	...s TGroupTel1=$p(^DHCPEPreGBI(PGBIDR),"^",8)
+	...s:TGroupTel1="" TGroupTel1=$p(^DHCPEPreGBI(PGBIDR),"^",9)
+	..i GroupDesc'="" s flag=1
+	..s OrdSetID=$G(^DHCPEDataEx("DHCPEPreIADM","PreOrdSet",PIADM)) 
+	..i OrdSetID'="" d
+	...s OrdSetID=$p(OrdSetID,"^",2)  
+	...s OrdSetDesc=$p($g(^ARCOS(OrdSetID)),"^",2)
+	...s OrdSetDesc=$p(OrdSetDesc,"-",2)
+	..;q:((OrdSetID'="")&&(0=$d(^DHCPEDataEx("DHCPEBaseData","PEARCOS",OrdSetID,"LOC",LocID))))
+	..i $d(^DHCPEDataEx("ConfirmRecPaper",PIADM)) d
+	...s TotalPerson=TotalPerson+1
+	...s RecievedDate=##class(websys.Conversions).DateLogicalToHtml($p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",1))   //_" "_$zt($p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",2),1)
+	...s RecieverID=$p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",3)
+	...s:$d(^SSU("SSUSR",RecieverID)) RecieverName=$p(^SSU("SSUSR",RecieverID),"^",2) 
+	..i $d(^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM)) d
+	...s ReportDate=##class(websys.Conversions).DateLogicalToHtml($p(^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM),"^",1))
+	...s SendMethod=$g(^DHCPEDataEx("ConfirmRecPaper","SendReport",PIADM))
+	..q:""=RecieverName
+	
+	..d OutPut  
+	e  d 
+	.s PIADM=""
+	.s RecDate=RecBegDate-1
+	.i ArrivedFlag="Y" d
+	..f  s RecDate=$o(^DHCPEIADM(0,"AdmDateTime",RecDate))  q:(RecDate="")||(RecDate>RecEndDate)  d
+	...s Date=##class(websys.Conversions).DateLogicalToHtml(RecDate)
+	...s AdmTime=0
+    ...f  s AdmTime=$o(^DHCPEIADM(0,"AdmDateTime",RecDate,AdmTime))  q:AdmTime=""  d
+    ....s IADMRowID=0
+    ....f  s IADMRowID=$o(^DHCPEIADM(0,"AdmDateTime",RecDate,AdmTime,IADMRowID)) q:IADMRowID=""  d
+	.....s Status=$P($g(^DHCPEIADM(IADMRowID)),"^",8)
+	.....Q:"ARRIVED"'=Status
+ 	.....
+	.....s PIADM=$p(^DHCPEIADM(IADMRowID),"^",4)
+	.....q:($d(^DHCPEDataEx("ConfirmRecPaper",PIADM))=1) 
+	.....s LocFlag=##class(web.DHCPE.PreCommon).GetLocFlag("PreADM",PIADM)         //Add by 090702
+    .....q:LocFlag=1  
+	.....;q:(""=$p(^DHCPEPreIADM(PIADM),"^",2))
+	.....d Clear 
+	.....s PIBIDR=$p(^DHCPEPreIADM(PIADM),"^",1)
+	.....q:PIBIDR=""
+	.....s Amount=+##class(web.DHCPE.HandlerPreOrds).IGetAmount4Person(PIADM)
+	.....s TVip=$p(^DHCPEPreIADM(PIADM),"^",18)
+	.....q:(VIPLevel'="")&&(VIPLevel'=TVip)
+	.....d GetPersonInfo
+	.....s Depart=$G(^DHCPEDataEx("DHCPEPreIADM","Position",PIADM))
+	.....s PGADMDR=$p(^DHCPEPreIADM(PIADM),"^",2)
+	.....s GroupDesc="",flag=0
+	.....i PGADMDR'="" d
+	......s PGBIDR=$p(^DHCPEPreGADM(PGADMDR),"^",1)
+	......s GroupDesc=$p(^DHCPEPreGBI(PGBIDR),"^",2)
+	......s TGroupTel1=$p(^DHCPEPreGBI(PGBIDR),"^",8)
+	......s:TGroupTel1="" TGroupTel1=$p(^DHCPEPreGBI(PGBIDR),"^",9)
+	.....i GroupDesc'="" s flag=1
+	.....d OutPut
+	.....i GroupDesc="" s GroupDesc="个人"
+	.....s TotalPerson=TotalPerson+1
+	.....s GTotal=+$G(^TempDHCPERecPaper(Job,GroupDesc))+1
+	.....s ^TempDHCPERecPaper(Job,GroupDesc)=GTotal
+	.e  d
+	..f  s RecDate=$o(^DHCPEDataEx("ConfirmRecPaper","DateTime",RecDate)) q:(RecDate="")||(RecDate>RecEndDate)  d
+	...s Time=""
+	...f  s Time=$O(^DHCPEDataEx("ConfirmRecPaper","DateTime",RecDate,Time),-1) q:Time=""  d
+	....f  s PIADM=$o(^DHCPEDataEx("ConfirmRecPaper","DateTime",RecDate,Time,PIADM)) q:PIADM=""  d
+	.....s LocFlag=##class(web.DHCPE.PreCommon).GetLocFlag("PreADM",PIADM)         //Add by 090702
+    .....q:LocFlag=1  
+	.....;q:(""=$p(^DHCPEPreIADM(PIADM),"^",2))
+	.....d Clear 
+	.....s PIBIDR=$p(^DHCPEPreIADM(PIADM),"^",1)
+	.....q:PIBIDR=""
+	.....s Amount=+##class(web.DHCPE.HandlerPreOrds).IGetAmount4Person(PIADM)
+	.....s TVip=$p(^DHCPEPreIADM(PIADM),"^",18)
+	.....q:(VIPLevel'="")&&(VIPLevel'=TVip)
+	.....d GetPersonInfo
+	.....s Depart=$G(^DHCPEDataEx("DHCPEPreIADM","Position",PIADM))
+	.....s PGADMDR=$p(^DHCPEPreIADM(PIADM),"^",2)
+	.....s GroupDesc="",flag=0
+	.....i PGADMDR'="" d
+	......s PGBIDR=$p(^DHCPEPreGADM(PGADMDR),"^",1)
+	......s GroupDesc=$p(^DHCPEPreGBI(PGBIDR),"^",2)
+	......s TGroupTel1=$p(^DHCPEPreGBI(PGBIDR),"^",8)
+	......s:TGroupTel1="" TGroupTel1=$p(^DHCPEPreGBI(PGBIDR),"^",9)
+	.....i GroupDesc'="" s flag=1
+	.....s OrdSetID=$G(^DHCPEDataEx("DHCPEPreIADM","PreOrdSet",PIADM)) 
+	.....i OrdSetID'="" d
+	......s OrdSetID=$p(OrdSetID,"^",2)  
+	......s OrdSetDesc=$p($g(^ARCOS(OrdSetID)),"^",2)
+	......s OrdSetDesc=$p(OrdSetDesc,"-",2)
+	.....;q:((OrdSetID'="")&&(0=$d(^DHCPEDataEx("DHCPEBaseData","PEARCOS",OrdSetID,"LOC",LocID))))
+	.....i $d(^DHCPEDataEx("ConfirmRecPaper",PIADM)) d
+	......s RecievedDate=##class(websys.Conversions).DateLogicalToHtml($p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",1))             //_" "_$zt($p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",2),1)
+	......s RecieverID=$p(^DHCPEDataEx("ConfirmRecPaper",PIADM),"^",3)
+	......s:$d(^SSU("SSUSR",RecieverID)) RecieverName=$p(^SSU("SSUSR",RecieverID),"^",2) 
+	.....i $d(^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM)) d
+	......s ReportDate=##class(websys.Conversions).DateLogicalToHtml($p(^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM),"^",1))
+	......s SendMethod=$g(^DHCPEDataEx("ConfirmRecPaper","SendReport",PIADM))
+	.....q:""=RecieverName
+	
+	.....d OutPut
+	.....i GroupDesc="" s GroupDesc="个人"
+	.....s TotalPerson=TotalPerson+1
+	.....s GTotal=+$G(^TempDHCPERecPaper(Job,GroupDesc))+1
+	.....s ^TempDHCPERecPaper(Job,GroupDesc)=GTotal
+	.....;d OutPut  
+	d Clear
+	;s ind=1
+	i ALLGroup="Y" s flag=1
+	I ALLPerson="Y" s flag=0
+    S ITotal=0,GTotal=0
+    s GroupDesc2=""
+ 	f  s GroupDesc2=$O(^TempDHCPERecPaper(Job,GroupDesc2)) q:GroupDesc2=""  d
+	.i GroupDesc2="个人" s ITotal=$G(^TempDHCPERecPaper(Job,GroupDesc2))
+	S GTotal=TotalPerson-ITotal
+	I ALLGroup="Y" S TotalPerson=GTotal
+	I ALLPerson="Y" S TotalPerson=ITotal
+	s sort=""
+	s RegNo="总计："
+ 	s PatName=TotalPerson_"人"
+ 	d OutPut
+ 	;s ind=2
+ 	s GroupDesc2=""
+ 	f  s GroupDesc2=$O(^TempDHCPERecPaper(Job,GroupDesc2)) q:GroupDesc2=""  d
+ 	.d Clear
+ 	.s RegNo=GroupDesc2
+ 	.s PatName=$G(^TempDHCPERecPaper(Job,GroupDesc2))_"人"
+ 	.q:(ALLPerson="Y")&&(GroupDesc2'="个人")
+ 	.q:(ALLGroup="Y")&&(GroupDesc2="个人")
+ 	.d OutPut
+ 	k ^TempDHCPERecPaper(Job)
+ 	
+	Set qHandle=$lb(0,repid,0) 
+	Quit $$$OK
+GetPersonInfo
+	s RegNo=$p($g(^DHCPEPreIBI(PIBIDR)),"^",1)
+	s PatName=$p($g(^DHCPEPreIBI(PIBIDR)),"^",2)
+	s SexDR=$p($g(^DHCPEPreIBI(PIBIDR)),"^",3)
+	s Sex=$p($g(^CT("SEX",SexDR)),"^",2)
+	s Age=$p($g(^DHCPEPreIBI(PIBIDR)),"^",4) 
+	s:Age'="" Age=$P(##class(web.DHCLCNUREXCUTE).CalAge(Age,+$H),"Y",1) 
+	s TelNo=$p($g(^DHCPEPreIBI(PIBIDR)),"^",6)
+	s:TelNo="" TelNo=$p($g(^DHCPEPreIBI(PIBIDR)),"^",7)
+	s:TelNo="" TelNo=$p($g(^DHCPEPreIBI(PIBIDR)),"^",8)
+	q
+Clear
+	s (RegNo,PatName,Sex,Age,OrdSetDesc,RecieverName,RecievedDate,TelNo,GroupDesc,Depart,Team,ReportDate,TVip,TGroupTel1,SendMethod,Amount)=""
+	q 
+OutPut
+	I TVip'="" S TVip=##class(web.DHCPE.VIPLevel).GetVIPDescByID(TVip)
+	//s:(TVip=1) TVip="普通"
+	//s:(TVip=2) TVip="VIP"
+	i SendMethod="ZQ" s SendMethod="自取"
+	i SendMethod="TQ" s SendMethod="统取"
+	i SendMethod="KD" s SendMethod="快递"
+	i SendMethod="DZB" s SendMethod="电子版"
+	q:(ALLPerson="Y")&&(flag="1")
+	q:(ALLGroup="Y")&&(flag'="1")
+	s sort=sort+1
+	i Sex="" s sort=""
+	set Data=$lb(sort,RegNo,PatName,Sex,Age,OrdSetDesc,RecieverName,RecievedDate,TelNo,GroupDesc,Depart,Team,ReportDate,PIADM,TVip,TGroupTel1,SendMethod,Amount)  
+	set ^DHCPETMPRECPAPERData("RowData","I",ind)=RegNo_"^"_PatName_"^"_Sex_"^"_Age_"^"_OrdSetDesc_"^"_RecieverName_"^"_RecievedDate_"^"_TelNo_"^"_ReportDate_"^"_SendMethod_"^"_Amount
+	
+	//set ^DHCPETMPRECPAPERData("RowData","G",ind)=RegNo_"^"_PatName_"^"_Sex_"^"_Age_"^"_OrdSetDesc_"^"_RecieverName_"^"_RecievedDate_"^"_TelNo_"^"_GroupDesc_"^"_Depart_"^"_Team_"^"_ReportDate
+	Set ^CacheTemp(repid,ind)=Data
+ 	Set ind=ind+1
+ 	q
+]]></Implementation>
+</Method>
+
+<Method name="SearchGPaperByRecDateFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>SearchGPaperByRecDateExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	
+	Set AtEnd=$LIST(qHandle,1)
+ 	Set repid=$LIST(qHandle,2)
+ 	Set ind=$LIST(qHandle,3)
+ 	Set ind=$o(^CacheTemp(repid,ind))
+ 	If ind="" {				
+ 		Set AtEnd=1
+ 		Set Row=""
+ 	}
+ 	Else{			
+ 		Set Row=^CacheTemp(repid,ind)
+ 	}
+ 	s qHandle=$lb(AtEnd,repid,ind) 
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="SearchGPaperByRecDateClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>SearchGPaperByRecDateExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+ 	Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GetRowData">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rownum</FormalSpec>
+<Implementation><![CDATA[
+	s DataStr=$g(^DHCPETMPRECPAPERData("RowData","I",rownum))
+	q DataStr
+]]></Implementation>
+</Method>
+
+<Method name="GetRowLength">
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+	s ind=""
+	s ind=$o(^DHCPETMPRECPAPERData("RowData","I",ind),-1)
+	q ind
+]]></Implementation>
+</Method>
+
+<Method name="GetReportDate">
+<Description>
+w ##class(web.DHCPE.DHCPEIAdm).GetReportDate(PAADM)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PAADM</FormalSpec>
+<Implementation><![CDATA[
+	q:""=PAADM ""
+	s IADM=$o(^DHCPEIADM(0,"PAADM",PAADM,0))
+	q:IADM="" ""  // FL 暂时保护 20121128
+	s PIADM=$p($g(^DHCPEIADM(IADM)),"^",4)
+	q:""=PIADM ""
+	q:'$d(^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM)) ""
+	s ReportDate=$zd($p(^DHCPEDataEx("ConfirmRecPaper","ReportDate",PIADM),"^",1),3)
+	q ReportDate
+]]></Implementation>
+</Method>
+
+<Method name="GetNameByRegNo">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RegNo</FormalSpec>
+<Implementation><![CDATA[
+	q:RegNo="" ""
+	s RegNo=##class(web.DHCPE.DHCPECommon).RegNoMask(RegNo)
+	s BaseID=$O(^DHCPEPreIBI(0,"PAPMINo",RegNo,0))
+	q:BaseID="" ""
+	q $P(^DHCPEPreIBI(BaseID),"^",2)
+]]></Implementation>
+</Method>
+
+<Method name="GetNoCheckDateByRegNo">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RegNo</FormalSpec>
+<Implementation><![CDATA[
+	;##class(web.DHCPE.DHCPEIAdm).GetNoCheckDateByRegNo()
+	s PIADMInfo=..GetPIADMByRegNo(RegNo)
+	s Flag=$P(PIADMInfo,"^",1)
+	s PIADMStr=$P(PIADMInfo,"^",2)
+	q:Flag'=0 PIADMStr
+	q:PIADMStr="" "不存在预约纪录"
+	s IADM=$O(^DHCPEIADM(0,"CRMADM",PIADMStr,0))
+	s EpisodeID=$P(^DHCPEIADM(IADM),"^",1)
+	s unAppItems=##class(web.DHCPE.ResultEdit).GetUnAppedItems("",EpisodeID)
+ 	s unAppItems=$P(unAppItems,"^",2)
+	q unAppItems
+]]></Implementation>
+</Method>
+
+<Method name="OutNoCheckItemByPAADM">
+<Description>
+w ##class(web.DHCPE.DHCPEIAdm).OutNoCheckItemByPAADM("","1",300,2,"0")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>EpisodeID,SendButton:%String="1",TableWidth:%String=300,Cols:%String=2,RecLabFlag:%String="0"</FormalSpec>
+<Implementation><![CDATA[
+	s ^tempwml("OutNoCheckItemByPAADM",$h)=$lb(EpisodeID,SendButton,TableWidth,Cols,RecLabFlag)
+	q:EpisodeID="" ""
+	s unAppItems=##class(web.DHCPE.ResultEdit).GetUnAppedItems("",EpisodeID,RecLabFlag,"1")
+	s unAppItemIDs=$P(unAppItems,"^",1)
+	s unAppItems=$P(unAppItems,"^",2)
+	s i=$L(unAppItems,",")
+	w:('$D(^User.DHCPESendAuditI("AdmIndex",EpisodeID)))&&(SendButton="1") "<input type='button' value='粘贴' onclick=SendAudit() id="_EpisodeID_">"
+	w:($D(^User.DHCPESendAuditI("AdmIndex",EpisodeID)))&&(SendButton="1") "<input type='button' value='取消粘贴' onclick=CacleSendAudit() id="_EpisodeID_">"
+	
+	i unAppItems'=""
+	{
+		w "未检项目(<font color=red>点击项目,放弃检查</font>)",!
+		s Rows=i/Cols
+		i $L(Rows,".")>1 d
+		.s Rows=i\Cols+1
+		w "<table width="_TableWidth_" border=1>"
+		for j=1:1:Rows
+		{
+			w "<TR>"
+			for k=1:1:Cols d
+			.;w "<TD onclick=RefuseItem(this) id="_$P(unAppItemIDs,",",(j-1)*Cols+k)_">"_$P(unAppItems,",",(j-1)*Cols+k)_"</TD>"
+			.s flag=..GetAddDate($P(unAppItemIDs,",",(j-1)*Cols+k))
+			.//w "<TD><input name='Select' type='checkbox' id="_$P(unAppItemIDs,",",(j-1)*Cols+k)_">"_$P(unAppItems,",",(j-1)*Cols+k)_"</TD>" //<TD onclick=RefuseItem(this) id="_$P(unAppItemIDs,",",(j-1)*Cols+k)_">"_$P(unAppItems,",",(j-1)*Cols+k)_"</TD>"
+			.i flag'="" d
+			..w "<TD><input name='Select' type='checkbox' id="_$P(unAppItemIDs,",",(j-1)*Cols+k)_">"_$P(unAppItems,",",(j-1)*Cols+k)_"("_flag_")</TD>"  //<input name='reason' type='text' style='height:20px;width:100px'/><input name='DateFrom'type='text' id='DateFrom'"_(j-1)*Cols+k_" value='' size='10'/><IMG id='ldDateFrom' name='ldDateFrom' src='../images/websys/lookupdate.gif'/></TD>" 
+			.e  d
+			..w "<TD><input name='Select' type='checkbox' id="_$P(unAppItemIDs,",",(j-1)*Cols+k)_">"_$P(unAppItems,",",(j-1)*Cols+k)_"</TD>"  //<input name='reason' type='text' style='height:20px;width:100px'/><input name='DateFrom'type='text' id='DateFrom'"_(j-1)*Cols+k_" value='' size='10'/><IMG id='ldDateFrom' name='ldDateFrom' src='../images/websys/lookupdate.gif'/></TD>"
+
+			w "</TR>"
+		}
+		w "</table>"
+		
+		w "<table width="_TableWidth_" border=0>"
+		w "<TR style='white-space:normal; word-break:break-all;'>"
+		w "<td><button class='i-btn' onclick='RefuseItem()' name='Refuse'>放弃检查</button></td>"
+		w "<td><button class='i-btn'; onclick='AddDate()' id=AddDate>延期</button></td>"
+		w "</tr>"
+		w "</table>"
+
+	}
+	;s Flag=##class(web.DHCPE.ResultDiagnosis).StationSHadSubmit(EpisodeID)
+	;s Station=$P(Flag,"^",2)
+	;i Station'="" w "<b>未提交站点:</b>"_Station,!
+	s RefuseItem=##class(web.DHCPE.ResultEdit).GetRefuseItems(EpisodeID)
+	i RefuseItem'=";" w "<b>谢绝检查的项目:</b>"_RefuseItem,!
+	w ""
+]]></Implementation>
+</Method>
+
+<Method name="OutNoCheckItem">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RegNo,RecLabFlag:%String="0"</FormalSpec>
+<Implementation><![CDATA[
+	;##class(web.DHCPE.DHCPEIAdm).GetNoCheckDateByRegNo()
+	s PIADMInfo=..GetPIADMByRegNo(RegNo)
+	s Flag=$P(PIADMInfo,"^",1)
+	s PIADMStr=$P(PIADMInfo,"^",2)
+	q:Flag'=0 PIADMStr
+	q:PIADMStr="" "不存在预约纪录"
+	s IADM=$O(^DHCPEIADM(0,"CRMADM",PIADMStr,0))
+	s EpisodeID=$P(^DHCPEIADM(IADM),"^",1)
+	s obj=##class(User.PAAdm).%OpenId(EpisodeID)
+	w "<b>当前姓名："_obj.PAADMPAPMIDR.PAPMIName_"</b><br>"
+	
+	
+	d ..OutNoCheckItemByPAADM(EpisodeID, "0",700,4,RecLabFlag)
+	s VIPInfo=##class(web.DHCPE.PreCommon).GetVIPLevel("PAADM",EpisodeID)
+	q:$P(VIPInfo,"^",2)'[("VIP")
+	//得到一般检查项目的结果
+	Set myStr=##class(web.DHCPE.ResultEdit).GetAgeSex(EpisodeID)
+	Set myAge=$p(myStr,"^",1)
+	Set mySex=$p(myStr,"^",2)
+	s OEORD=$O(^OEORD(0,"Adm",EpisodeID,0))
+	s ARCIM="23441||1"
+	q:OEORD="" ""
+	s UseSub=""
+	s stt=""
+	f  s stt=$O(^OEORDi(0,"ARCIM",OEORD,ARCIM,stt)) q:(stt="")||(UseSub'="")  d
+	.s Sub=0
+	.f  s Sub=$O(^OEORDi(0,"ARCIM",OEORD,ARCIM,stt,Sub)) q:(Sub="")||(UseSub'="")  d
+	..s Stat=$P(^OEORD(OEORD,"I",Sub,1),"^",13)
+	..q:Stat="4"
+	..s PaiedStatus=$p(^OEORD(OEORD,"I",Sub,3),"^",5)
+	..q:PaiedStatus'="P"
+	..s UseSub=Sub
+	q:UseSub="" ""
+	w "<table border=1 width=700>",!
+	w "<TR><TD width=175>项目</TD><TD width=175>结果</TD><TD width=175>单位</TD><TD>参考值</TD></TR>"
+	s Sequence=""
+	f  s Sequence=$O(^DHCPEODR(0,"Sequence",ARCIM,Sequence)) q:Sequence=""  d
+	.s RowId=""
+	.f  s RowId=$O(^DHCPEODR(0,"Sequence",ARCIM,Sequence,RowId)) q:RowId=""  d
+	..Set Item=$P($g(^DHCPEODR(RowId)),"^",2)
+	..Q:Item=""
+	..s ODDesc=$P($g(^DHCPEST(+Item,"OD",$P(Item,"||",2))),"^",1)
+	..Set ItemUOMDr=$P($g(^DHCPEST(+Item,"OD",$P(Item,"||",2))),"^",4)
+	..s:ItemUOMDr="" ItemUOMDr="&nbsp;"
+	..Set NormalStr=##class(web.DHCPE.ResultEdit).GetNormal(Item, mySex, myAge)
+	..s:NormalStr="" NormalStr="&nbsp;"
+	..s RLTId=$o(^DHCPERLT(0,"ADMOD",EpisodeID,OEORD_"||"_UseSub,Item,""))
+	..i RLTId="" d
+	...s Result=""
+	...s ID=OEORD_"||"_UseSub_"^"_Item
+	..e  d
+	...s Result=$P($g(^DHCPERLT(RLTId)),"^",4)
+	...s ID=RLTId
+	.w "<TR>"
+	.w "<TD>"_ODDesc_"</TD>"
+	.
+	.w "<TD><input name='result' id="_ID_" value="_Result_"></input></TD>"
+	.w "<TD>"_ItemUOMDr_"</TD>"
+	.w "<TD>"_NormalStr_"</TD>"
+	.w "</TR>"
+	w "<TR><TD colspan=4><button id='BSaveResult'>保存结果</button></TD></TR>"
+	w "</table>",!
+	w ""
+]]></Implementation>
+</Method>
+
+<Method name="SaveResult">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ResultStr</FormalSpec>
+<Implementation><![CDATA[
+	s ResultStr=##class(web.DHCPE.DHCPEIAdm).ChangeResultStr(ResultStr)
+	s Date=+$H
+	s Time=$P(Date,",",2)
+	s UserID=%session.Get("LOGON.USERID")
+	s ODLength=$L(ResultStr,"%")
+	s SQLCODE=0
+	f i=1:1:ODLength
+	{
+		s OneResult=$P(ResultStr,"%",i)
+		s ID=$P(OneResult,"#",1)
+		s OneResult=$P(OneResult,"#",2)
+		i $L(ID,"^")>1 d
+		.s OEID=$P(ID,"^",1)
+		.s ItemID=$P(ID,"^",2)
+		.s PAADM=$P(^OEORD(+OEID),"^",1)
+		.s myStr=##class(web.DHCPE.ResultEdit).GetAgeSex(PAADM)
+		.s sex=$p(myStr,"^",2) 
+		.s ArcIM=$P(^OEORD(+OEID,"I",$P(OEID,"||",2),1),"^",2)
+		.s Normal=##class(web.DHCPE.ResultEdit).IsNormal(ItemID,OneResult,sex)
+		.k PLIST
+		.s PLIST(2)=PAADM
+		.s PLIST(3)=ArcIM
+		.s PLIST(4)=ItemID
+		.s PLIST(5)=OneResult
+		.s PLIST(6)=UserID
+		.s PLIST(7)=Date
+		.s PLIST(13)=Time
+		.s PLIST(8)=Normal
+		.s PLIST(11)=OEID
+		.&SQL(INSERT INTO SQLUser.DHC_PE_Result VALUES PLIST())
+		e  d
+		.&sql(update sqluser.DHC_PE_Result set RLT_Result=:OneResult where RLT_RowID=:ID)
+	}
+	q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="ChangeResultStr">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ResultStr</FormalSpec>
+<Implementation><![CDATA[
+	;w ##class(web.DHCPE.DHCPEIAdm).ChangeResultStr("57151#126.3%57152#85.5%57153#%57154#104%57155#129%57156#84")
+	s ResultLength=$L(ResultStr,"%")
+	b ;ResultLength
+	s Job=$J
+	k ^TempDHCPEChangeReult(Job)
+	f i=1:1:ResultLength
+	{
+		s OneResult=$P(ResultStr,"%",i)
+		s ID=$P(OneResult,"#",1)
+		i $L(ID,"^")>1 d
+		.s OrderItemID=$P(ID,"^",1)
+		.s ODID=$P(ID,"^",2)
+		e  d
+		.s ODID=$P(^DHCPERLT(ID),"^",3)
+		.b ;ODID
+		continue:+ODID=0
+		s Value=$P(OneResult,"#",2)
+		s Type=$P(^DHCPEST(+ODID,"OD",$P(ODID,"||",2)),"^",2)
+		s ODCode=$P(^DHCPEST(+ODID,"OD",$P(ODID,"||",2)),"^",11)
+		i Type="C" d
+		.s Express=$P(^DHCPEST(+ODID,"OD",$P(ODID,"||",2)),"^",3)
+		.s ^TempDHCPEChangeReult(Job,"C",ODCode,i)=Express
+		s ^TempDHCPEChangeReult(Job,"R",ODCode,i)=OneResult
+	}
+	;i '$D(^TempDHCPEChangeReult(Job,"C")) q ResultStr
+	s ODCode=""
+	f  s ODCode=$O(^TempDHCPEChangeReult(Job,"C",ODCode)) q:ODCode=""  d
+	.s i=0
+	.f  s i=$O(^TempDHCPEChangeReult(Job,"C",ODCode,i)) q:i=""  d
+	..s Express=$G(^TempDHCPEChangeReult(Job,"C",ODCode,i))
+	..s Length=$L(Express,"[")
+	..f k=1:1:Length  d
+	...s OneInfo=$P(Express,"[",k)
+	...s OneCode=$P(OneInfo,"]",1)
+	...q:OneCode=""
+	...s j=$O(^TempDHCPEChangeReult(Job,"R",OneCode,0))
+	...q:j=""
+	...i j>0 d
+	....s value=$P($G(^TempDHCPEChangeReult(Job,"R",OneCode,j)),"#",2)
+	...e  d
+	....s value=""
+	...s Express=##class(web.DHCPE.Public.Setting).Replace(Express,"["_OneCode_"]",value)
+	..s value=##class(web.DHCPE.ExcuteExpress).ExcuteExpress(Express)
+	..s value=$FN(value,"",2)
+	..s $P(^TempDHCPEChangeReult(Job,"R",ODCode,i),"#",2)=value
+	..s value=$G(^TempDHCPEChangeReult(Job,"R",ODCode,i))
+	..s $P(ResultStr,"%",i)=value
+	q ResultStr
+]]></Implementation>
+</Method>
+
+<Method name="RisHasCheck">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>OEORIRowId</FormalSpec>
+<Implementation><![CDATA[
+	q:OEORIRowId="" 0
+	///Add by wrz  xdt
+	s ARCIMDR=$P($G(^OEORD(+OEORIRowId,"I",$p(OEORIRowId,"||",2),1)),"^",2)
+	Q:(""=ARCIMDR) 0
+	s STRowId=0
+	s STRowId=$O(^DHCPEST(0,"STORD_ARCIM",ARCIMDR, STRowId))
+	Q:(""=STRowId) 0
+	s STORDChildSub=0
+	s STORDChildSub=$O(^DHCPEST(0,"STORD_ARCIM",ARCIMDR, STRowId, STORDChildSub))
+	Q:(""=STORDChildSub) 0
+	s ReportFormat=$P(^DHCPEST(STRowId,"O",STORDChildSub),"^",4)
+	i ReportFormat["EKG"
+	{
+		s rltId=$o(^DHCPERLT(0,"OEORI",OEORIRowId,0))
+		q:rltId'="" 0
+	}
+	
+	///Add End
+	Set RARRowId=$o(^DHCPACRegInfoi("OEORI",OEORIRowId,0))
+	i RARRowId=""
+	{
+		//只要有结果就当作已经检查了
+		s RLTID=$o(^DHCPERLT(0,"OEORI",OEORIRowId,0))
+		q:RLTID'="" 0
+		q 1
+	}
+	q 0  ;登记就算已检
+]]></Implementation>
+</Method>
+
+<Method name="GetQuestionFlag">
+<Description>
+判断预约记录是否存在问卷</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PreIADM</FormalSpec>
+<Implementation><![CDATA[
+	;w ##class(web.DHCPE.DHCPEIAdm).GetQuestionFlag(80636)
+	s VIPLevel=##class(web.DHCPE.PreCommon).GetVIPLevel("Pre",PreIADM)
+	q:VIPLevel[("VIP") "1" ;VIP不填写问卷
+	s Flag=0
+	s ID=""
+	f  s ID=$O(^User.DHCPENetPreRecordI("NPRPreIADMIndex"," "_PreIADM,ID)) q:(ID="")||(Flag=1)  d
+	.s QuestID=$LG(^User.DHCPENetPreRecordD(ID),14)
+	.s:QuestID'="" Flag=1
+	q Flag
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// 判断是否存在未总检记录
+
+]]></Content>
+</UDLText>
+
+<UDLText name="T">
+<Content><![CDATA[
+// w ##class(web.DHCPE.DHCPEIAdm).HadNoGenRecord(180042)
+
+]]></Content>
+</UDLText>
+
+<Method name="HadNoGenRecord">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PreIADM</FormalSpec>
+<Implementation><![CDATA[
+	s Ret=""
+	
+	s AdmId=$O(^DHCPEIADM(0,"CRMADM",PreIADM,0))
+	s Flag=##class(web.DHCPE.DHCPEIAdm).HaveNoPayedItem(AdmId)
+	q:(Flag="1") "存在未付费的项目、不能到达"
+	
+	s ReCheck=$P(^DHCPEPreIADM(PreIADM),"^",28)
+	q:ReCheck="Y" Ret
+	s PIBIID=$P(^DHCPEPreIADM(PreIADM),"^",1)
+	s PIADM=""
+	f  s PIADM=$O(^DHCPEPreIADM(0,"PIBI",PIBIID,PIADM),-1) q:(PIADM="")||(Ret'="")  d
+	.q:PIADM=PreIADM
+	.b ;PIADM
+	.s ReCheck=$P(^DHCPEPreIADM(PIADM),"^",28)
+	.q:ReCheck="Y"
+	.s Status=$P(^DHCPEPreIADM(PIADM),"^",8)
+	.b ;Status
+	.q:Status'="ARRIVED"
+	.s IADM=$O(^DHCPEIADM(0,"CRMADM",PIADM,0))
+    .q:IADM=""
+	.s PAADM=$P(^DHCPEIADM(IADM),"^",1)
+	.s AdmDate=$P(^DHCPEIADM(IADM),"^",5)
+	.s AdmDate=$ZD(AdmDate,3)
+	.s GSID=##class(web.DHCPE.ResultDiagnosis).GetSSId(PAADM)
+	.i GSID="" d
+	..s Ret=AdmDate_"到达记录还未总检，其它记录不能到达"
+	.e  d
+	..s GenUser=$P(^DHCPEGS(GSID,1),"^",5)
+	..i GenUser="" d
+	...s Ret=AdmDate_"到达记录还未总检，其它记录不能到达"
+	.b ;GSID
+	q Ret
+]]></Implementation>
+</Method>
+
+<Method name="GetIAdmIdByPaadm">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>paadm</FormalSpec>
+<Implementation><![CDATA[
+	q:paadm="" ""
+	s IADMRowId=$o(^DHCPEIADM(0,"PAADM",paadm,0))
+	q IADMRowId
+]]></Implementation>
+</Method>
+
+<Method name="OutSendReportToHTML">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContrlWidth:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s:(""=ContrlWidth) ContrlWidth="155"
+	//下拉列表
+	w "<select name='SendMethod' id='SendMethod' style='width:"_ContrlWidth_"' HEIGHT=0 tabIndex=0>",!
+	w "<option value='ZQ'>自取</option>",!
+	w "<option value='TQ'>统取</option>",!
+	w "<option value='KD'>快递</option>",!
+	w "<option value='DZB'>电子版</option>",!
+	w "</select>",!
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OutReportSendMethodToHTML">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContrlWidth:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s:(""=ContrlWidth) ContrlWidth="155"
+	//下拉列表
+	w "<select name='SendMethod' id='SendMethod' style='width:"_ContrlWidth_"' HEIGHT=0 tabIndex=0>",!
+	w "<option value='QB'>全部</option>",!
+	w "<option value='ZQ'>自取</option>",!
+	w "<option value='TQ'>统取</option>",!
+	w "<option value='KD'>快递</option>",!
+	w "<option value='DZB'>电子版</option>",!
+	w "</select>",!
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OutInvTypeToHTML">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContrlWidth:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s:(""=ContrlWidth) ContrlWidth="155"
+	//下拉列表
+	w "<select name='InvType' id='InvType' style='width:"_ContrlWidth_"' HEIGHT=0 tabIndex=0>",!
+	w "<option value='QB'>全部</option>",!
+	w "<option value='JSJLCW'>结算记录(财务)</option>",!
+	w "</select>",!
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OutSignFlagHTML">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContrlWidth:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s:(""=ContrlWidth) ContrlWidth="155"
+	//下拉列表
+	w "<select name='SignFlag' id='SignFlag' style='width:"_ContrlWidth_"' HEIGHT=0 tabIndex=0>",!
+	w "<option value='A'>转咨询</option>",!
+	w "<option value='D'>转单号组</option>",!
+	w "<option value='S'>转双号组</option>",!
+	w "<option value='N'>转正常组</option>",!
+	w "</select>",!
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="OutSignFlagHTML2">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContrlWidth:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s:(""=ContrlWidth) ContrlWidth="155"
+	//下拉列表
+	w "<select name='SignFlag' id='SignFlag' style='width:"_ContrlWidth_"' HEIGHT=0 tabIndex=0>",!
+	w "<option value='ALL'>全部</option>",!
+	w "<option value='A'>转咨询</option>",!
+	w "<option value='D'>转单号组</option>",!
+	w "<option value='S'>转双号组</option>",!
+	w "<option value='N'>转正常组</option>",!
+	w "</select>",!
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="FindPatFeeType">
+<Description>
+获取体检类别选择框 add by wangminglong 2019-3-21 start
+w ##class(web.DHCPE.DHCPEIAdm).FindPatFeeType()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContrlWidth:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s:(""=ContrlWidth) ContrlWidth="155"
+	//下拉列表
+	w "<select name='PatFeeType' id='PatFeeType' style='width:"_ContrlWidth_"' HEIGHT=0 tabIndex=0>",!
+	w "<option value='0'>全部</option>",!
+	w "<option value='6'>普通客户</option>",!
+	w "<option value='30'>特殊客户</option>",!
+	w "<option value='46'>入职体检</option>",!
+	w "</select>",!
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GetTeamIADM">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>TeamID</FormalSpec>
+<Implementation><![CDATA[
+	s PreIADMID=0,ret=""
+	f  s PreIADMID=$O(^DHCPEPreIADM(0,"PGTeam",TeamID,PreIADMID)) q:(PreIADMID="")  d
+	.s Status=$P(^DHCPEPreIADM(PreIADMID),"^",8)
+	.q:(Status'="REGISTERED")
+	.s IADM=$o(^DHCPEIADM(0,"CRMADM",PreIADMID,0))
+	.q:(IADM="")
+	.s PAADM=$p(^DHCPEIADM(IADM),"^",1)
+	.
+	.s:(ret'="") ret=ret_"^"_PAADM
+	.s:(ret="") ret=PAADM
+	
+	q ret
+]]></Implementation>
+</Method>
+
+<Method name="GetGoPrintStatus">
+<Description>
+Creator：      Jinlei
+CreatDate：    2018-09-10
+Description:： UsingJS DHCPEPreIADM.Find.js function GoPrint_click()
+Return：    函数返回值的说明</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PreIADMID:%String=""</FormalSpec>
+<Implementation><![CDATA[
+    q:PreIADMID="" 0
+    s ret=0
+    s Status=$P(^DHCPEPreIADM(PreIADMID),"^",8)
+    i Status="ARRIVED" s ret=1
+    q ret
+]]></Implementation>
+</Method>
+
+<Method name="UpdateNokAddress">
+<Description>
+add by liuxiang 2018-12-09
+更新快递地址
+w ##class(web.DHCPE.DHCPEIAdm).UpdateNokAddress(701,"我的老嘎") </Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RegNo,NokAddress</FormalSpec>
+<Implementation><![CDATA[
+	s NokAddress=$g(NokAddress)
+	i RegNo'="" s RegNo=##class(web.DHCPE.DHCPECommon).RegNoMask(RegNo)
+	s papmiID=$O(^PAPERi("PAPMI_PatNo",RegNo,""))
+	&SQL(Update Pa_Person Set PAPER_NokAddress1=:NokAddress Where PAPER_RowId=:papmiID)
+	
+	q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="GetNokAddress1">
+<Description>
+add by liuxiang 2018-12-09
+初始化快递地址
+w ##class(web.DHCPE.DHCPEIAdm).GetNokAddress1(3) </Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RegNo</FormalSpec>
+<Implementation><![CDATA[
+	q:RegNo="" ""
+	i RegNo'="" s RegNo=##class(web.DHCPE.DHCPECommon).RegNoMask(RegNo)
+	s papmiID=$O(^PAPERi("PAPMI_PatNo",RegNo,""))
+	q:papmiID="" ""
+	s NokAddress1=$P($g(^PAPER(papmiID,"NOK")),"^",7)
+	
+	q NokAddress1
+]]></Implementation>
+</Method>
+
+<Method name="GetAddDate">
+<Description>
+查看延期项目标志 liuxiang 2019-01-02</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ord</FormalSpec>
+<Implementation><![CDATA[
+	s ^tmplx("GetAddDate")=ord
+	s flag=""
+	i ord="" d 
+	.s flag=""
+	e  d
+	.s PostPoneInfo=##Class(web.DHCPE.OrderPostPoned).GetPostPoneInfo(ord)
+	.s PostPoneFlag=$p(PostPoneInfo,"^",1)
+	.s PostPoneDate=$p(PostPoneInfo,"^",3)
+	.i (PostPoneFlag="Y")&&(PostPoneDate'="") d
+	..s flag="延期"
+	q flag
+]]></Implementation>
+</Method>
+
+<Query name="GetRefuseAndPostPoneItems">
+<Description>
+获取延迟体检和放弃体检的项目 add by wangminglong 2019-3-11 start
+d ##class(%ResultSet).RunQuery("web.DHCPE.DHCPEIAdm","GetRefuseAndPostPoneItems","2019-01-02","2019-01-02")</Description>
+<Type>websys.Query</Type>
+<FormalSpec>StartDate:%String,EndDate:%String,RegNo:%String</FormalSpec>
+<SqlProc>1</SqlProc>
+<Parameter name="ROWSPEC" value="TPIADM:%String,TPAADM:%String,TPIBIRegNo:%String,TPIBIName:%String,TPIBISxeDes:%String,TPIBIAge:%String,TARCOSDescs:%String,TSendMethod:%String,TPGBIDesc:%String,TPIBIPhone:%String,TPIBIAddress:%String  ,TPostPoneIflag:%String,TRefuseflag:%String,TItemDesc:%String,TItemDate:%String,TCstat::%String"/>
+</Query>
+
+<Method name="GetRefuseAndPostPoneItemsExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,StartDate:%String,EndDate:%String,RegNo:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s repid = $I(^CacheTemp)
+	s ind = 1
+	s qHandle = $lb(0,repid,0)
+	s ^tempwml("GetRefuseAndPostPoneItems")=$lb(StartDate,EndDate,RegNo)
+	i StartDate'="" s StartDate=##class(websys.Conversions).DateHtmlToLogical(StartDate) 
+	i EndDate'="" s EndDate=##class(websys.Conversions).DateHtmlToLogical(EndDate) 
+	
+	for date=StartDate:1:EndDate d
+	.s BookDateEnd=""
+	.for  s BookDateEnd=$o(^DHCPEPreIADM(0,"BookDateTime",date,BookDateEnd)) q:(BookDateEnd="")  d
+	..s BookTime=""
+	..for  s BookTime=$o(^DHCPEPreIADM(0,"BookDateTime",date,BookDateEnd,BookTime)) q:(BookTime="")  d
+	...s PIADM=""
+	...for  s PIADM=$o(^DHCPEPreIADM(0,"BookDateTime",date,BookDateEnd,BookTime,PIADM)) q:(PIADM="")  d
+	....s IADM=$O(^DHCPEIADM(0,"CRMADM",PIADM,0))
+	....q:IADM=""
+	....s PAADM=$P(^DHCPEIADM(IADM),"^",1)
+	....s PostPoneItemDesc=""
+	....s RefuseItemDesc=##class(web.DHCPE.DHCPEIAdm).GetRefuseItems(PAADM)   //取出所有谢绝(放弃)检查的项目
+	....s PostPoneDate=""
+	....s Cstat=""
+	....d GetRefuseAndPostPoneItems
+	....b ;33333333
+	....d GetPostPoneItems
+	s qHandle = $lb(0,repid,0)
+	quit $$$OK
+	
+GetPostPoneItems
+	s EpisodeID=PAADM
+	s refuseItems=""
+	s RegNoDoItems=""
+	s PostPoneItems=""   //延迟项目
+	s PostPoneDate=""    //延迟时间
+	s RefuseItemDesc=""
+	s OEOrder=0
+	f  s OEOrder=$O(^OEORD(0,"Adm",EpisodeID,OEOrder))  q:(OEOrder="")  d
+	.s OEOrdItem=0
+	.f  s OEOrdItem=$O(^OEORD(OEOrder,"I",OEOrdItem))  q:(OEOrdItem="")  d
+	..s CRMOID=$O(^DHCPECRMO(0,"OEORI",OEOrder_"||"_OEOrdItem,""))
+	..q:CRMOID=""
+	..s CRMORI=$P(^DHCPECRMO(CRMOID),"^",2)
+	..s PIOI=CRMORI
+	..s PostPoneFlag=$p(^DHCPEPreIADM(+PIOI,"ORDITEM",$p(PIOI,"||",2)),"^",18)
+	..q:PostPoneFlag'="Y"     //延迟标志
+	..s Cstat=##Class(web.DHCPE.PrintIAdmInfo).CheckRefuse(OEOrder_"||"_OEOrdItem)   //是否已经体检
+	..s PostPoneDate=$p(^DHCPEPreIADM(+PIOI,"ORDITEM",$p(PIOI,"||",2)),"^",20)
+	..i PostPoneDate'="" s PostPoneDate=$zd(PostPoneDate,3)    //延迟时间
+	..s Reason=$p($G(^DHCPEDataEx("DHCPEPreIOrdItem","RefuseCheck",OEOrder_"||"_OEOrdItem)),"^",5)
+	..s ItemMastId=$p(^OEORD(OEOrder,"I",OEOrdItem,1),"^",2)
+	..s unAppItemSub=$p(ItemMastId,"||",1)	//ARCIM_Desc 医嘱名称 Arc_ItmMast
+	..s unAppItemVer=$p(ItemMastId,"||",2)
+	..s unAppItemDesc=$p($g(^ARCIM(unAppItemSub,unAppItemVer,1)),"^",2)
+	..i Reason'="" s unAppItemDesc=unAppItemDesc_"("_Reason_")"
+	..s PostPoneItemDesc=unAppItemDesc
+	..b ;111111111
+	..d GetRefuseAndPostPoneItems
+	q
+GetRefuseAndPostPoneItems
+	q:(RefuseItemDesc="")&&(PostPoneItemDesc="")
+   
+    s PostPoneIflag=""
+    s Refuseflag=""
+    i (RefuseItemDesc'="")  s Refuseflag="Y" s ItemDesc=RefuseItemDesc
+    i (PostPoneItemDesc'="")  s PostPoneIflag="Y" s ItemDesc=PostPoneItemDesc
+    s PIBI=$p(^DHCPEPreIADM(PIADM),"^",1)
+    s PIBIRegNo=$p(^DHCPEPreIBI(PIBI),"^",1)   //登记号
+    q:(RegNo'="")&&(RegNo'=PIBIRegNo)
+    s PIBIName=$p(^DHCPEPreIBI(PIBI),"^",2)    //姓名
+    s PIBISexDR=$p(^DHCPEPreIBI(PIBI),"^",3)   
+    s PIBISxeDes=$p(^CT("SEX",PIBISexDR),"^",2) //性别
+    s PIBIDOB=$p(^DHCPEPreIBI(PIBI),"^",4)
+    s PIBIDOB=$zd(PIBIDOB,3)
+    s Rtn=##class(web.UDHCJFCOMMON).DispPatAge(PIBIDOB,"","","")
+    s PIBIAge=$p(Rtn,"||",1)     //年龄
+    s PIBIPhone=$p(^DHCPEPreIBI(PIBI),"^",8)    //电话
+    s PIBIAddress=$p(^DHCPEPreIBI(PIBI),"^",14) //地址
+    
+    s TSendMethodCode=##class(web.DHCPE.PreCommon).GetSendMethod(PIADM) //报告领取方式
+	s:TSendMethodCode="ZQ" TSendMethod="自取"
+	s:TSendMethodCode="TQ" TSendMethod="统取"
+	s:TSendMethodCode="KD" TSendMethod="快递"
+	s:TSendMethodCode="DZB" TSendMethod="电子版"
+    
+    s ARCOSDescs=##class(web.DHCPE.PreIADM).GetOrdEntByPIAdm(PIADM)   //获取套餐
+    
+    s PGBIDesc=""
+    s PreGADM=""
+    s PIBIGADMDR=$p(^DHCPEPreIADM(PIADM),"^",2)   
+    i PIBIGADMDR'="" s PreGADM=$p(^DHCPEPreGADM(PIBIGADMDR),"^",1)
+    i PreGADM'="" s PGBIDesc=$p(^DHCPEPreGBI(PreGADM),"^",2)   //团体
+	set data=$lb(PIADM,PAADM,PIBIRegNo,PIBIName,PIBISxeDes,PIBIAge,ARCOSDescs,TSendMethod,PGBIDesc,PIBIPhone,PIBIAddress,PostPoneIflag,Refuseflag,ItemDesc,PostPoneDate,Cstat)
+	b ;wml
+	set ^CacheTemp(repid,ind) = data
+	set ind = ind+1
+	q
+]]></Implementation>
+</Method>
+
+<Method name="GetPostPoneItems">
+<Description>
+取延迟体检的项目 add by wangminglong 2019-03-11 start</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>EpisodeID:%String</FormalSpec>
+<Implementation><![CDATA[
+	
+	//取延迟的项目
+	s ^tempwml("GetRefuseItems",$h)=$lb(EpisodeID)
+	s refuseItems=""
+	s RegNoDoItems=""
+	s PostPoneItems=""   //延迟项目
+	s PostPoneDate=""    //延迟时间
+	s OEOrder=0
+	f  s OEOrder=$O(^OEORD(0,"Adm",EpisodeID,OEOrder))  q:(OEOrder="")  d
+	.s OEOrdItem=0
+	.f  s OEOrdItem=$O(^OEORD(OEOrder,"I",OEOrdItem))  q:(OEOrdItem="")  d
+	..s CRMOID=$O(^DHCPECRMO(0,"OEORI",OEOrder_"||"_OEOrdItem,""))
+	..q:CRMOID=""
+	..s CRMORI=$P(^DHCPECRMO(CRMOID),"^",2)
+	..s ^tempwml("PIOI",CRMORI)=$lb(CRMOID,OEOrder,OEOrdItem)
+	..s PIOI=CRMORI
+	..s PostPoneFlag=$p(^DHCPEPreIADM(+PIOI,"ORDITEM",$p(PIOI,"||",2)),"^",18)
+	..q:PostPoneFlag'="Y"     //延迟标志
+	..s PostPoneDate=$p(^DHCPEPreIADM(+PIOI,"ORDITEM",$p(PIOI,"||",2)),"^",20)
+	..i PostPoneDate'="" s PostPoneDate=$zd(PostPoneDate,3)    //延迟时间
+	..s Reason=$p($G(^DHCPEDataEx("DHCPEPreIOrdItem","RefuseCheck",OEOrder_"||"_OEOrdItem)),"^",5)
+	..s ItemMastId=$p(^OEORD(OEOrder,"I",OEOrdItem,1),"^",2)
+	..s unAppItemSub=$p(ItemMastId,"||",1)	//ARCIM_Desc 医嘱名称 Arc_ItmMast
+	..s unAppItemVer=$p(ItemMastId,"||",2)
+	..s unAppItemDesc=$p($g(^ARCIM(unAppItemSub,unAppItemVer,1)),"^",2)
+	..i Reason'="" s unAppItemDesc=unAppItemDesc_"("_Reason_")"
+	..i PostPoneItems="" d
+	...s PostPoneItems=unAppItemDesc
+	..e  d
+	...s PostPoneItems=PostPoneItems_","_unAppItemDesc
+	
+	q PostPoneItems_"^"_PostPoneDate
+]]></Implementation>
+</Method>
+
+<Method name="GetRefuseItems">
+<Description>
+取出所有谢绝(放弃)检查的项目 add by wangminglong 2019-03-11 start
+w ##class(web.DHCPE.DHCPEIAdm).GetRefuseItems(1090)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>EpisodeID:%String</FormalSpec>
+<Implementation><![CDATA[
+	s ^tempwml("GetRefuseItems",$h)=$lb(EpisodeID)
+	s refuseItems=""
+	s RegNoDoItems=""
+	s PostPoneItems=""   //延迟项目
+	s OEOrder=0
+	f  s OEOrder=$O(^OEORD(0,"Adm",EpisodeID,OEOrder))  q:(OEOrder="")  d
+	.s OEOrdItem=0
+	.f  s OEOrdItem=$O(^OEORD(OEOrder,"I",OEOrdItem))  q:(OEOrdItem="")  d
+	..i $d(^DHCPEDataEx("DHCPEPreIOrdItem","RefuseCheck",OEOrder_"||"_OEOrdItem)) d
+	...//如果该项目有谢绝检查，把项目的名称返回
+	...s Reason=$p($G(^DHCPEDataEx("DHCPEPreIOrdItem","RefuseCheck",OEOrder_"||"_OEOrdItem)),"^",5)
+	...s ItemMastId=$p(^OEORD(OEOrder,"I",OEOrdItem,1),"^",2)
+	...s unAppItemSub=$p(ItemMastId,"||",1)	//ARCIM_Desc 医嘱名称 Arc_ItmMast
+	...s unAppItemVer=$p(ItemMastId,"||",2)
+	...s unAppItemDesc=$p($g(^ARCIM(unAppItemSub,unAppItemVer,1)),"^",2)
+	...i Reason'="" s unAppItemDesc=unAppItemDesc_"("_Reason_")"
+	...i refuseItems="" d
+	....s refuseItems=unAppItemDesc
+	...e  d
+	....s refuseItems=refuseItems_","_unAppItemDesc
+	..i $d(^DHCPEDataEx("DHCPEPreIOrdItem","RegNo",OEOrder_"||"_OEOrdItem)) d
+	...//如果该项目有谢绝检查，把项目的名称返回
+	...s Reason=$p($G(^DHCPEDataEx("DHCPEPreIOrdItem","RegNo",OEOrder_"||"_OEOrdItem)),"^",5)
+	...s ItemMastId=$p(^OEORD(OEOrder,"I",OEOrdItem,1),"^",2)
+	...s unAppItemSub=$p(ItemMastId,"||",1)	//ARCIM_Desc 医嘱名称 Arc_ItmMast
+	...s unAppItemVer=$p(ItemMastId,"||",2)
+	...s unAppItemDesc=$p($g(^ARCIM(unAppItemSub,unAppItemVer,1)),"^",2)
+	...i Reason'="" s unAppItemDesc=unAppItemDesc_"("_Reason_")"
+	...i refuseItems="" d
+	....s refuseItems=unAppItemDesc
+	...e  d
+	....s refuseItems=refuseItems_","_unAppItemDesc
+	q refuseItems
+]]></Implementation>
+</Method>
+</Class>
+</Export>

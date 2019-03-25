@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-01-20 14:18:26">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-03-18 10:18:55">
 <Class name="web.DHCOPBILLOrdDirectList">
 <Description>
 Lid 
@@ -9,7 +9,7 @@ Lid
 <Import>SQLUser</Import>
 <ProcedureBlock>0</ProcedureBlock>
 <Super>%RegisteredObject,websys.Abstract</Super>
-<TimeChanged>65033,45127.612265</TimeChanged>
+<TimeChanged>65078,32673.085809</TimeChanged>
 <TimeCreated>62144,30119.98389</TimeCreated>
 <Inheritance>right</Inheritance>
 
@@ -821,13 +821,13 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","
 	...Set OEORIOEORIDRArcimDR=$p($g(^OEORD(+OEORIOEORIDR,"I",$p(OEORIOEORIDR,"||",2),1)),"^",2)
 	...Set ItmCatDR=$p(^ARCIM(+OEORIOEORIDRArcimDR,$p(OEORIOEORIDRArcimDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
 	...Set OrdItmType=$p(^ARC("IC",ItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
-	..Quit:OrdItmType="R"
+	..;Quit:OrdItmType="R"      //主医嘱类型是药品，而子医嘱类型就算不是药品而是诊疗是也需要显示出来 add by wangminglong 2019-02-27
 	..;End
 	..Set LisFlag=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",22)	
-	..Quit:LisFlag'="" 	;过滤检验绑定的医嘱.
+	..;Quit:LisFlag'="" 	;过滤检验绑定的医嘱.  把检验的绑定联动医嘱显示出来 add by wangminglong 2019-2-18 start
 	..Quit:(Group="183")&(OrderType'="R")	;体检安全组导诊单上只打印药品
 	..Set LisFlag=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",22)	
-	..Quit:LisFlag'="" 	;过滤检验绑定的医嘱.
+	..;Quit:LisFlag'="" 	;过滤检验绑定的医嘱.   把检验的绑定联动医嘱显示出来 add by wangminglong 2019-2-18 start
 	..If OrderType="R" d
 	...;药品
 	...;判断是否为基数药，如果是则取基数药使用位置(科室)
@@ -878,7 +878,10 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","
 	..Set RecDepLocDesc=RecDepLoc
 	..If RecDepLoc["-" s RecDepLoc=$p(RecDepLoc,"-",2)					;接收科室
 	..set RecLocFloor=$p($g(^CTLOC(myRecDR)),"^",16)
+	
 	..if RecDepLoc["心电图" s RecLocFloor="心电图检查地点请咨询护士"   //心电检查地点请咨询护士 add by wangminglong 2019-1-18
+	
+	
 	..Set RecDepLocPosition=$p($g(^CTLOC(myRecDR,"ADDR","1")),"^",1)  	;接收科室的物理地址
 	..Set RecLocPrompt=""												;科室注意事项提示
 	..Set ReportPosition=""												;取报告地点
@@ -892,23 +895,25 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","
 	....Set ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
 	....Set ArcimAbbrev=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",3) ;简写 ARCIM_Abbrev
 	
-	....b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start
+	....;b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start
 	....Set Reporttime=""   //报告时间
 	....set ReportPrompt="" 
 	....set Reportfrist=""
-	....set DepFlag=2
+	....set DepFlag=1     //1是检验科只维护住院的检验信息
 	....if AdmDepDesc["门诊"  set DepFlag=2
 	....if AdmDepDesc["急诊"  set DepFlag=3
 	....Set CodeID=$p($g(^ARCIM(+ARCIMDR,1,"EXT",1)),"^",4) ;  //检验项目对应的外部codeid
 	....set TestSetDR=$o(^dbo.BTTestSetI("IndexCode",1," "_CodeID,""))  //检验项目的id
-	....s FestivalWeek=" "_$zd($h,10)
+	....s FestivalWeek=$zd($h,10)
+	....if FestivalWeek=0  s FestivalWeek=7
+	....s FestivalWeek=" "_FestivalWeek
 	....i TestSetDR'="" d
 	.....s InspectingId=$o(^dbo.BTTestSetReceiptI("IndexTestSetDR",TestSetDR,FestivalWeek,DepFlag,""))
 	.....i InspectingId'="" d
 	......s Reportfrist=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),4)  //报告优先级
 	......s Reporttime=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),7)     //报告时间
 	......s ReportPrompt="  "_$list($g(^dbo.BTTestSetReceiptD(InspectingId)),10)  //报告提示
-	....b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end
+	....;b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end
 	
 		
 	....Set UserDepartment=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),7)),"^",2) ;开单科室DR
@@ -989,26 +994,25 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","
 	...Set ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
 	...Set ArcimAbbrev=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",3) ;简写 ARCIM_Abbrev
 	
-	
-	...b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start
+	...;b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start
 	...Set Reporttime=""   //报告时间
 	...set ReportPrompt="" 
 	...set Reportfrist=""
-	...set DepFlag=2
+	...set DepFlag=1     //1是检验科只维护住院的检验信息
 	...if AdmDepDesc["门诊"  set DepFlag=2
 	...if AdmDepDesc["急诊"  set DepFlag=3
 	...Set CodeID=$p($g(^ARCIM(+ARCIMDR,1,"EXT",1)),"^",4) ;  //检验项目对应的外部codeid
 	...set TestSetDR=$o(^dbo.BTTestSetI("IndexCode",1," "_CodeID,""))  //检验项目的id
-	...s FestivalWeek=" "_$zd($h,10)
+	...s FestivalWeek=$zd($h,10)
+	...if FestivalWeek=0  s FestivalWeek=7
+	...s FestivalWeek=" "_FestivalWeek
 	...i TestSetDR'="" d
 	....s InspectingId=$o(^dbo.BTTestSetReceiptI("IndexTestSetDR",TestSetDR,FestivalWeek,DepFlag,""))
 	....i InspectingId'="" d
 	.....s Reportfrist=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),4)  //报告优先级
 	.....s Reporttime=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),7)     //报告时间
 	.....s ReportPrompt="  "_$list($g(^dbo.BTTestSetReceiptD(InspectingId)),10)  //报告提示
-	...b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end
-	
-	
+	...;b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end
 	
 	...Set ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
 	...Set OrderType=$p(^ARC("IC",ArcItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
@@ -1038,7 +1042,7 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","
 	...If ((OrderType="R")&(PackQty'="")) Do
 	....s PackQty=PackQty/ConFac
 	...If myOrdTypeFlag=1 Do
-	....;b ;药品
+	....b ;药品
     ....If ((+$g(FCHerbFlag)=1)&&(FCHerbRange[("^"_ArcItmCatDR_"^"))) Do
     .....;b ;草药
     .....If +$g(FCHerIndex)=0 Do
@@ -1048,22 +1052,22 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","
     ....Else  Do
     .....;西药、中成药	导诊单拼串药品名称
     .....set PhyAcount=PhyAcount+1
-    .....set ArcimDesc=ArcimDesc_" "_PackQty_PackUOM_" "_OrdTotSum_"元"
+    .....set ArcimDesc=ArcimDesc_" "_PackQty_PackUOM_" "_OrdTotSum_"元"       //医嘱名称单位价格 wml
     .....set len=$l(ArcimDesc)
-    .....set ArcimDesc1=$e(ArcimDesc,1,25)   
-    .....set tmp3=ArcimDesc1_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_PhyAcount_"."    
-	.....if len>25 do
-	......set halflen=len\25 ;$fn(len/30,"",0)
+    .....set ArcimDesc1=$e(ArcimDesc,1,23)   
+    .....set tmp3=ArcimDesc1_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_PhyAcount_"." 
+	.....if len>23 do
+	......set halflen=len\23 ;$fn(len/30,"",0)
 	......;set ArcimDesc1=$e(ArcimDesc,1,15)     
 	......set tmp3=ArcimDesc1_"^"_""_"^"_""_"^"_""_"^"_""_"^"_PhyAcount_"."  
 	......if OrdStr="" Set OrdStr=tmp3      
 	......else  Set OrdStr=OrdStr_"!"_tmp3   
 	......for i=1:1:halflen d
-	.......set ArcimDesc2=$e(ArcimDesc,25*i+1,25*(i+1))
-	.......set ArcimDesc2="  "_ArcimDesc2   //wml
+	.......set ArcimDesc2=$e(ArcimDesc,23*i+1,23*(i+1))
+	.......set ArcimDesc2="  "_ArcimDesc2   
 	.......if i=halflen set tmp33=ArcimDesc2_"^"_PackQty_"^"_Price_"元"_"^"_PackUOM_"^"_OrdTotSum_"^"_""
 	.......else  set tmp33=ArcimDesc2_"^"_""_"^"_""_"^"_""_"^"_""_"^"_""  
-	.......b ;3333333
+	.......;b ;3333333
 	.......Set OrdStr=OrdStr_"!"_tmp33
 	.....else  do
 	......if OrdStr="" Set OrdStr=tmp3 
@@ -1116,7 +1120,7 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","
     .....Set PrescPricePosition="请咨询就诊楼层护士站"
     ....Set NewArcimDesc=##class(web.DHCRisApplicationBill).GetAppItemName(OEORIDR) 
     ....s JCAcount=JCAcount+1  //检查医嘱序号 add by wangminglong 2018-11-1
-    ....set NewArcimDesc=NewArcimDesc_" "_PackQty_PackUOM_"  "_OrdTotSum_"元"   //医嘱后面加单位单价数量 add by wangminglong 2018-10-19 start
+    ....set NewArcimDesc=NewArcimDesc_" "_PackQty_PackUOM_"  "_OrdTotSum_"元"   //医嘱后面加单位单价数量 add by wangminglong 2018-10-19 start  wml
     ....Set tmp3=NewArcimDesc_"^"_PackQty_"^"_Price_"^"_PackUOM_"^"_OrdTotSum_"^"_AdmDepDesc_"^"_PrescPricePosition_"^"_Prompt_"^"_BookedNote_"^"_OEORIDateDisplay_" "_OEORITimeDisplay_"^"_JCAcount_"."   //add _"^"_JCAcount_"." by wangminglong 2018-11-1
    
   	....;测试导诊单医嘱项名字过长时分行  目前规则小于15字时不分行,超过15字时分行 add  by wangminglong 2018-09-17  start
@@ -1268,7 +1272,7 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","
 	.....else  Set OrdStr=OrdStr_"!"_tmp4
 	
 	....;取标本时间 add by wangminglong 2019-1-12 start
-	....if LabReportDate>0 d
+	....if LabReportDate>1 d
 	.....if (0<LabReportDate)&(LabReportDate<60) d
 	......s temp42="  标本采集"_LabReportDate_"分钟后可查询报告"
 	.....if (60<=LabReportDate)&(LabReportDate<1440) d
@@ -1289,9 +1293,9 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","
     ......if OrdStr="" Set OrdStr=tmp43
 	......else  Set OrdStr=OrdStr_"!"_tmp43
     ......for k=1:1:halflen d
-	.......set ReportPrompt2=$e(ReportPrompt,22*k+1,22*(k+1))
+	.......set ReportPrompt2="  "_$e(ReportPrompt,22*k+1,22*(k+1))
    	.......Set OrdStr=OrdStr_"!"_ReportPrompt2
-   	.....else  do
+   	.....if (2<len1)&&(len1<23)  do
 	......if OrdStr="" Set OrdStr=ReportPrompt
 	......else  Set OrdStr=OrdStr_"!"_ReportPrompt
    
@@ -1338,7 +1342,7 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXH("377416","
 	....b ;If LabOrdStr="" Set LabOrdStr=tmp6
     ....;Else  Set LabOrdStr=LabOrdStr_"!"_tmp6
     ....;b ;222
-    ..;Set RecLocStr=RecDepLoc_"^^^^^^"_$c(5)_LabOrdStr  //wml
+    ..;Set RecLocStr=RecDepLoc_"^^^^^^"_$c(5)_LabOrdStr 
     ..Set RecLocStr=LabOrdStr   //wml
   	.. ;检验输出结束
     .If rtn="" Set rtn=Str_$c(3)_RecLocStr  
@@ -1456,13 +1460,13 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXHNew("377416
 	...Set OEORIOEORIDRArcimDR=$p($g(^OEORD(+OEORIOEORIDR,"I",$p(OEORIOEORIDR,"||",2),1)),"^",2)
 	...Set ItmCatDR=$p(^ARCIM(+OEORIOEORIDRArcimDR,$p(OEORIOEORIDRArcimDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
 	...Set OrdItmType=$p(^ARC("IC",ItmCatDR),"^",7)                   	;医嘱类型ARC_ItemCat->ARCIC_OrderType(R:药品N:诊疗 L:检验P:自定价医嘱)
-	..Quit:OrdItmType="R"
+	..;Quit:OrdItmType="R"
 	..;End
 	..Set LisFlag=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",22)	
-	..Quit:LisFlag'="" 	;过滤检验绑定的医嘱.
+	..;Quit:LisFlag'="" 	;过滤检验绑定的医嘱.  把检验的绑定联动医嘱显示出来 add by wangminglong 2019-2-18 start
 	..Quit:(Group="183")&(OrderType'="R")	;体检安全组导诊单上只打印药品
 	..Set LisFlag=$p($g(^OEORD(+OEORIDR,"I",$P(OEORIDR,"||",2),"DHC")),"^",22)	
-	..Quit:LisFlag'="" 	;过滤检验绑定的医嘱.
+	..;Quit:LisFlag'="" 	;过滤检验绑定的医嘱.  把检验的绑定联动医嘱显示出来 add by wangminglong 2019-2-18 start
 	..If OrderType="R" d
 	...;药品
 	...;判断是否为基数药，如果是则取基数药使用位置(科室)
@@ -1527,23 +1531,25 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXHNew("377416
 	....Set ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
 	....Set ArcimAbbrev=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",3) ;简写 ARCIM_Abbrev
 	
-	....b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start   wml
+	....b ;1添加检验项目的取报告时间 add by wangminglong 2019-1-11 start   
 	....Set Reporttime=""   //报告时间
 	....set ReportPrompt="" 
 	....set Reportfrist=""
-	....set DepFlag=2
+	....set DepFlag=1     //1是检验科只维护住院的检验信息
 	....if AdmDepDesc["门诊"  set DepFlag=2
 	....if AdmDepDesc["急诊"  set DepFlag=3
 	....Set CodeID=$p($g(^ARCIM(+ARCIMDR,1,"EXT",1)),"^",4) ;  //检验项目对应的外部codeid
 	....set TestSetDR=$o(^dbo.BTTestSetI("IndexCode",1," "_CodeID,""))  //检验项目的id
-	....s FestivalWeek=" "_$zd($h,10)
+	....s FestivalWeek=$zd($h,10)
+	....if FestivalWeek=0  s FestivalWeek=7
+	....s FestivalWeek=" "_FestivalWeek
 	....i TestSetDR'="" d
 	.....s InspectingId=$o(^dbo.BTTestSetReceiptI("IndexTestSetDR",TestSetDR,FestivalWeek,DepFlag,""))
 	.....i InspectingId'="" d
 	......s Reportfrist=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),4)  //报告优先级
 	......s Reporttime=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),7)     //报告时间
 	......s ReportPrompt="  "_$list($g(^dbo.BTTestSetReceiptD(InspectingId)),10)  //报告提示
-	....b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end   wml
+	....b ;1添加检验项目的取报告时间 add by wangminglong 2019-1-11 end   
 	
 	....Set UserDepartment=$p($g(^OEORD(+PPOrdItm,"I",$p(PPOrdItm,"||",2),7)),"^",2) ;开单科室DR
 	....Set UserDepDesc=""
@@ -1607,23 +1613,26 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXHNew("377416
 	...Set ArcimDesc=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",2) ;名称
 	...Set ArcimAbbrev=$p($g(^ARCIM(+ARCIMDR,1,1)),"^",3) ;简写 ARCIM_Abbrev
 	
-	...b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start  wml
+	...b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 start  
 	...Set Reporttime=""   //报告时间
 	...set ReportPrompt="" 
 	...set Reportfrist=""
-	...set DepFlag=2
+	...set DepFlag=1     //1是检验科只维护住院的检验信息
 	...if AdmDepDesc["门诊"  set DepFlag=2
 	...if AdmDepDesc["急诊"  set DepFlag=3
 	...Set CodeID=$p($g(^ARCIM(+ARCIMDR,1,"EXT",1)),"^",4) ;  //检验项目对应的外部codeid
 	...set TestSetDR=$o(^dbo.BTTestSetI("IndexCode",1," "_CodeID,""))  //检验项目的id
 	...s FestivalWeek=" "_$zd($h,10)
+	...s FestivalWeek=$zd($h,10)
+	...if FestivalWeek=0  s FestivalWeek=7
+	...s FestivalWeek=" "_FestivalWeek
 	...i TestSetDR'="" d
 	....s InspectingId=$o(^dbo.BTTestSetReceiptI("IndexTestSetDR",TestSetDR,FestivalWeek,DepFlag,""))
 	....i InspectingId'="" d
 	.....s Reportfrist=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),4)  //报告优先级
 	.....s Reporttime=$list($g(^dbo.BTTestSetReceiptD(InspectingId)),7)     //报告时间
 	.....s ReportPrompt="  "_$list($g(^dbo.BTTestSetReceiptD(InspectingId)),10)  //报告提示
-	...b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end wml
+	...b ;添加检验项目的取报告时间 add by wangminglong 2019-1-11 end 
 	
 	
 	...Set ArcItmCatDR=$p(^ARCIM(+ARCIMDR,$p(ARCIMDR,"||",2),1),"^",10) 	;医嘱子类(ARC_ItmMast->ARCIM_ItemCat_DR->ARC_ItemCat)
@@ -1800,7 +1809,7 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXHNew("377416
    	
    	....//标本采集多少时间后查询报告 add by wangminglong 2019-1-16 start
    	....s LabReportDesc=""
-   	....if LabReportDate>0 d
+   	....if LabReportDate>1 d
 	.....if (0<LabReportDate)&(LabReportDate<60) d
 	......s LabReportDesc="标本采集"_LabReportDate_"分钟后可查询报告"
 	.....if (60<=LabReportDate)&(LabReportDate<1440) d
@@ -1808,7 +1817,7 @@ Other:w ##class(web.DHCOPBILLOrdDirectList).GetDirectListByPrtRowidXHNew("377416
 	......s LabReportDesc="标本采集"_LabReportDate_"小时后可查询报告"
 	.....if (1440<=LabReportDate) d
 	......s LabReportDate=$fn(LabReportDate/1440,"",1)
-	......s LabReportDesc="标本采集"_LabReportDate_"工作日后可查询报告"
+	......s LabReportDesc="标本采集"_LabReportDate_"工作日可查询报告"
    	....//标本采集多少时间后查询报告 add by wangminglong 2019-1-16 end
    	
    	....Do ##class(web.DHCOPBILLOrdDirectList).GetNumberForString(LabNO,myReportDate,$j)

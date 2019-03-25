@@ -1,0 +1,2705 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-03-25 14:54:53">
+<CSP name="scripts/dhcpepreiadm.main.hisui.js" application="/dthealth/web/" default="1"><![CDATA[
+
+var myCombAry=new Array(); 
+function SetPreDate(NewDateStr)
+{
+	$('#PEDateBegin').val(NewDateStr);
+	//$('#PEDateBegin').datebox('setValue', NewDateStr);
+}
+$.extend($.fn.validatebox.defaults.rules, {
+	 	mobile : {// 验证手机号码
+        validator : function(value) {
+            return /^(13|15|16|17|18)\d{9}$/i.test(value);
+        },
+        	message : '手机号码格式不正确'
+    	}
+		})
+		
+$.extend($.fn.validatebox.defaults.rules, {
+	 	age : {// 年龄控制 add by sun
+        validator : function(value) {
+            return ((value.split("岁")[0])>=18)
+        },
+        	message : '年龄不够18'
+    	}
+		})
+$.extend($.fn.validatebox.defaults.rules, {
+	 	idcard : {// 证件控制 add by sun
+        validator : function(value) {
+	        //alert(value)
+            return (value!="")
+        },
+        	message : '身份证号不能为空'
+    	}
+		})
+
+var openPreDateWin = function(PreIADMDR,ExpStr){
+	
+	$HUI.window("#PreDateWin",{
+		title:"修改体检日期",
+		collapsible:false,
+		modal:true,
+		width:600,
+		height:400,                              
+		content:'<iframe src="websys.default.hisui.csp?WEBSYS.TCOMPONENT=DHCPEPreDate&PreIADMID='+PreIADMDR+'&ExpStr='+ExpStr+'" width="100%" height="100%" frameborder="0"></iframe>'
+	});
+};	
+var openSetWin = function(SetId){
+	
+	$HUI.window("#SetWin",{
+		title:"项目信息列表",
+		collapsible:false,
+		modal:true,
+		width:600,
+		height:400
+	});
+	
+	var QryLisObj = $HUI.datagrid("#QrySetWin",{
+		url:$URL,
+		queryParams:{
+			ClassName:"web.DHCPE.Query.PreItemList",
+			QueryName:"QueryPreItemList",
+			AdmId:SetId,
+			AdmType:"Ord"
+
+		},
+		columns:[[
+			{field:'ItemDesc',width:'230',title:'项目名称'},
+			{field:'ItemSetDesc',width:'250',title:'套餐'},
+			{field:'TAccountAmount',width:'100',title:'应收金额'}
+		]],
+		pagination:true,
+		pageSize:20,
+		fit:true
+	
+		})
+	
+	
+};
+var openNameWin = function(desc){
+	
+	var NameWinObj=$HUI.window("#NameWin",{
+		title:"信息列表",
+		collapsible:false,
+		modal:true,
+		width:800,
+		height:400
+	});
+	
+	var QryLisObj = $HUI.datagrid("#QryNameWin",{
+		url:$URL,
+		queryParams:{
+			ClassName:"web.DHCPE.PreIBaseInfo",
+			QueryName:"SearchPreIBaseInfo",
+			PatName:desc
+
+		},
+		columns:[[
+			{field:'PIBI_RowId',hidden:true},
+			{field:'PIBI_PAPMINo',width:'100',title:'登记号'},
+			{field:'PIBI_Name',width:'80',title:'姓名'},
+			{field:'PIBI_Sex_DR_Name',width:'60',title:'性别'},
+			{field:'PIBI_DOB',width:'100',title:'出生日期'},
+			{field:'PIBI_Married_DR_Name',width:'70',title:'婚姻状况'},
+			{field:'PIBI_MobilePhone',width:'110',title:'电话号码'},
+			{field:'PIBI_IDCard',width:'150',title:'身份证号'}
+			
+		]],
+		onDblClickRow:function(rowIndex,rowData){
+			var pibi=rowData.PIBI_PAPMINo;
+			$('#PAPMINo').val(pibi);
+			RegNoOnChange();
+			NameWinObj.close();
+		},
+		pagination:true,
+		pageSize:20,
+		fit:true
+	
+		})
+	
+	
+};
+var init = function(){
+	
+		
+		LoadCard();
+		
+		var myobj=document.getElementById("ReadRegInfo");
+		if (myobj)
+		{ 
+		myobj.onclick=ReadRegInfo_OnClick;  	 
+		}
+		
+		
+		
+		
+		var obj=document.getElementById('ReadCard');
+		if (obj) obj.onclick=ReadCardClickHandler;
+		
+		
+		
+		
+		$("#PAPMINo").change(function(){
+  			RegNoOnChange();
+		});
+		
+		$("#PAPMINo").keydown(function(e) {
+			
+			if(e.keyCode==13){
+				RegNoOnChange();
+			}
+			
+        });
+        
+        
+        $("#Age").change(function(){
+	        
+  			AgeOnChange();
+		});
+        $("#CardNo").change(function(){
+  			CardNoOnChange();
+		});
+		
+		$("#CardNo").keydown(function(e) {
+			
+			if(e.keyCode==13){
+				CardNoOnChange();
+			}
+			
+        });
+        
+        $("#IDCard").change(function(){
+  			IDCardOnChange();
+		});
+		
+		$("#IDCard").keydown(function(e) {
+			
+			if(e.keyCode==13){
+				IDCardOnChange();
+			}
+			
+        });
+        
+        
+		$("#Update").click(function() {
+			
+			Save();	
+			
+        });
+        $("#PreDate").click(function() {
+			
+			PreDate();	
+			
+        });
+        $("#PEDateBegin").attr('readonly',true);
+        $("#BRegister").click(function() {
+			
+			Register();	
+			
+        });
+        
+        
+        
+        $("#BClear").click(function() {
+			
+			Clear_click();
+			
+        });
+		
+		
+		$("#SetBFind").click(function() {
+			SetBFind_click();
+			
+        });
+		
+		$("#Set").keydown(function(e) {
+			
+			if(e.keyCode==13){
+				SetBFind_click();
+				}
+		});
+		
+		$("#Name").keydown(function(e) {
+			
+			if(e.keyCode==13){
+				Name_keydown();
+				}
+		});
+		$("#RisBFind").click(function() {
+			RisBFind_click();
+			
+        });
+		
+		$("#Item").keydown(function(e) {
+			
+			if(e.keyCode==13){
+				RisBFind_click();
+				}
+		});
+		
+		
+		$("#LisBFind").click(function() {
+			LisBFind_click();
+			
+        });
+		
+		$("#LisItem").keydown(function(e) {
+			
+			if(e.keyCode==13){
+				LisBFind_click();
+				}
+		});
+		
+		$("#OtherBFind").click(function() {
+			OtherBFind_click();
+			
+        });
+		
+		$("#OtherItem").keydown(function(e) {
+			
+			if(e.keyCode==13){
+				OtherBFind_click();
+				}
+		});
+		
+		
+		$("#MedicalBFind").click(function() {
+			MedicalBFind_click();
+			
+        });
+		
+		$("#MedicalItem").keydown(function(e) {
+			
+			if(e.keyCode==13){
+				MedicalBFind_click();
+				}
+		});
+		
+		var QrySetObj = $HUI.datagrid("#QrySet",{
+		url:$URL,
+		queryParams:{
+			ClassName:"web.DHCPE.HandlerOrdSetsEx",
+			QueryName:"queryOrdSet",
+			Set:"",
+			Type:"ItemSet"
+
+		},
+		onDblClickRow:function(rowIndex,rowData){
+			
+			var RowId=$("#PIADM_RowId").val()
+			if(RowId=="")
+			{
+				$.messager.alert("提示","还未预约");
+	 	   		return false;
+			}
+			var SetId=rowData.OrderSetId;
+			
+			var SetSexFlag=tkMakeServerCall("web.DHCPE.PreItemList","IsSetSex",RowId,"PERSON",SetId);
+			var SetSexCanFlag=SetSexFlag.split("^")
+			if(SetSexCanFlag[0]=="1"){
+				$.messager.alert("提示",SetSexCanFlag[1]);
+				return false;
+	
+			}
+			
+			var isetid=tkMakeServerCall("web.DHCPE.PreItemList","IsExistItems",RowId,"PERSON",SetId);
+ 			/*if("1"==isetid) {
+	 	
+	 			$.messager.alert("提示","本次体检已有套餐,不能继续添加");
+	 			return false;
+	 		}*/
+			
+			
+			var UserId=session['LOGON.USERID'];
+			
+			
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":"",
+			"ArcItemSetId":SetId,
+			"UpdateUserId":UserId
+			},function(jsonData){
+				
+				
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				
+				}
+				else
+				{
+					$.messager.alert("提示",jsonData.ret);
+				}
+			
+			});
+			
+			
+			
+			
+		},
+		columns:[[
+			{field:'OrderSetId',title:'预览',
+				formatter:function(value,row,index){
+					return "<a href='#' onclick='openSetWin(\""+value+"\")'>\
+					<img src='../images/dhcpe/查看.png' border=0/>\
+					</a>";
+				}},
+			{field:'OrderSetDesc',width:'180',title:'名称'},
+			{field:'OrderSetPrice',width:'80',title:'金额'}
+		]],
+		pagination:true,
+		pageSize:20,
+		fit:true
+	
+		})
+		
+		
+		var QryRisObj = $HUI.datagrid("#QryRisItm",{
+		url:$URL,
+		queryParams:{
+			ClassName:"web.DHCPE.StationOrder",
+			QueryName:"StationOrderList",
+			Type:"Item",
+			TargetFrame:"PreItemList"
+
+		},
+		onDblClickRow:function(rowIndex,rowData){
+			
+			var RowId=$("#PIADM_RowId").val()
+			if(RowId=="")
+			{
+				$.messager.alert("提示","还未预约");
+	 	   		return false;
+			}
+			var ItemId=rowData.STORD_ARCIM_DR;
+			var IsAddPhc=tkMakeServerCall("web.DHCPE.PreItemList","IsAddPhcItem",RowId,"PERSON",ItemId,"PRE");
+	   		
+ 	   		if(IsAddPhc=="1") {
+	 	   		$.messager.alert("提示","分组不允许加药");
+	 	   		
+	 	   		return false;
+ 	   		}
+ 	   		
+ 	   		var flagret=tkMakeServerCall("web.DHCPE.PreItemList","IsExistItem",RowId,"PERSON",ItemId);
+ 			var flagArr=flagret.split("^");
+			var flag=flagArr[0];
+
+	    	if ("1"==flag) 
+	    	{
+    	
+    	  		if (flagArr[1]=="1")
+    	  		{
+	    	  		
+	    	  		$.messager.confirm("操作提示", "项目已存在,是否再增加?", function (data) {
+            		if (data) {
+	        var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+			
+			});
+            		}
+            		else {
+                		return false;
+            		}
+        			});
+	    	  		
+    			}else
+    			{
+			 		$.messager.alert("提示","项目已存在,不能再增加.");
+					return false;
+    			}
+    		}
+    		else if("2"==flag)
+    		{
+	    		$.messager.alert("提示","项目中的化验项目,和已有项目有重复,是否继续添加?")
+	    		return false;
+			}
+			if (flagArr[1]=="1")
+			{return false;}
+ 	   		var ItemFlag;
+ 			ItemFlag=tkMakeServerCall("web.DHCPE.PreItemList","ItemCanPreInfo",RowId,"PERSON",ItemId)
+ 			
+			var ItemCanFlag=ItemFlag.split(",")
+ 			if (ItemCanFlag[0]==-1)
+ 			{
+	 			
+	 			$.messager.confirm("操作提示",ItemCanFlag[1], function (data) {
+            		if (data) {
+	        var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+			
+			});
+            		}
+            		else {
+                		return false;
+            		}
+        			});
+	 			 
+			}
+			if (ItemCanFlag[0]==-1)
+			{return false;}
+			var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+				else
+				{
+					$.messager.alert("提示",jsonData.ret);	
+				}
+			
+			});
+			
+			
+			
+		},
+		columns:[[
+			{field:'STORD_ARCIM_DR',title:'操作',width:'40',
+			formatter:function(value,row,index){
+					return "<a href='#' onclick='AddItem(\""+value+"\")'>\
+					<img src='../images/dhcpe/添加.png' border=0/>\
+					</a>";
+				}},
+			{field:'STORD_ARCIM_Code',width:'70',title:'编码'},
+			{field:'STORD_ARCIM_Desc',width:'120',title:'名称'},
+			{field:'STORD_ARCIM_Price',width:'40',title:'价格'},
+			{field:'TLocDesc',width:'50',title:'站点'}
+		]],
+		pagination:true,
+		pageSize:20,
+		fit:true
+	
+		})
+		
+		
+		var QryLisObj = $HUI.datagrid("#QryLisItm",{
+		url:$URL,
+		queryParams:{
+			ClassName:"web.DHCPE.StationOrder",
+			QueryName:"StationOrderList",
+			Type:"Lab",
+			TargetFrame:"PreItemList"
+
+		},
+		onDblClickRow:function(rowIndex,rowData){
+			
+			var RowId=$("#PIADM_RowId").val()
+			if(RowId=="")
+			{
+				$.messager.alert("提示","还未预约");
+	 	   		return false;
+			}
+			var ItemId=rowData.STORD_ARCIM_DR;
+			
+			var IsAddPhc=tkMakeServerCall("web.DHCPE.PreItemList","IsAddPhcItem",RowId,"PERSON",ItemId,"PRE");
+	   		
+ 	   		if(IsAddPhc=="1") {
+	 	   		$.messager.alert("提示","分组不允许加药");
+	 	   		
+	 	   		return false;
+ 	   		}
+ 	   		
+ 	   		var flagret=tkMakeServerCall("web.DHCPE.PreItemList","IsExistItem",RowId,"PERSON",ItemId);
+ 			var flagArr=flagret.split("^");
+			var flag=flagArr[0];
+
+	    	if ("1"==flag) 
+	    	{
+    	
+    	  		if (flagArr[1]=="1")
+    	  		{
+	    	  		
+	    	  		$.messager.confirm("操作提示", "项目已存在,是否再增加?", function (data) {
+            		if (data) {
+	        var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+			
+			});
+            		}
+            		else {
+                		return false;
+            		}
+        			});
+	    	  		
+    			}else
+    			{
+			 		$.messager.alert("提示","项目已存在,不能再增加.");
+					return false;
+    			}
+    		}
+    		else if("2"==flag)
+    		{
+	    		$.messager.alert("提示","项目中的化验项目,和已有项目有重复,是否继续添加?")
+	    		return false;
+			}
+			if (flagArr[1]=="1")
+			{return false;}
+ 	   		var ItemFlag;
+ 			ItemFlag=tkMakeServerCall("web.DHCPE.PreItemList","ItemCanPreInfo",RowId,"PERSON",ItemId)
+ 			
+			var ItemCanFlag=ItemFlag.split(",")
+ 			if (ItemCanFlag[0]==-1)
+ 			{
+	 			
+	 			$.messager.confirm("操作提示",ItemCanFlag[1], function (data) {
+            		if (data) {
+	        var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+			
+			});
+            		}
+            		else {
+                		return false;
+            		}
+        			});
+	 			 
+			}
+			if (ItemCanFlag[0]==-1)
+			{return false;}
+			var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+				else
+				{
+					$.messager.alert("提示",jsonData.ret);	
+				}
+			
+			});
+			
+			
+			
+		},
+		columns:[[
+			{field:'STORD_ARCIM_DR',title:'操作',width:'40',
+			formatter:function(value,row,index){
+					return "<a href='#' onclick='AddItem(\""+value+"\")'>\
+					<img src='../images/dhcpe/添加.png' border=0/>\
+					</a>";
+				}},
+			{field:'STORD_ARCIM_Code',width:'70',title:'编码'},
+			{field:'STORD_ARCIM_Desc',width:'120',title:'名称'},
+			{field:'STORD_ARCIM_Price',width:'40',title:'价格'},
+			{field:'TLocDesc',width:'50',title:'站点'}
+		]],
+		pagination:true,
+		pageSize:20,
+		fit:true
+	
+		})
+		
+		
+		var QryOtherObj = $HUI.datagrid("#QryOtherItm",{
+		url:$URL,
+		queryParams:{
+			ClassName:"web.DHCPE.StationOrder",
+			QueryName:"StationOrderList",
+			Type:"Other",
+			TargetFrame:"PreItemList"
+
+		},
+		onDblClickRow:function(rowIndex,rowData){
+			
+			var RowId=$("#PIADM_RowId").val()
+			if(RowId=="")
+			{
+				$.messager.alert("提示","还未预约");
+	 	   		return false;
+			}
+			var ItemId=rowData.STORD_ARCIM_DR;
+			var IsAddPhc=tkMakeServerCall("web.DHCPE.PreItemList","IsAddPhcItem",RowId,"PERSON",ItemId,"PRE");
+	   		
+ 	   		if(IsAddPhc=="1") {
+	 	   		$.messager.alert("提示","分组不允许加药");
+	 	   		
+	 	   		return false;
+ 	   		}
+ 	   		var flagret=tkMakeServerCall("web.DHCPE.PreItemList","IsExistItem",RowId,"PERSON",ItemId);
+ 			var flagArr=flagret.split("^");
+			var flag=flagArr[0];
+
+	    	if ("1"==flag) 
+	    	{
+    	
+    	  		if (flagArr[1]=="1")
+    	  		{
+	    	  		
+	    	  		$.messager.confirm("操作提示", "项目已存在,是否再增加?", function (data) {
+            		if (data) {
+	        var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+			
+			});
+            		}
+            		else {
+                		return false;
+            		}
+        			});
+	    	  		
+    			}else
+    			{
+			 		$.messager.alert("提示","项目已存在,不能再增加.");
+					return false;
+    			}
+    		}
+    		else if("2"==flag)
+    		{
+	    		$.messager.alert("提示","项目中的化验项目,和已有项目有重复,是否继续添加?")
+	    		return false;
+			}
+			if (flagArr[1]=="1")
+			{return false;}
+ 	   		var ItemFlag;
+ 			ItemFlag=tkMakeServerCall("web.DHCPE.PreItemList","ItemCanPreInfo",RowId,"PERSON",ItemId)
+ 			
+			var ItemCanFlag=ItemFlag.split(",")
+ 			if (ItemCanFlag[0]==-1)
+ 			{
+	 			
+	 			$.messager.confirm("操作提示",ItemCanFlag[1], function (data) {
+            		if (data) {
+	        var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+			
+			});
+            		}
+            		else {
+                		return false;
+            		}
+        			});
+	 			 
+			}
+			if (ItemCanFlag[0]==-1)
+			{return false;}
+			var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+				else
+				{
+					$.messager.alert("提示",jsonData.ret);	
+				}
+			
+			});
+			
+			
+			
+		},
+		columns:[[
+			{field:'STORD_ARCIM_DR',title:'操作',width:'40',
+			formatter:function(value,row,index){
+					return "<a href='#' onclick='AddItem(\""+value+"\")'>\
+					<img src='../images/dhcpe/添加.png' border=0/>\
+					</a>";
+				}},
+			{field:'STORD_ARCIM_Code',width:'70',title:'编码'},
+			{field:'STORD_ARCIM_Desc',width:'120',title:'名称'},
+			{field:'STORD_ARCIM_Price',width:'40',title:'价格'},
+			{field:'TLocDesc',width:'50',title:'站点'}
+		]],
+		pagination:true,
+		pageSize:20,
+		fit:true
+	
+		})
+		
+		
+		
+		var QryMedicalObj = $HUI.datagrid("#QryMedicalItm",{
+		url:$URL,
+		queryParams:{
+			ClassName:"web.DHCPE.StationOrder",
+			QueryName:"StationOrderList",
+			Type:"Medical",
+			TargetFrame:"PreItemList"
+
+		},
+		onDblClickRow:function(rowIndex,rowData){
+			
+			var RowId=$("#PIADM_RowId").val()
+			if(RowId=="")
+			{
+				$.messager.alert("提示","还未预约");
+	 	   		return false;
+			}
+			var ItemId=rowData.STORD_ARCIM_DR;
+			var IsAddPhc=tkMakeServerCall("web.DHCPE.PreItemList","IsAddPhcItem",RowId,"PERSON",ItemId,"PRE");
+	   		
+ 	   		if(IsAddPhc=="1") {
+	 	   		$.messager.alert("提示","分组不允许加药");
+	 	   		
+	 	   		return false;
+ 	   		}
+ 	   		var flagret=tkMakeServerCall("web.DHCPE.PreItemList","IsExistItem",RowId,"PERSON",ItemId);
+ 			var flagArr=flagret.split("^");
+			var flag=flagArr[0];
+
+	    	if ("1"==flag) 
+	    	{
+    	
+    	  		if (flagArr[1]=="1")
+    	  		{
+	    	  		
+	    	  		$.messager.confirm("操作提示", "项目已存在,是否再增加?", function (data) {
+            		if (data) {
+	        var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+			
+			});
+            		}
+            		else {
+                		return false;
+            		}
+        			});
+	    	  		
+    			}else
+    			{
+			 		$.messager.alert("提示","项目已存在,不能再增加.");
+					return false;
+    			}
+    		}
+    		else if("2"==flag)
+    		{
+	    		$.messager.alert("提示","项目中的化验项目,和已有项目有重复,是否继续添加?")
+	    		return false;
+			}
+			if (flagArr[1]=="1")
+			{return false;}
+ 	   		var ItemFlag;
+ 			ItemFlag=tkMakeServerCall("web.DHCPE.PreItemList","ItemCanPreInfo",RowId,"PERSON",ItemId)
+ 			
+			var ItemCanFlag=ItemFlag.split(",")
+ 			if (ItemCanFlag[0]==-1)
+ 			{
+	 			
+	 			$.messager.confirm("操作提示",ItemCanFlag[1], function (data) {
+            		if (data) {
+	        var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+			
+			});
+            		}
+            		else {
+                		return false;
+            		}
+        			});
+	 			 
+			}
+			if (ItemCanFlag[0]==-1)
+			{return false;}
+			var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+				else
+				{
+					$.messager.alert("提示",jsonData.ret);	
+				}
+			});
+			
+			
+			
+		},
+		columns:[[
+			{field:'STORD_ARCIM_DR',title:'操作',width:'40',
+			formatter:function(value,row,index){
+					return "<a href='#' onclick='AddItem(\""+value+"\")'>\
+					<img src='../images/dhcpe/添加.png' border=0/>\
+					</a>";
+				}},
+			{field:'STORD_ARCIM_Code',width:'70',title:'编码'},
+			{field:'STORD_ARCIM_Desc',width:'120',title:'名称'},
+			{field:'STORD_ARCIM_Price',width:'40',title:'价格'},
+			{field:'TLocDesc',width:'50',title:'站点'}
+		]],
+		pagination:true,
+		pageSize:20,
+		fit:true
+	
+		})
+		
+		var PreItemListObj = $HUI.datagrid("#PreItemList",{
+		url:$URL,
+		queryParams:{
+			ClassName:"web.DHCPE.Query.PreItemList",
+			QueryName:"QueryPreItemList",
+			AdmId:"",
+			AdmType:"PERSON",
+			PreOrAdd:"PRE",
+			AddType:"Item",
+			SelectType:"ItemSet",
+			ShowFlag:"",
+			Control:""
+
+		},
+		
+		columns:[[
+			
+			{field:'IsBreakable',title:'操作',width:'40',
+			formatter:function(value,row,index){
+					
+					return "<a href='#' onclick='DeleteItemSet(\""+row.RowId+"^"+row.OrderEntId+"\")'>\
+					<img src='../images/dhcpe/删除.png' border=0/>\
+					</a>";
+			}},
+			{field:'RowId',hidden:true,title:'项目id'},
+			{field:'OrderEntId',hidden:true,title:'套餐id'},
+			{field:'ItemDesc',width:'120',title:'项目名称'},
+			{field:'ItemSetDesc',width:'100',title:'套餐'},
+			{field:'TAddOrdItem',width:'50',title:'费别'},
+			{field:'TFactAmount',width:'80',title:'优惠金额'},
+			{field:'TPreOrAdd',width:'60',title:'项目类别'},
+			{field:'PrivilegeMode',width:'80',title:'优惠方式'},
+			{field:'TPersonAmount',width:'50',title:'自付'},
+			{field:'TRecLoc',width:'100',title:'接收科室'},
+			{field:'TSpecName',width:'50',title:'样本'},
+			{field:'TAddUser',width:'60',title:'操作员'},
+			{field:'TTotalAmount',width:'60',title:'总应收'},
+			{field:'TTotalFactAmount',width:'60',title:'总费用'}
+			
+		]],
+		pagination:true,
+		pageSize:20,
+		fit:true
+	
+		});
+		
+		var PGADM_DR_NameObj = $HUI.combogrid("#PGADM_DR_Name",{
+		panelWidth:490,
+		url:$URL+"?ClassName=web.DHCPE.PreGADM&QueryName=SearchPreGADMShort",
+		mode:'remote',
+		delay:200,
+		idField:'Hidden',
+		textField:'Name',
+		onBeforeLoad:function(param){
+			param.Code = param.q;
+		},
+		onChange:function()
+		{
+			PGTeam_DR_NameObj.clear();
+			
+		},
+		columns:[[
+			{field:'Hidden',hidden:true},
+			{field:'Name',title:'团体名称',width:140},
+			{field:'Code',title:'编码',width:100},
+			{field:'Begin',title:'开始日期',width:100},
+			{field:'End',title:'截止日期',width:100},
+			{field:'DelayDate',title:'状态',width:50}
+			
+			
+		]]
+		});
+		
+		
+		
+		var PGTeam_DR_NameObj = $HUI.combogrid("#PGTeam_DR_Name",{
+		panelWidth:300,
+		url:$URL+"?ClassName=web.DHCPE.PreGTeam&QueryName=SearchGTeam",
+		mode:'remote',
+		delay:200,
+		idField:'PGT_RowId',
+		textField:'PGT_Desc',
+		onBeforeLoad:function(param){
+			
+			var PreGId=$("#PGADM_DR_Name").combogrid("getValue");
+			param.ParRef = PreGId;
+		},
+		onShowPanel:function()
+		{
+			$('#PGTeam_DR_Name').combogrid('grid').datagrid('reload');
+		},
+		columns:[[
+			{field:'PGT_RowId',hidden:true},
+			{field:'PGT_ParRef_Name',title:'团体名称',width:140},
+			{field:'PGT_Desc',title:'分组名称',width:100}
+		]]
+		});
+		
+		
+		
+		var SexObj = $HUI.combobox("#PAPMICardType_DR_Name",{
+		url:$URL+"?ClassName=web.DHCPE.HISUICommon&QueryName=FindPAPMICardType&ResultSetType=array",
+		valueField:'id',
+		textField:'type'
+		})
+		
+		var PatFeeObj = $HUI.combobox("#PatFeeType_DR_Name",{
+		url:$URL+"?ClassName=web.DHCPE.HISUICommon&QueryName=FindPatFeeType&ResultSetType=array",
+		valueField:'id',
+		textField:'desc'
+		})
+		
+		
+		var RoomPlaceObj = $HUI.combobox("#RoomPlace",{
+		url:$URL+"?ClassName=web.DHCPE.HISUICommon&QueryName=FindRoomPlace&ResultSetType=array",
+		valueField:'id',
+		textField:'desc'
+		})
+		
+		var SexObj = $HUI.combobox("#Sex_DR_Name",{
+		url:$URL+"?ClassName=web.DHCPE.HISUICommon&QueryName=FindSex&ResultSetType=array",
+		valueField:'id',
+		textField:'sex'
+		})
+		
+		var VIPObj = $HUI.combobox("#VIPLevel",{
+		url:$URL+"?ClassName=web.DHCPE.HISUICommon&QueryName=FindVIP&ResultSetType=array",
+		valueField:'id',
+		textField:'desc',
+		onSelect:function(record){
+			
+			VIPLevelOnChange(record.id);
+		}
+		})
+		
+		var MarriedObj = $HUI.combobox("#Married_DR_Name",{
+		url:$URL+"?ClassName=web.DHCPE.HISUICommon&QueryName=FindMarried&ResultSetType=array",
+		valueField:'id',
+		textField:'married'
+		})
+		
+		var StationObj = $HUI.combobox("#StationID",{
+		url:$URL+"?ClassName=web.DHCPE.HISUICommon&QueryName=FindStation&ResultSetType=array",
+		valueField:'id',
+		textField:'desc',
+		onSelect:function(record){
+			
+			$("#QryRisItm").datagrid('load',{ClassName:"web.DHCPE.StationOrder",QueryName:"StationOrderList",Type:"Item",TargetFrame:"PreItemList",Item:$("#Item").val(),StationID:record.id}); 
+		}
+		});
+		
+		$('#DOB').datebox({
+			
+			onSelect: function(date){
+        		var Bob=$('#DOB').datebox('getValue');
+        		var AgeDesc=GetAgeNew(Bob,"");
+        		$('#Age').val(AgeDesc);
+    		}
+		});
+		
+		
+		
+		$("#BSetDefaultVIP").click(function() {
+			
+			BSetDefaultVIP_click();	
+			
+        });
+		
+		SetDefault();
+		InitPicture();
+		
+	};
+function SetDefault()
+{
+	var VIPNV="";
+	var jsonData=$.cm({
+	ClassName:"web.DHCPE.HISUICommon",
+	MethodName:"GetVIP"
+	},false);
+		
+	VIPNV=jsonData;
+		
+	$('#VIPLevel').combobox('setValue',jsonData);
+
+	
+	var jsonData=$.cm({
+	ClassName:"web.DHCPE.HISUICommon",
+	MethodName:"GetDefault"
+	},false);
+	
+		var SexNV=jsonData.ret;
+		SexNV=SexNV.split("^");
+		$('#Sex_DR_Name').combobox('setValue',SexNV[1]);
+		$('#PAPMICardType_DR_Name').combobox('setValue',SexNV[4]);
+		
+	    //alert(SexNV[4])
+	
+	
+	var DefaultRoomPlace=tkMakeServerCall("web.DHCPE.RoomManagerEx","GetDefaultRoomPlace",VIPNV,"I");
+	
+	$('#RoomPlace').combobox('setValue',DefaultRoomPlace);
+	
+	
+
+	var curr_time = new Date();
+	
+	function myformatter(date){  
+    var y = date.getFullYear();  
+    var m = date.getMonth()+1;  
+    var d = date.getDate();  
+    return (d<10?('0'+d):d)+'/'+(m<10?('0'+m):m)+'/'+y;  
+	}  
+	//$('#PEDateBegin').datebox('setValue', myformatter(curr_time));
+	
+	$("#DietFlag").checkbox('setValue',true);
+	
+}
+function trim(s) {
+	if (""==s) { return ""; }
+	var m = s.match(/^\s*(\S+(\s+\S+)*)\s*$/);
+	return (m == null) ? "" : m[1];
+}
+
+function SaveIBIInfo()
+{
+	var iPAPMINo="";
+	var MDMRegNo=$('#MDMRegNo').val();
+	if(MDMRegNo=="") iPAPMINo=$("#PAPMINo").val();
+	var iRowId=$("#PIBI_RowId").val();
+	
+	var iName=$("#Name").val();
+	var NameHasValue=$("#Name").validatebox('isValid');
+	if(!NameHasValue)
+	{
+		$.messager.alert("提示","姓名不能为空");
+		return
+	}
+	var MobilePhoneHasValue=$("#MobilePhone").validatebox('isValid');
+	if(!MobilePhoneHasValue)
+	{
+		$.messager.alert("提示","移动电话不正确");
+		return
+	}
+	
+	var AgeHasValue=$("#Age").validatebox('isValid');
+	if(!AgeHasValue)
+	{
+		$.messager.alert("提示","年龄不能低于18");
+		return
+	}
+	//addby huangchuanqi 20181203 start
+	var iMarriedDR=$("#Married_DR_Name").combobox('getValue')
+	if(!iMarriedDR)
+	{
+		$.messager.alert("提示","婚姻状况不能为空");
+		return
+	} 
+	
+	//addby huangchuanqi 20181203 end
+	var IDCARDHasValue=$("#IDCard").validatebox('isValid');
+	if(!IDCARDHasValue)
+	{
+		$.messager.alert("提示","身份证号不能为空");
+		return
+	}
+	
+	var iSex_DR=$("#Sex_DR_Name").combobox('getValue');
+	var iDOB=$("#DOB").datebox('getValue');
+	
+	var iPatType_DR="1";
+	var iTel1=$("#Tel1").val();
+	var iTel2="";
+	var iMobilePhone=$("#MobilePhone").val();
+	var iIDCard=$("#IDCard").val();
+	var iVocation="";
+	var iPosition=$("#Position").val();
+	var iCompany="";
+	var iPostalcode="";
+	var iAddress=$("#Address").val();
+	var iNation="";
+	var iEmail="";
+	var iMarriedDR=$("#Married_DR_Name").combobox('getValue');
+	var iBloodDR="";
+	var iUpdateDate="";
+	var iUpdateUserDR=session['LOGON.USERID'];
+	var iHPNo="";
+	var iHCPDR="";
+	var iHCADR="";
+	var iCardNo="";
+	var iVIPLevel=$("#VIPLevel").combobox('getValue');
+	var iMedicareCode="";
+	var FIBIUpdateModel="NoGen";
+	var iPAPMICardType=$("#PAPMICardType_DR_Name").combobox('getValue');
+	//alert(iPAPMICardType)
+	//当证件类型为居民身份证时校验身份证号的有效性 add by wangminglong 2018-12-14 start
+	if(iPAPMICardType==20){
+		var iIDCard=DHCWeb_Get18IdFromCardNo(iIDCard)   
+		if(iIDCard=="")
+		{
+			return
+		}	
+	}
+	//当证件类型为居民身份证时校验身份证号的有效性 add by wangminglong 2018-12-14 end
+	//if(iTel1=="") iTel1=iMobilePhone;
+	//if(iTel2=="") iTel2=iMobilePhone;
+	var Instring=	trim(iRowId)			//PIBI	    1 
+				+"^"+trim(iPAPMINo)			//登记号    2
+				+"^"+trim(iName)			//姓名		3
+				+"^"+trim(iSex_DR)			//性别		4
+				+"^"+trim(iDOB)				//生日		5
+				+"^"+trim(iPatType_DR)		//客人类型	6
+				+"^"+trim(iTel1)			//电话号码1	7
+				+"^"+trim(iTel2)			//电话号码2	8
+				+"^"+trim(iMobilePhone)		//移动电话	9
+				+"^"+trim(iIDCard)			//身份证号	10
+				+"^"+trim(iVocation)		//职业		11
+				+"^"+trim(iPosition)		//职位		12
+				+"^"+trim(iCompany)			//公司		13
+				+"^"+trim(iPostalcode)		//邮编		14
+				+"^"+trim(iAddress)			//联系地址	15
+				+"^"+trim(iNation)			//民族		16
+				+"^"+trim(iEmail)			//电子邮件	17
+				+"^"+trim(iMarriedDR)		//婚姻状况	18
+				+"^"+trim(iBloodDR)			//血型		19
+				+"^"+trim(iUpdateDate)		//日期		20
+				+"^"+trim(iUpdateUserDR)	//更新人	21
+				+"^"+trim(iHPNo)            //体检号
+				+"^"+trim(iHCPDR)
+				+"^"+trim(iHCADR)
+				+"^"+trim(iCardNo)          //卡号
+				+"^"+trim(iVIPLevel)        //VIP等级
+				+"^"+trim(iMedicareCode)
+				+"^"+trim(iPAPMICardType)   //证件类型
+				+";"+FIBIUpdateModel
+	//alert(Instring)
+	
+	if(MDMRegNo!="")
+	{
+		//先更新MDM系统的主索引信息 
+		var updateRet=tkMakeServerCall("web.DHCPE.Platform.Handler","PreIBIMDM",Instring,"U","",ret);
+		if(parseInt(updateRet)!=0){
+			alert(updateRet.split("^")[1]);
+			return false;
+		}
+	}else{
+		var MDMRet=tkMakeServerCall("web.DHCPE.Platform.Handler","PreIBIMDM",Instring,"M");
+		if(MDMRet!="0")
+		{
+			if(parseInt(MDMRet)<0)
+			{
+				//MDM系统异常
+				alert(MDMRet.split("^")[1]);
+				return false;
+			}else if(parseInt(MDMRet)==1)
+			{
+				//MDM系统查询到多条匹配结果 前台进行确认
+				//确认后拿到MDMRegNo   先更新MDM对应记录  再根据现在信息创建本地HIS基本信息 
+				//可以选择创建新的MDM索引
+				var MDMStr=MDMRet.split("^")[1];
+				//alert(MDMStr);
+				var ret=ShowMDMSelect(MDMStr,"1");
+				if((ret!="")&&(ret=="Create")){
+					var CreateRet=tkMakeServerCall("web.DHCPE.Platform.Handler","PreIBIMDM",Instring,"M",1);
+					if(parseInt(CreateRet)!=2){
+						alert("直接创建MDM索引失败:"+CreateRet.split("^")[1]);
+						return false;
+					}else{
+						MDMRegNo=CreateRet.split("^")[1];
+					}
+				}else if(ret!=""){
+					//先更新MDM系统的主索引信息 
+					var updateRet=tkMakeServerCall("web.DHCPE.Platform.Handler","PreIBIMDM",Instring,"U","",ret);
+					if(parseInt(updateRet)!=0){
+						alert(updateRet.split("^")[1]);
+						return false;
+					}
+					MDMRegNo=ret;
+				}
+			}else if(parseInt(MDMRet)==2)
+			{
+				//MDM系统生成的登记号
+				MDMRegNo=MDMRet.split("^")[1];
+			}	
+		}
+	}
+	//alert("MDMRegNo="+MDMRegNo);
+	//alert("InString="+Instring);
+	var jsonData=$.cm({
+	ClassName:"web.DHCPE.PreIBIUpdate",
+	MethodName:"HISUISave",
+	"itmjs":"",
+	"itmjsex":"",
+	"InString":Instring,
+	"MDMRegNo":MDMRegNo
+	},false);
+	
+	
+	if (iRowId!=""){
+		return true;
+	}
+		
+	flag=jsonData.code;
+	iRowId=jsonData.rowid;
+	iRegNo=jsonData.regno;
+	
+	if (flag=='0') {
+		
+		$("#PIBI_RowId").val(iRowId);
+		$("#PAPMINo").val(iRegNo);
+		
+		return true;
+	}
+	return false;
+	
+	
+	
+}
+
+function Save()
+{
+	var DataStr="";
+	var iPIADMRowId=$("#PIADM_RowId").val();
+	DataStr=iPIADMRowId;
+	
+	var flag=SaveIBIInfo();
+	
+	if (!flag) return false;
+	
+	var PIBIID=$("#PIBI_RowId").val();
+	
+	DataStr=DataStr+"^"+PIBIID;
+	
+	var GADMID="";
+	GADMID=$("#PGADM_DR_Name").combogrid("getValue");
+	DataStr=DataStr+"^"+GADMID;
+	var GTeamID="";
+	GTeamID=$("#PGTeam_DR_Name").combogrid("getValue");
+	DataStr=DataStr+"^"+GTeamID;
+	var iPEDateBegin=$.trim($("#PEDateBegin").val());
+	if(iPEDateBegin==""){
+		$.messager.alert("提示","预约日期不能为空");
+		return false;
+	}
+	DataStr=DataStr+"^"+iPEDateBegin;
+	var iPEDateEnd=iPEDateBegin;
+	DataStr=DataStr+"^"+iPEDateEnd;
+	var iPETime="";
+	DataStr=DataStr+"^"+iPETime;
+	var iPEDeskClerk_DR="";
+	DataStr=DataStr+"^"+iPEDeskClerk_DR;
+	var iPIADM_Status="PREREG";
+	DataStr=DataStr+"^"+iPIADM_Status;
+	var iAsCharged="N";
+	DataStr=DataStr+"^"+iAsCharged;
+	var iAddOrdItem="N";
+	DataStr=DataStr+"^"+iAddOrdItem;
+	var iAddOrdItemLimit="N";
+	DataStr=DataStr+"^"+iAddOrdItemLimit;
+	var iAddOrdItemAmount="";
+	DataStr=DataStr+"^"+iAddOrdItemAmount;
+	var iAddPhcItem="N";
+	DataStr=DataStr+"^"+iAddPhcItem;
+	var iAddPhcItemLimit="N";
+	DataStr=DataStr+"^"+iAddPhcItemLimit;
+	var iAddPhcItemAmount="";
+	DataStr=DataStr+"^"+iAddPhcItemAmount;
+	var iIReportSend="DC";
+	DataStr=DataStr+"^"+iIReportSend;
+	var iDisChargedMode="ID";
+	DataStr=DataStr+"^"+iDisChargedMode;
+	var iVIPLevel=$("#VIPLevel").combobox('getValue');
+	DataStr=DataStr+"^"+iVIPLevel;
+	var iDelayDate="";
+	DataStr=DataStr+"^"+iDelayDate;
+	var iRemark="";
+	DataStr=DataStr+"^"+iRemark;
+	var iSales_DR="";
+	DataStr=DataStr+"^"+iSales_DR;
+	var iType="";
+	DataStr=DataStr+"^"+iType;
+	var iGetReportDate="";
+	DataStr=DataStr+"^"+iGetReportDate;
+	var iGetReportTime="";
+	DataStr=DataStr+"^"+iGetReportTime;
+	var iPayType="";
+	DataStr=DataStr+"^"+iPayType;
+	var iPercent="";
+	DataStr=DataStr+"^"+iPercent;
+	var iDietFlag=0;
+	var DietFlag=$("#DietFlag").checkbox('getValue');
+	if(DietFlag) iDietFlag=1; 
+	DataStr=DataStr+"^"+iDietFlag;
+	var iGiftFlag=0;
+	var GiftFlag=$("#GiftFlag").checkbox('getValue');
+	if(GiftFlag) iGiftFlag=1; 
+	DataStr=DataStr+"^"+iGiftFlag;
+	var iInsureUnit="";
+	DataStr=DataStr+"^"+iInsureUnit;
+	//体检类别 add by wangminglong 2019-3-21 start
+	//var iPatType_DR_Name="";
+	var iPatType_DR_Name=$("#PatFeeType_DR_Name").combobox('getValue');  
+	//体检类别 add by wangminglong 2019-3-21 end
+	DataStr=DataStr+"^"+iPatType_DR_Name;
+	var iCheckRoom="";
+	DataStr=DataStr+"^"+iCheckRoom;
+	var Position="";
+	Position=$("#Position").val();
+	DataStr=DataStr+"^"+Position;
+	var iPatFeeType_DR_Name="";
+	DataStr=DataStr+"^"+iPatFeeType_DR_Name;
+	var iReCheckFlag="N";
+	var ReCheckFlag=$("#ReCheckFlag").checkbox('getValue');
+	if(ReCheckFlag) iReCheckFlag="Y";
+	DataStr=DataStr+"^"+iReCheckFlag;
+	var iRoomPlace=$('#RoomPlace').combobox('getValue');
+	DataStr=DataStr+"^"+iRoomPlace;
+	
+	
+	
+	var DataStr=DataStr+"$$"+NetPreID+"^"+NetSetsID;
+	
+	
+	if (GADMID=="")
+	{
+		var jsonData=$.cm({
+		ClassName:"web.DHCPE.PreIADM",
+		MethodName:"HISUISave",
+		"itmjs":"",
+		"itmjsex":"",
+		"InString":DataStr
+	
+		},false);
+		var flag=jsonData.ret;
+		//alert(flag);
+	}
+	else 
+	{
+		//alert("PIBIID="+PIBIID+"GADMID="+GADMID+"GTeamID="+GTeamID+"Position="+Position)
+		var flag=tkMakeServerCall("web.DHCPE.PreIADM","InsertIADMInGTeam",PIBIID,GADMID,GTeamID,Position,iPEDateBegin);
+			
+	}
+		
+		
+	
+		
+		var Rets=flag.split("^");
+		flag=Rets[0];
+		if (""==iPIADMRowId) { 
+			iPIADMRowId=Rets[1];
+			$("#PIADM_RowId").val(Rets[1]);
+		}
+		
+	
+		if ('0'==flag) {
+			$.messager.alert("提示","预约成功");
+			if (""==iPIADMRowId) {
+			}else {
+				$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:iPIADMRowId,AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+				var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",iPIADMRowId);
+				TotalAmount=TotalAmount.split("^")[1];
+				var myDiv=document.getElementById("TotalFee");
+				myDiv.innerText=TotalAmount+"元";
+				$("#QrySet").datagrid('load',{ClassName:"web.DHCPE.HandlerOrdSetsEx",QueryName:"queryOrdSet",Set:$("#Set").val(),Type:"ItemSet",AdmId:iPIADMRowId}); 
+	
+				
+				 }
+		}
+		return true;
+	
+	
+	
+	
+	
+	
+	
+}
+function RegNoMask(RegNo)
+{
+	if (RegNo=="") return RegNo;
+	var RegNo=tkMakeServerCall("web.DHCPE.DHCPECommon","RegNoMask",RegNo);
+	return RegNo;
+}
+
+function SetPatient_Sel(value) 
+{
+	//debugger;
+	var Data=value.split(";");
+	var PreIBaseInfoData=Data[0];
+	
+	if (""!=PreIBaseInfoData)
+	{   
+		SetPreIBaseInfo(PreIBaseInfoData);
+	}
+	else
+	{    
+		var HisInfo=Data[1];
+		SetHisInfo(HisInfo)
+	}
+}
+
+function SetPreIBaseInfo(value)
+{
+	var Data=value.split("^");
+	
+	var Tel1=Data[8]
+	var Phone=Data[10]
+	if (Phone=="") Phone=Tel1    //liuxiang 2019-01-20 如果联系电话为空，取电话1
+	var iLLoop=0;	
+	var iRowId=Data[iLLoop];
+	$("#PIBI_RowId").val(iRowId);
+	iLLoop=iLLoop+1;
+	$("#PAPMINo").val(Data[iLLoop]);
+	iLLoop=iLLoop+1;
+	$("#Name").val(Data[iLLoop]);
+	iLLoop=iLLoop+1;
+	$("#Sex_DR_Name").combobox('setValue',Data[iLLoop]);
+	iLLoop=iLLoop+2;
+	$("#DOB").datebox('setValue',Data[iLLoop]);
+	iLLoop=iLLoop+3;
+	$("#Tel1").val(Tel1);    //liuxiang 2019-01-20
+	iLLoop=iLLoop+2;
+	$("#MobilePhone").val(Phone);    //liuxiang 2019-01-20
+	iLLoop=iLLoop+1;
+	$("#IDCard").val(Data[iLLoop]);
+	iLLoop=iLLoop+2;
+	$("#Position").val(Data[iLLoop]);
+	iLLoop=iLLoop+3;
+	$("#Address").val(Data[iLLoop]);
+	iLLoop=iLLoop+3;
+	$("#Married_DR_Name").combobox('setValue',Data[iLLoop]);
+	iLLoop=iLLoop+8;
+	$("#Age").val(Data[iLLoop].split("Y")[0]);
+	iLLoop=iLLoop+5;
+	$("#CardNo").val(Data[iLLoop]);
+	iLLoop=iLLoop+1;
+	$("#VIPLevel").combobox('setValue',Data[iLLoop]);
+	$("#PAPMICardType_DR_Name").combobox('setValue',Data[35]);  //添加证件类型 add by wangminglong 2018-12-5 
+	VIPLevelOnChange();
+}
+function SetHisInfo(value)
+{
+	//alert(value)
+	var Data=value.split("^");
+	var iLLoop=1;
+	$("#PAPMINo").val(Data[iLLoop]);
+	iLLoop=iLLoop+1;
+	$("#Name").val(Data[iLLoop]);
+	iLLoop=iLLoop+1;
+	$("#Sex_DR_Name").combobox('setValue',Data[iLLoop]);
+	iLLoop=iLLoop+2;
+	$("#DOB").datebox('setValue',Data[iLLoop]);
+	iLLoop=iLLoop+3;
+	$("#Tel1").val(Data[iLLoop]);
+	iLLoop=iLLoop+2;
+	$("#MobilePhone").val(Data[iLLoop]);
+	iLLoop=iLLoop+1;
+	$("#IDCard").val(Data[iLLoop]);
+	iLLoop=iLLoop+2;
+	$("#Position").val(Data[iLLoop]);
+	iLLoop=iLLoop+3;
+	$("#Address").val(Data[iLLoop]);
+	iLLoop=iLLoop+3;
+	$("#Married_DR_Name").combobox('setValue',Data[iLLoop]);
+	iLLoop=iLLoop+8;
+	$("#Age").val(Data[iLLoop].split("Y")[0]);
+	iLLoop=iLLoop+5;
+	$("#CardNo").val(Data[iLLoop]);
+	iLLoop=iLLoop+1;
+	$("#VIPLevel").combobox('setValue',Data[iLLoop]);
+	$("#PAPMICardType_DR_Name").combobox('setValue',Data[35]);  //添加证件类型 add by wangminglong 2018-12-5 
+}
+function PreDate()
+{
+	var RowId=$("#PIADM_RowId").val();
+	if (RowId==""){
+		var Sex=$("#Sex_DR_Name").combobox('getValue');
+		var VIP=$("#VIPLevel").combobox('getValue');
+		var ExpStr=Sex+"^"+VIP;
+	}
+	
+	//openPreDateWin(RowId,ExpStr);
+	var lnk="websys.default.csp?WEBSYS.TCOMPONENT="+"DHCPEPreDate"
+			+"&PreIADMID="+RowId+"&ExpStr="+ExpStr;
+	
+	var nwin='toolbar=no,location=no,directories=no,status=no,menubar=no,scrollbars=no,resizable=yes,copyhistory=yesheight='
+			+'height='+600+',width='+800+',left='+200+',top='+300
+			;
+	var cwin=window.open(lnk,"_blank",nwin)	
+	
+	
+}
+function Register()
+{
+	var RowId=$("#PIADM_RowId").val();
+	
+	var ret=tkMakeServerCall("web.DHCPE.DHCPEIAdm","UpdateIADMInfo",RowId,"2");
+	if(ret==0)
+	{
+		//$.messager.alert("提示","登记成功");
+		
+		if (confirm("登记成功！是否将状态变更为 到达 ？")){
+			Arrive();
+			PrintAllAppForHISUI(RowId,"CRM")
+		}
+		
+		$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:"",AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+		
+		var myDiv=document.getElementById("TotalFee");
+		myDiv.innerText="0元";
+		
+		$("#QrySet").datagrid('load',{ClassName:"web.DHCPE.HandlerOrdSetsEx",QueryName:"queryOrdSet",Set:$("#Set").val(),Type:"ItemSet"}); 
+	
+
+		$("#QryRisItm").datagrid('load',{ClassName:"web.DHCPE.StationOrder",QueryName:"StationOrderList",Type:"Item",TargetFrame:"PreItemList",Item:$("#Item").val(),StationID:$("#StationID").combobox("getValue")}); 
+	
+
+		$("#QryLisItm").datagrid('load',{ClassName:"web.DHCPE.StationOrder",QueryName:"StationOrderList",Type:"Lab",TargetFrame:"PreItemList",Item:$("#LisItem").val()}); 
+	
+
+		$("#QryOtherItm").datagrid('load',{ClassName:"web.DHCPE.StationOrder",QueryName:"StationOrderList",Type:"Other",TargetFrame:"PreItemList",Item:$("#OtherItem").val()}); 
+	
+
+		$("#QryMedicalItm").datagrid('load',{ClassName:"web.DHCPE.StationOrder",QueryName:"StationOrderList",Type:"Medical",TargetFrame:"PreItemList",Item:$("#MedicalItem").val()}); 
+	
+		
+		
+		$("#preiadmform").form("clear");
+		
+		Clear_click()	
+		//SetDefault();
+	}
+	
+	
+}
+
+function Arrive()
+{
+	var Ret,
+    type=3,
+    obj,
+    iRowId="";
+	var iRowId=$("#PIADM_RowId").val();
+	if (iRowId=="") return;
+    var CurS=tkMakeServerCall("web.DHCPE.DHCPEIAdm","GetGoPrintStatus",iRowId);
+    if (CurS==0){
+        Ret=tkMakeServerCall("web.DHCPE.DHCPEIAdm","UpdateIADMInfo",iRowId,type,"1","","1");
+        if (Ret!='0') {
+            alert("CRM系统中取数据出错?如重试后出错请联系系统管理员."+"  error="+Ret);
+            return false;
+        }
+    }
+}
+
+function InitPicture()
+{
+	
+    var PAPMINo=""; 
+    PAPMINo=$("#PAPMINo").val();
+	var jsonData=$.cm({
+	ClassName:"web.DHCPE.PreIADM",
+	MethodName:"HISUIGetPatientID",
+	"PAPMINo":PAPMINo
+	
+	},false);
+	var PatientID=jsonData.PatientID;
+	
+	PEShowPicByPatientID(PatientID,"imgPic")  //DHCPECommon.js
+	
+	
+  
+}
+function SetBFind_click()
+{
+	$("#QrySet").datagrid('load',{ClassName:"web.DHCPE.HandlerOrdSetsEx",QueryName:"queryOrdSet",Set:$("#Set").val(),Type:"ItemSet"}); 
+	
+}
+
+function RisBFind_click()
+{
+	$("#QryRisItm").datagrid('load',{ClassName:"web.DHCPE.StationOrder",QueryName:"StationOrderList",Type:"Item",TargetFrame:"PreItemList",Item:$("#Item").val(),StationID:$("#StationID").combobox("getValue")}); 
+	
+}
+function LisBFind_click()
+{
+	$("#QryLisItm").datagrid('load',{ClassName:"web.DHCPE.StationOrder",QueryName:"StationOrderList",Type:"Lab",TargetFrame:"PreItemList",Item:$("#LisItem").val()}); 
+	
+}
+
+
+function OtherBFind_click()
+{
+	$("#QryOtherItm").datagrid('load',{ClassName:"web.DHCPE.StationOrder",QueryName:"StationOrderList",Type:"Other",TargetFrame:"PreItemList",Item:$("#OtherItem").val()}); 
+	
+}
+
+
+function MedicalBFind_click()
+{
+	$("#QryMedicalItm").datagrid('load',{ClassName:"web.DHCPE.StationOrder",QueryName:"StationOrderList",Type:"Medical",TargetFrame:"PreItemList",Item:$("#MedicalItem").val()}); 
+	
+}
+
+function CardTypeKeydownHandler(){
+	var SelValue=$HUI.combobox("#CardType").getValue();
+	if (SelValue==""){return;}
+	var myary=SelValue.split("^");
+	var myCardTypeDR=myary[0];
+	if (myCardTypeDR==""){return;}
+	
+	if (myary[16]=="Handle"){
+		$('#CardNo').removeAttr("readonly","readonly");
+		DHCWeb_setfocus("CardNo");
+	}else{
+		$('#CardNo').attr("readonly","readonly")
+		m_CCMRowID=GetCardEqRowId();
+		var myobj=document.getElementById("CardNo");
+		
+		if (myobj){myobj.readOnly = false;} 
+		var obj=document.getElementById("ReadCard");
+		if (obj){
+			obj.disabled = false;
+			obj.style.color='#FFFFFF';
+			obj.onclick = function () {
+				return true;
+			}
+			obj.onclick=ReadCardClickHandler;
+		}
+		DHCWeb_setfocus("ReadCard");
+	}
+}
+function GetCardEqRowId(){
+	var CardEqRowId="";
+	var CardTypeValue=$HUI.combobox("#CardType").getValue();
+	
+	if (CardTypeValue!=""){
+		var CardTypeArr=CardTypeValue.split("^")
+		CardEqRowId=CardTypeArr[14];
+	}
+	return CardEqRowId;
+}
+function GetCardTypeRowId(){
+	var CardTypeRowId="";
+	var CardTypeValue=$HUI.combobox("#CardType").getValue();
+	if (CardTypeValue!=""){
+		var CardTypeArr=CardTypeValue.split("^")
+		CardTypeRowId=CardTypeArr[0];
+	}
+	return CardTypeRowId;
+}
+function GetCardNoLength(){
+	var CardNoLength="";
+	var CardTypeValue=$HUI.combobox("#CardType").getValue();
+	if (CardTypeValue!=""){
+		var CardTypeArr=CardTypeValue.split("^");
+		CardNoLength=CardTypeArr[17];
+	}
+	return CardNoLength;
+}
+
+function FormatCardNo(){
+	var CardNo=DHCC_GetElementData("CardNo");
+	if (CardNo!='') {
+		var CardNoLength=GetCardNoLength();
+		if ((CardNo.length<CardNoLength)&&(CardNoLength!=0)) {
+			for (var i=(CardNoLength-CardNo.length-1); i>=0; i--) {
+				CardNo="0"+CardNo;
+			}
+		}
+	}
+	return CardNo;
+}
+
+
+
+function ReadCardClickHandler(){
+	
+	var SelValue=$HUI.combobox("#CardType").getValue();
+	if (SelValue==""){return;}
+	var myary=SelValue.split("^");
+	var myCardTypeDR=myary[0];
+	if (myCardTypeDR==""){return;}
+	
+	var myary=SelValue.split("^");
+	var myEquipDR=myary[14];
+	var rtn = DHCACC_GetAccInfoHISUI(myCardTypeDR, myEquipDR);
+	
+	var ReturnArr=rtn.split("^");
+	
+	if (ReturnArr[0]=="-200")
+	{
+		 var cardvalue=rtn.split("^")[1];
+		 $('#CardNo').val(cardvalue);
+		 return false;
+	}
+	$('#PAPMINo').val(ReturnArr[5]);
+	RegNoOnChange();
+	$('#CardNo').val(ReturnArr[1]);
+	
+	
+	
+}
+function DHCACC_GetAccInfoHISUI(CardTypeDR, EquipDR)
+{
+
+	var myrtn =DHCACC_ReadMagCard(EquipDR);
+	var rtn=0;
+	var myLeftM=0;
+	var myAccRowID="";
+	var myPAPMI="";
+	var myPAPMNo=""
+	var myCardNo="";
+	var myCheckNo="";
+	var myGetCardTypeDR="";
+	var mySCTTip="";
+	var myary=myrtn.split("^");
+	var encmeth="";
+	if (myary[0]==0){
+		rtn=myary[0];
+		myCardNo=myary[1];
+		myCheckNo=myary[2];
+	
+			var myExpStr=""+String.fromCharCode(2)+CardTypeDR;
+			var myrtn=tkMakeServerCall("web.UDHCAccManageCLSIF","getaccinfofromcardno",myCardNo,myCheckNo, myExpStr);
+			
+		
+			var myary=myrtn.split("^");
+			rtn=myary[0];
+			var myAccRowID=myary[1];
+			var myLeftM=myary[3];
+			var myPAPMI=myary[7];
+			var myPAPMNo=myary[8];
+			var myAccType=myary[10];
+			var myAccGrpLeftM=myary[17]
+			if (myary.length>12){
+				myGetCardTypeDR=myary[12];
+			}
+			if (myary.length>13){
+				mySCTTip = myary[13];
+			}
+		
+	}else{
+		rtn=myary[0];
+	}
+	return rtn +"^"+myCardNo+"^" + myCheckNo +"^"+myLeftM+"^"+myPAPMI+"^"+myPAPMNo+"^"+myAccType+"^"+myAccRowID+"^"+myGetCardTypeDR+"^"+mySCTTip+"^"+myAccGrpLeftM;
+}
+
+
+function RegNoOnChange()
+{
+				var iPAPMINo=$("#PAPMINo").val();	
+   				if(iPAPMINo!="")
+   				{
+	   				iPAPMINo = RegNoMask(iPAPMINo); 
+	   				iPAPMINo="^"+iPAPMINo+"^";
+	   			}
+	   			
+	   			var SelValue=$HUI.combobox("#CardType").getValue();
+	   			//alert(SelValue)
+	   			if (SelValue==""){return;}
+				var myary=SelValue.split("^");
+				var myCardTypeDR=myary[0];
+				if (myCardTypeDR==""){return;}
+	   			var jsonData=$.cm({
+				ClassName:"web.DHCPE.PreIADM",
+				MethodName:"HISUIDocListBroker",
+				"itmjs":"",
+				"itmjsex":"",
+				"InString":iPAPMINo,
+				"CardType":myCardTypeDR
+				},false);
+				
+				var Data=jsonData.ret;
+				//alert(Data)
+				SetPatient_Sel(Data);
+				
+				//找到HIS基本信息
+				if(Data.split("^")[0]!="0")
+				{
+					SetAllDisabled()
+				}
+	
+	
+}
+
+/**
+ * [登记号不为空时，设置全部控件不可编辑]
+ * @Author   wangguoying
+ * @DateTime 2018-12-25
+ */
+function SetAllDisabled()
+{
+	$("#CardNo").attr("disabled","disabled");  //卡号
+	$('#CardType').combobox({ disabled:true });  //卡类型
+	$("#ReadCard").linkbutton('disable');  //读卡按钮
+	$("#Age").attr("disabled","disabled");  //年龄
+	//$('#Married_DR_Name').combobox({ disabled:true });  //婚姻状况
+	$("#Name").attr("disabled","disabled");  //姓名	
+	//$('#PatFeeType_DR_Name').combobox({ disabled:true }); //体检类别
+	$("#Position").attr("disabled","disabled");  //部门
+	var val=$('#Sex_DR_Name').combobox('getValue')
+	$('#Sex_DR_Name').combobox({ disabled:true });  //性别
+	$('#Sex_DR_Name').combobox('setValue',val);
+	$("#MobilePhone").attr("disabled","disabled");  //移动电话
+	$("#Address").attr("disabled","disabled");  //联系地址
+	val=$('#DOB').datebox('getValue');
+	$('#DOB').datebox({ disabled:true });  //出生日期
+	$('#DOB').datebox('setValue',val);
+	$("#Tel1").attr("disabled","disabled");  //电话
+	$("#IDCard").attr("disabled","disabled");  //证件号码
+	val=$('#PAPMICardType_DR_Name').combobox('getValue');
+	$('#PAPMICardType_DR_Name').combobox({ disabled:true }); //证件类型
+	$('#PAPMICardType_DR_Name').combobox('setValue',val);
+	$("#ReadRegInfo").linkbutton('disable');  //读身份证按钮
+}
+
+function CardNoOnChange()
+{
+	
+	//CardNoChangeAppHISUI("PAPMINo","CardNo","RegNoOnChange()","Clear_click()","0");
+	//add by chengxin 20190123 start
+	            var SelValue=$HUI.combobox("#CardType").getValue();
+	            if (SelValue==""){return;}
+	            var myary=SelValue.split("^");
+				var myCardTypeDR=myary[0];//取卡类型
+				if (myCardTypeDR==""){return;}
+				if(myCardTypeDR==2){return;}//判断是否是虚拟卡
+	            var iCardNo=$("#CardNo").val();	
+   				if(iCardNo!="")
+   				{
+	   				iCardNo = CardNoMask(iCardNo); 
+	   				iCardNo="^"+iCardNo+"^";
+	   			}
+	   			
+	   			//var SelValue=$HUI.combobox("#CardType").getValue();
+	   			//alert(SelValue)
+	   			//if (SelValue==""){return;}
+				//var myary=SelValue.split("^");
+				//var myCardTypeDR=myary[0];
+				//if (myCardTypeDR==""){return;}
+	   			var jsonData=$.cm({
+				ClassName:"web.DHCPE.PreIADM",
+				MethodName:"HISUIDocListBroker",
+				"itmjs":"",
+				"itmjsex":"",
+				"InString":iCardNo,
+				"CardType":myCardTypeDR
+				},false);
+				
+				var Data=jsonData.ret;
+				//alert(Data)
+				SetPatient_Sel(Data);
+				
+				//找到HIS基本信息
+				if(Data.split("^")[0]!="0")
+				{
+					SetAllDisabled()
+				}
+	//add by chengxin 20190123 end
+	
+}
+
+function CardNoChangeAppHISUI(RegNoElement,CardElement,AppFunction,AppFunctionClear,ClearFlag)
+{
+	
+	var obj;
+	var CardNo="",SelectCardTypeRowID="";
+	obj=document.getElementById(CardElement);
+	if (obj) CardNo=obj.value;
+	if (CardNo=="") return;
+	var CardNo=CardNo.split("&")[0];
+	if (ClearFlag=="1") eval(AppFunctionClear);
+	obj.value=CardNo;
+	
+	var SelValue=$HUI.combobox("#CardType").getValue();
+	if (SelValue==""){return;}
+	var myary=SelValue.split("^");
+	var myCardTypeDR=myary[0];
+	if (myCardTypeDR==""){return;}
+	SelectCardTypeRowID=myCardTypeDR;
+	
+	CardNo=CardNo+"$"+SelectCardTypeRowID;
+	RegNo=tkMakeServerCall("web.DHCPE.PreIBIUpdate","GetRelate",CardNo,"C");
+	
+	if (RegNo=="") return;
+	obj=document.getElementById(RegNoElement);
+	if (obj)
+	{
+		obj.value=RegNo;
+		eval(AppFunction);
+	}
+}
+
+
+function Clear_click()
+{
+	$("#preiadmform").form("clear");
+	var src="../images/uiimages/patdefault.png"
+	ShowPicBySrcNew(src,"imgPic");
+	var myDiv=document.getElementById("TotalFee");
+	myDiv.innerText="0元";
+	ClearDisabled();    //清屏时去掉disable
+	LoadCard();	
+	SetDefault();
+}
+
+/**
+ * [点击清屏时，设置全部控件可编辑]
+ * @Author   wangminglong
+ * @DateTime 2018-12-25
+ */
+function ClearDisabled()
+{
+	$("#CardNo").attr("disabled",false);  //卡号
+	$('#CardType').combobox({ disabled:false });  //卡类型
+	$("#ReadCard").linkbutton('enable');  //读卡按钮
+	$("#Age").attr("disabled",false);  //年龄
+	//$('#Married_DR_Name').combobox({ disabled:false });  //婚姻状况
+	$("#Name").attr("disabled",false);  //姓名	
+	//$('#PatFeeType_DR_Name').combobox({ disabled:true }); //体检类别
+	$("#Position").attr("disabled",false);  //部门
+	var val=$('#Sex_DR_Name').combobox('getValue')
+	$('#Sex_DR_Name').combobox({ disabled:false });  //性别
+	$('#Sex_DR_Name').combobox('setValue',val);
+	$("#MobilePhone").attr("disabled",false);  //移动电话
+	$("#Address").attr("disabled",false);  //联系地址
+	val=$('#DOB').datebox('getValue');
+	$('#DOB').datebox({ disabled:false });  //出生日期
+	$('#DOB').datebox('setValue',val);
+	$("#Tel1").attr("disabled",false);  //电话
+	$("#IDCard").attr("disabled",false);  //证件号码
+	val=$('#PAPMICardType_DR_Name').combobox('getValue');
+	$('#PAPMICardType_DR_Name').combobox({ disabled:false }); //证件类型
+	$('#PAPMICardType_DR_Name').combobox('setValue',val);
+	$("#ReadRegInfo").linkbutton('enable');  //读身份证按钮
+}
+
+function LoadCard()
+{
+	$.m({
+			ClassName:"web.UDHCOPOtherLB",
+			MethodName:"ReadCardTypeDefineListBroker",
+			JSFunName:"GetCardTypeToHUIJson",
+			ListName:"",
+			SessionStr:""
+		},function(val){
+			
+			var ComboJson=JSON.parse(val); 
+			
+			$HUI.combobox('#CardType',{
+				data:ComboJson,
+				valueField:'id',    
+				textField:'text',
+			onSelect:function(record){
+				CardTypeKeydownHandler();
+			}
+		});
+		CardTypeKeydownHandler();
+		});
+	
+}
+
+function AddItem(arcitem)
+{
+			var RowId=$("#PIADM_RowId").val()
+			if(RowId=="")
+			{
+				$.messager.alert("提示","还未预约");
+	 	   		return false;
+			}
+			var ItemId=arcitem;
+			
+	   		var IsAddPhc=tkMakeServerCall("web.DHCPE.PreItemList","IsAddPhcItem",RowId,"PERSON",ItemId,"PRE");
+	   		
+ 	   		if(IsAddPhc=="1") {
+	 	   		$.messager.alert("提示","分组不允许加药");
+	 	   		
+	 	   		return false;
+ 	   		}
+			
+	 		var flagret=tkMakeServerCall("web.DHCPE.PreItemList","IsExistItem",RowId,"PERSON",ItemId);
+ 			var flagArr=flagret.split("^");
+			var flag=flagArr[0];
+
+	    	if ("1"==flag) 
+	    	{
+    	
+    	  		if (flagArr[1]=="1")
+    	  		{
+	    	  		
+	    	  		$.messager.confirm("操作提示", "项目已存在,是否再增加?", function (data) {
+            		if (data) {
+	        var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+			
+			});
+            		}
+            		else {
+                		return false;
+            		}
+        			});
+	    	  		
+    			}else
+    			{
+			 		$.messager.alert("提示","项目已存在,不能再增加.");
+					return false;
+    			}
+    		}
+    		else if("2"==flag)
+    		{
+	    		$.messager.alert("提示","项目中的化验项目,和已有项目有重复,是否继续添加?")
+	    		return false;
+			}
+			if (flagArr[1]=="1")
+			{return false;}
+			
+			
+			var ItemFlag;
+ 			ItemFlag=tkMakeServerCall("web.DHCPE.PreItemList","ItemCanPreInfo",RowId,"PERSON",ItemId)
+ 			
+			var ItemCanFlag=ItemFlag.split(",")
+ 			if (ItemCanFlag[0]==-1)
+ 			{
+	 			
+	 			$.messager.confirm("操作提示",ItemCanFlag[1], function (data) {
+            		if (data) {
+	        var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+		
+			
+			});
+            		}
+            		else {
+                		return false;
+            		}
+        			});
+	 			 
+			}
+			if (ItemCanFlag[0]==-1)
+			{return false;}
+			
+			var UserId=session['LOGON.USERID'];
+			$.cm({
+			ClassName:"web.DHCPE.PreItemList",
+			MethodName:"HISUIIInsertItem",
+			"AdmId":RowId,
+			"AdmType":"PERSON",
+			"PreOrAdd":"PRE",
+			"ArcItemId":ItemId,
+			"ArcItemSetId":"",
+			"UpdateUserId":UserId
+			},function(jsonData){
+				if(jsonData.ret=="")
+				{
+					$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+					var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",RowId);
+					TotalAmount=TotalAmount.split("^")[1];
+					var myDiv=document.getElementById("TotalFee");
+					myDiv.innerText=TotalAmount+"元";
+				}
+				else
+				{
+					$.messager.alert("提示",jsonData.ret);
+				}
+				
+			});
+}
+
+function DeleteItemSet(value)
+{
+		
+		var ordItemId=value.split("^")[0];
+		
+		var ordEntId=value.split("^")[1];
+		
+		var OrderType="ORDERITEM";
+		var AddAmountFlag="0";
+		if (ordEntId!="")  OrderType="ORDERENT";
+		
+		
+		if (OrderType=="ORDERITEM") {ordEntId=""};
+		if (OrderType=="ORDERENT") {ordItemId=""};
+		var gAdmType="PERSON";
+		var AddAmountFlag=0;
+		var gAdmId=$("#PIADM_RowId").val();
+		
+		var flag=tkMakeServerCall("web.DHCPE.PreItemList","IDeleteItem",gAdmId,gAdmType,ordItemId,ordEntId,AddAmountFlag)
+		
+		$("#PreItemList").datagrid('load',{ClassName:"web.DHCPE.Query.PreItemList",QueryName:"QueryPreItemList",AdmId:$("#PIADM_RowId").val(),AdmType:"PERSON",PreOrAdd:"PRE",AddType:"Item",SelectType:"ItemSet",ShowFlag:"",Control:""}); 
+		var TotalAmount=tkMakeServerCall("web.DHCPE.HandlerPreOrds","IGetAmount4Person",gAdmId);
+		TotalAmount=TotalAmount.split("^")[1];
+		var myDiv=document.getElementById("TotalFee");
+		myDiv.innerText=TotalAmount+"元";
+}
+
+function ReadRegInfo_OnClick()
+  { 
+    var dtformat=tkMakeServerCall("web.DHCPE.DHCPECommon","GetSYSDatefomat")
+	var rtn=tkMakeServerCall("DHCDoc.Interface.Inside.Service","GetIECreat")
+	var myHCTypeDR=rtn.split("^")[0];
+	
+	var myInfo=DHCWCOM_PersonInfoRead(myHCTypeDR);
+	
+    //alert(myInfo)
+    var myary=myInfo.split("^");
+    
+    if (myary[0]=="0")
+    { 
+      
+      SetPatInfoByXML(myary[1]); 
+      
+      var mySexobj=document.getElementById("Sex");
+	  var mySex_DR_Nameobj=document.getElementById('Sex_DR_Name');
+	  if ((mySexobj)&&(mySex_DR_Nameobj)){
+			mySex_DR_Nameobj.value=mySexobj.value; 
+	  }
+	  var myBirobj=document.getElementById("Birth");
+	    if(myBirobj){
+	    var mybirth=myBirobj.value;
+		  if (dtformat=="YMD"){
+			 if (mybirth.length==10){
+			var mybirth=mybirth.substring(0,4)+"-"+mybirth.substring(5,7)+"-"+mybirth.substring(8,10)
+ 	 		}else{
+ 			var mybirth=mybirth.substring(0,4)+"-"+mybirth.substring(4,6)+"-"+mybirth.substring(6,8) 
+  			}
+		}
+		if (dtformat=="DMY"){
+			if (mybirth.length==10){
+				var mybirth=mybirth.substring(0,4)+"-"+mybirth.substring(5,7)+"-"+mybirth.substring(8,10)
+  			}else{
+				var mybirth=mybirth.substring(6,8)+"/"+mybirth.substring(4,6)+"/"+mybirth.substring(0,4)
+ 			}
+		}
+	  }
+     // alert(mybirth)
+	  var myDOBobj=document.getElementById('DOB');   	
+	
+		if ((myBirobj)&&(myDOBobj)){
+			myDOBobj.value=myBirobj.value;  
+			// myDOBobj.value=mybirth;
+			 
+		}
+		//alert(myDOBobj.value)
+	  var mycredobj=document.getElementById("CredNo");
+	  var myidobj=document.getElementById('IDCard');
+		if ((mycredobj)&&(myidobj)){
+			myidobj.value=mycredobj.value;
+			myDOBobj.value=mybirth; 
+		}	
+     }
+     
+		var myAddressobj=document.getElementById("Address");
+	    var Addressobj=document.getElementById('Address'); 
+	    if ((myAddressobj)&&(Addressobj)){
+			Addressobj.value=myAddressobj.value; 
+		}
+	 IDCardOnChange();
+	var photoobj=document.getElementById("PhotoInfo");
+	if ((photoobj)&&(photoobj.value!="")){
+		
+		var src="data:image/png;base64,"+photoobj.value}
+	else{
+		//var src='c://'+mycredobj.value+".bmp"
+		var img64Str=readFile('c://'+mycredobj.value+".txt")
+		var src="data:image/png;base64,"+img64Str
+		tkMakeServerCall("web.DHCPE.DHCPECommon","SetPhotoGlobal",mycredobj.value,img64Str);     //预约时候保存身份证照片base64 wangguoying 2019-01-02
+	}
+	
+	ShowPicBySrcNew(src,"imgPic");
+
+   }
+   
+function readFile(filename){
+	var fso = new ActiveXObject("Scripting.FileSystemObject");
+	var f = fso.OpenTextFile(filename,1);
+	var s = "";
+	while (!f.AtEndOfStream)
+		s += f.ReadLine()+"\n";
+	f.Close();
+	return s;
+}  
+ 
+function SetPatInfoByXML(XMLStr)
+{
+	XMLStr ="<?xml version='1.0' encoding='gb2312'?>"+XMLStr
+	
+	var xmlDoc=DHCDOM_CreateXMLDOM();
+	xmlDoc.async = false;
+	xmlDoc.loadXML(XMLStr);
+	if(xmlDoc.parseError.errorCode != 0) 
+	{    
+		alert(xmlDoc.parseError.reason); 
+		return; 
+	}
+
+	var nodes = xmlDoc.documentElement.childNodes; 
+	for(var i=0; i<nodes.length; i++) 
+	{
+		
+		var myItemName=nodes(i).nodeName;
+		var myItemValue= nodes(i).text;
+		if (myCombAry[myItemName]){
+			myCombAry[myItemName].setComboValue(myItemValue);
+
+		}else{
+			DHCWebD_SetObjValueXMLTrans(myItemName, myItemValue);
+		}
+	}
+	delete(xmlDoc);
+}
+var NetPreID="";
+var NetSetsID="";
+function IDCardOnChange()
+{
+	var obj;
+	var iPAPMINo="";
+	obj=document.getElementById('IDCard');
+	if (obj) {
+		IDCard = obj.value;
+		IDCardSave=obj.value;
+	}
+	else { return false; }		
+	
+	var RegNo=tkMakeServerCall("web.DHCPE.PreIBaseInfo","GetRegNoByIDCard",IDCard);
+	
+	if (RegNo==""){
+		SetDefault();
+		isIdCardNo(IDCard);
+		FindPreInfoByIDCard(IDCard);
+		SearchMDMInfo("0");
+		return false;
+	}
+	
+	var obj=document.getElementById("PAPMINo");
+	if (obj){
+		obj.value=RegNo;
+		RegNoOnChange();
+	}
+	FindPreInfoByIDCard(IDCard);
+	return false;
+}
+function FindPreInfoByIDCard(IDCard)
+{
+	var LocID=session['LOGON.CTLOCID'];
+	var ID="";
+	var obj=document.getElementById("ID");
+	if (obj) ID=obj.value;
+	if (ID!="") return false;
+	var Info=tkMakeServerCall("web.DHCPE.NetPre.GetPreInfo","GetInfo",IDCard,LocID);
+	//alert(Info)
+	if (Info=="") return false;
+	var Arr=Info.split("^");
+	NetPreID=Arr[0];
+	NetSetsID=Arr[1];
+	var PreDate=Arr[2];
+	if(PreDate!=""){
+		//读取身份证后,把APP客户预约的预约时间带出来 add by wangminglong 2018-12-14 start
+		$('#PEDateBegin').val(PreDate); 
+		//$('#PEDateBegin').datebox('setValue',PreDate);  
+		//读取身份证后,把APP客户预约的预约时间带出来 add by wangminglong 2018-12-14 end
+	}
+	
+	var obj=document.getElementById("Name");
+	if (obj&&obj.value=="") obj.value=Arr[3];
+	var obj=document.getElementById("Sex_DR_Name");
+	if (obj) obj.value=Arr[4];
+	$("#VIPLevel").combobox('setValue',Arr[5]);
+	VIPLevelOnChange();
+	var obj=document.getElementById("PETime");
+	if (obj) obj.value=Arr[6];
+	var obj=document.getElementById("MobilePhone");
+	if (obj&&obj.value=="") obj.value=Arr[7];
+	var obj=document.getElementById("Tel1");
+	if (obj&&obj.value=="") obj.value=Arr[7];
+	var obj=document.getElementById("PAPMINo");
+	if (obj&&obj.value==""){
+		obj.value=Arr[8];
+	}
+}
+
+function isIdCardNo(num) {
+	
+	if (num=="") return true;
+	var ShortNum=num.substr(0,num.length-1)
+	if (isNaN(ShortNum))
+	{
+		alert("输入的不是数字?");
+		return false;
+	}
+	var len = num.length;
+	var re;
+	if (len == 15) re = new RegExp(/^(\d{6})()?(\d{2})(\d{2})(\d{2})(\d{2})$/);
+	else if (len == 18) re = new RegExp(/^(\d{6})()?(\d{4})(\d{2})(\d{2})(\d{3})(\d)$/);
+	else {alert("身份证号输入的数字位数不对?");
+	websys_setfocus("IDCard");
+	return false;}
+	var ShortNum=ShortNum+"1"
+	var a = (ShortNum).match(re);
+	
+	if (a != null)
+	{
+		if (len==15)
+		{
+			var D = new Date("19"+a[3]+"/"+a[4]+"/"+a[5]);
+			var B = D.getFullYear()==a[3]&&(D.getMonth()+1)==a[4]&&D.getDate()==a[5];
+		}
+		else
+		{
+			var D = new Date(a[3]+"/"+a[4]+"/"+a[5]);
+			var B = D.getFullYear()==a[3]&&(D.getMonth()+1)==a[4]&&D.getDate()==a[5];
+		}
+		if (!B)
+		{
+			alert("输入的身份证号 "+ a[0] +" 里出生日期不对?");
+			websys_setfocus("IDCard");
+			return false;
+		}
+		
+		var dtformat=tkMakeServerCall("web.DHCPE.DHCPECommon","GetSYSDatefomat")
+		if (dtformat=="YMD"){
+			var mybirth=a[3]+"-"+a[4]+"-"+a[5];
+		}else if (dtformat=="DMY"){
+			var mybirth=a[5]+"/"+a[4]+"/"+a[3];
+		}
+		
+		$("#DOB").datebox('setValue',mybirth);
+		
+		var Dateinit=new Date;	
+        var Yearinit=Dateinit.getFullYear();
+	    var Year=Yearinit-a[3]
+		
+		var myAge=tkMakeServerCall("web.DHCDocCommon","GetAgeDescNew",mybirth,"")
+		
+		DHCWebD_SetObjValueA("Age",myAge);
+
+		if (len==15)
+		{
+			var SexFlag=num.substr(14,1);
+		}
+		else
+		{
+			var SexFlag=num.substr(16,1);
+		}
+		
+		var JsonData=$.cm({
+		ClassName:"web.DHCPE.HISUICommon",
+		MethodName:"GetDefault"
+		},false);
+		
+		var SexNV=JsonData.ret;
+		
+		SexNV=SexNV.split("^");
+		
+		
+		if (SexFlag%2==1)
+		{
+			
+			$('#Sex_DR_Name').combobox('setValue',SexNV[2]);
+		}
+		else
+		{
+			
+			$('#Sex_DR_Name').combobox('setValue',SexNV[3]);
+		}
+		
+	}
+	return true;
+}
+function BSetDefaultVIP_click()
+{
+	
+   var VIP=$("#VIPLevel").combobox('getValue');
+   var ret=tkMakeServerCall("web.DHCPE.VIPLevel","SetDefaultVIP",session['LOGON.USERID'],VIP);
+}
+
+function VIPLevelOnChange()
+{
+	
+	var obj=document.getElementById("VIPLevel");
+	if (obj){
+		var VIPLevel=$("#VIPLevel").combobox('getValue');
+		
+		if (VIPLevel=="") return false;
+		var PatType=tkMakeServerCall("web.DHCPE.VIPLevel","GetPatFeeType",VIPLevel)
+		if (PatType!=""){
+			var obj=document.getElementById("PatFeeType_DR_Name");
+			if (obj) $('#PatFeeType_DR_Name').combobox('setValue',PatType);
+		}
+		var DefaultRoomPlace=tkMakeServerCall("web.DHCPE.RoomManagerEx","GetDefaultRoomPlace",VIPLevel,"I");
+		var obj=document.getElementById("RoomPlace");
+		if (obj) { $('#RoomPlace').combobox('setValue',DefaultRoomPlace);}
+		
+	}
+	
+}
+function AgeOnChange()
+{
+	
+	var iAge=$('#Age').val();
+	if (iAge=="") return false;
+	if (!(isNaN(iAge)))
+	{
+		var iDOB=$('#DOB').combobox('getValue');
+		if (iAge=="") {iAge=0}
+		if (iDOB!="") return;
+		
+		iAge=parseInt(iAge)
+		var D   =   new   Date();
+	    var Year=D.getFullYear();
+	    var Year=Year-iAge;
+	    var newDOB=Year+"-01"+"-01";
+	    
+	    $('#DOB').datebox('setValue',newDOB);
+
+	}
+	
+}
+
+function Name_keydown()
+{
+	
+	var iName="";
+	var obj=document.getElementById('Name');
+	if (obj && ""!=obj.value) { iName = obj.value; }
+	else { return false; }
+	var info=tkMakeServerCall("web.DHCPE.PreIBaseInfo","GetPersonInfo",iName);
+	if (info==0) return;
+	
+	openNameWin(iName);
+}
+
+$(init);
+]]></CSP>
+</Export>

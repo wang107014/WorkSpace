@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-03-25 15:45:49">
+<Class name="web.DHCPE.OrderPostPoned">
+<Description>
+Creator:LiuXiang
+Reason:体检项目延期，增加类方法
+</Description>
+<ClassType/>
+<Import>sqluser</Import>
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%RegisteredObject</Super>
+<TimeChanged>65094,37682.041172</TimeChanged>
+<TimeCreated>65015,61225.089532</TimeCreated>
+
+<Method name="PostPoneOrder">
+<Description>
+更新延期时间和延期原因
+w ##Class(web.DHCPE.OrderPostPoned).PostPoneOrder("950||16","Y","01","2019-01-05")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>oeori,Flag,Reason,Date</FormalSpec>
+<Implementation><![CDATA[
+	s ^tmplx("PostPoneOrder")=$lb(oeori, Flag, Reason, Date)
+	s CRMOID=$O(^DHCPECRMO(0,"OEORI",oeori,""))
+	
+	s CRMORI=$P(^DHCPECRMO(CRMOID),"^",2)
+	s PIOI=CRMORI
+	
+	s Flag="Y"
+	if Reason="" s Reason="01"  //为空默认01客户要求
+	q:Date="" "请先选择延期日期！"
+	q:Date'["-" "请检查日期格式是否正确！"
+	s Date=$zdh(Date,3)
+	;s User=7058
+	s User=%session.Get("LOGON.USERID")
+	&sql(Update DHC_PE_PreIOrdItem Set PIOI_PostponedFlag=:Flag,PIOI_PostponedReason=:Reason,PIOI_PostponedDate=:Date,PIOI_PostponedUser=:User Where PIOI_RowId=:PIOI)
+	
+	q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="CancelPostPoneOrder">
+<Description>
+取消延期
+w ##Class(web.DHCPE.OrderPostPoned).CancelPostPoneOrder("1094||2")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>oeori</FormalSpec>
+<Implementation><![CDATA[
+	s CRMOID=$O(^DHCPECRMO(0,"OEORI",oeori,""))
+	
+	s CRMORI=$P(^DHCPECRMO(CRMOID),"^",2)
+	s PIOI=CRMORI
+	
+	s Flag=""
+	s Reason=""
+	s Date=""
+	s User=""
+	&sql(Update DHC_PE_PreIOrdItem Set PIOI_PostponedFlag=:Flag,PIOI_PostponedReason=:Reason,PIOI_PostponedDate=:Date,PIOI_PostponedUser=:User Where PIOI_RowId=:PIOI)
+	
+	q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="OutPostponedReasonToHTML">
+<Description>
+延期原因下拉列表
+d ##Class(web.DHCPE.OrderPostPoned).OutPostponedReasonToHTML("130")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContrlWidth:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	s:(""=ContrlWidth) ContrlWidth="155"
+	//下拉列表
+	w "<select name='延期原因' id='PostPoneReason' style='width:"_ContrlWidth_"' HEIGHT=0 tabIndex=0>",!
+	w "<option value='01'>客户要求</option>",!
+	w "<option value='02'>暂不满足检查条件</option>",!
+	w "<option value='03'>其他原因</option>",!
+	w "</select>",!
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GetPostPoneInfo">
+<Description>
+根据医嘱ID取延期标志、延期日期、延期原因、延期人
+Input:oeori HIS医嘱表ID
+Output:延期标志^延期日期^延期原因^延期人
+w ##Class(web.DHCPE.OrderPostPoned).GetPostPoneInfo("1094||2")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>oeori</FormalSpec>
+<Implementation><![CDATA[
+	s CRMOID=$O(^DHCPECRMO(0,"OEORI",oeori,""))
+	
+	s CRMORI=$P(^DHCPECRMO(CRMOID),"^",2)
+	s PIOI=CRMORI
+	
+	s PostPoneFlag="",PostPoneReason="",PostPoneDate="",PostPoneUser=""
+	s PostPoneFlag=$p(^DHCPEPreIADM(+PIOI,"ORDITEM",$p(PIOI,"||",2)),"^",18)
+	s PostPoneReason=$p(^DHCPEPreIADM(+PIOI,"ORDITEM",$p(PIOI,"||",2)),"^",19)
+	s:PostPoneReason="01" PostPoneReason="客户要求"
+	s:PostPoneReason="02" PostPoneReason="暂不满足检查要求"
+	s:PostPoneReason="03" PostPoneReason="其他原因"
+	s PostPoneDate=$p(^DHCPEPreIADM(+PIOI,"ORDITEM",$p(PIOI,"||",2)),"^",20)
+	i PostPoneDate'="" s PostPoneDate=$zd(PostPoneDate,3)
+	s PostPoneUser=$p(^DHCPEPreIADM(+PIOI,"ORDITEM",$p(PIOI,"||",2)),"^",21)
+	i PostPoneUser'="" s PostPoneUser=$p(^SSU("SSUSR",PostPoneUser),"^",2)
+	
+	q PostPoneFlag_"^"_PostPoneReason_"^"_PostPoneDate_"^"_PostPoneUser
+]]></Implementation>
+</Method>
+
+<Method name="GetPostPoneFlagByAdm">
+<Description>
+根据就诊ID判断该次就诊是否有延检项目 add by wangminglong 2019-3-22
+Input:AdmId HIS就诊表ID
+Output:Y表示有延检项目 空表示无
+w ##Class(web.DHCPE.OrderPostPoned).GetPostPoneFlagByAdm("3310")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>AdmId</FormalSpec>
+<Implementation><![CDATA[
+	s ^tempwml("GetPostPoneFlagByAdm",AdmId)=$lb(AdmId)
+	s OEOrder=0
+	s PostPoneFlag=""
+	f  s OEOrder=$O(^OEORD(0,"Adm",AdmId,OEOrder))  q:((OEOrder=""))  d
+	.s OEOrdItem=0
+	.f  s OEOrdItem=$O(^OEORD(OEOrder,"I",OEOrdItem))  q:((OEOrdItem="")||(PostPoneFlag="Y"))  d
+	..s CRMOID=$O(^DHCPECRMO(0,"OEORI",OEOrder_"||"_OEOrdItem,""))
+	..q:CRMOID=""
+	..s CRMORI=$P(^DHCPECRMO(CRMOID),"^",2)
+	..s PIOI=CRMORI
+	..s PostPoneFlag=$p(^DHCPEPreIADM(+PIOI,"ORDITEM",$p(PIOI,"||",2)),"^",18)  //延迟标志   
+	
+	q PostPoneFlag
+]]></Implementation>
+</Method>
+</Class>
+</Export>

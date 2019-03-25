@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-01-11 18:49:59">
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-03-18 10:18:44">
 <CSP name="scripts/udhcOPCharge.js" application="/dthealth/web/" default="1"><![CDATA[
 ///udhcOPCharge.js
 
@@ -125,6 +125,15 @@ function PatCal_OnClick() {
 	//Calculate the Payor
 	FootCalculate();
 	//FootExpCalculate();
+	/*
+	var iHeight = 500;
+	var iWidth = 1100;
+	var iTop = (window.screen.availHeight - 30 - iHeight) / 2; //获得窗口的垂直位置
+	var iLeft = (window.screen.availWidth - 10 - iWidth) / 2; //获得窗口的水平位置
+	var lnk = 'dhcbill.opbill.CRMCoupon.csp?&prtRowIdStr=' + '' + '&guser=' + session['LOGON.USERID'];
+	//rtnValue = window.showModalDialog(lnk, '', 'dialogHeight:' + iHeight + 'px;dialogWidth:' + iWidth + 'px;dialogHeight:' + iHeight + 'px;dialogLeft:' + iLeft + 'px;dialogTop:' + iTop + 'px;resizable:no;status:yes;scroll:no');
+	//rtnValue = window.open(lnk, '', 'dialogHeight:' + iHeight + 'px;dialogWidth:' + iWidth + 'px;dialogHeight:' + iHeight + 'px;dialogLeft:' + iLeft + 'px;dialogTop:' + iTop + 'px;resizable:no;status:yes;scroll:no');
+	*/
 	return;
 }
 
@@ -302,6 +311,12 @@ function Bill_Click() {
 		if (billobj) {
 			DHCWeb_AvailabilityBtnA(billobj, Bill_Click);
 		}
+		return;
+	}
+	var couponNo = DHCWebD_GetObjValue('FavourNo');
+	if ((couponNo!="")&&(couponNo.length!="12"))
+	{
+		alert("使用的优惠券号位数不正确,当前输入券号共"+couponNo.length+"位,请核实");
 		return;
 	}
 	//OPBillCharge
@@ -485,9 +500,10 @@ function Bill_Click() {
 	//HIS结算界面，如果勾选多种支付方式或者优惠券处不为空，不需要强制判断实付金额是否小于结算金额。 add wangminglong 2018-06-15 start
 	if(PayMode==1){
 		var Actualmoney = DHCWebD_GetObjValue("Actualmoney");
-		var PayMentFlag=document.getElementById("PayMentFlag").checked   //多种支付方式
-		var FavourNo=document.getElementById("FavourNo").value;    //优惠劵号
-		if(Actualmoney=="" && PayMentFlag==false && FavourNo==""){
+		var PayMentFlag=document.getElementById("PayMentFlag").checked;   //多种支付方式
+		var FavourNo = DHCWebD_GetObjValue("FavourNo");    //优惠劵号
+		var myYBINS = DHCWebD_GetObjValue("YBFlag");
+		if(Actualmoney=="" && PayMentFlag==false && FavourNo == ""&& (myYBINS==""||myYBINS==0)){
 			alert("请输入实付金额");
 			//实付金额未填，点结算，光标需要跳到实付金额处 add by wangminglong 2018-06-19 start
 			websys_setfocus('Actualmoney');
@@ -596,57 +612,51 @@ function Bill_Click() {
 				var mytmprtn = cspRunServerMethod(encmeth, myConAry[0]);
 			}
 			*/
-			//Lid 2010-07-05 更新多种支付方式,对于卡消费在界面上控制在此不做控制
-			var rtn = UpdatePayment(myPRTStr); //入参:发票Rowid串
+			//+2018-12-20 ZhYW 优惠券
+			var myYBINS = DHCWebD_GetObjValue("YBFlag");
+			var rtn = tkMakeServerCall("DHCBillCRMPay.OPBillPay", "GetFavourInfoFromCRM", myPRTStr, session['LOGON.USERID'], couponNo);   //返回有无可用的优惠券
+			if ((rtn != "")&&((myYBINS == "")||(myYBINS=="0"))) {
+				var ret = rtn.split("!")[0];
+				var OrdListInfo=rtn.split("!")[2];
+				if ((ret == 0)&&(OrdListInfo!="")) {
+					var iHeight = 500;
+					var iWidth = 1100;
+					var iTop = (window.screen.availHeight - 30 - iHeight) / 2; //获得窗口的垂直位置
+					var iLeft = (window.screen.availWidth - 10 - iWidth) / 2; //获得窗口的水平位置
+					var lnk = 'dhcbill.opbill.CRMCoupon.csp?&prtRowIdStr=' + myPRTStr + '&guser=' + session['LOGON.USERID'];
+					rtnValue = window.showModalDialog(lnk, '', 'dialogHeight:' + iHeight + 'px;dialogWidth:' + iWidth + 'px;dialogHeight:' + iHeight + 'px;dialogLeft:' + iLeft + 'px;dialogTop:' + iTop + 'px;resizable:no;status:yes;scroll:no');
+					//rtnValue = window.open(lnk, '', 'dialogHeight:' + iHeight + 'px;dialogWidth:' + iWidth + 'px;dialogHeight:' + iHeight + 'px;dialogLeft:' + iLeft + 'px;dialogTop:' + iTop + 'px;resizable:no;status:yes;scroll:no');
+					if (rtnValue != 0) {
+						alert("优惠券信息保存失败");
+						return;
+					}
+				}else if (couponNo!=""){
+						alert("没有可以有优惠的项目,请核实");
+						for(var index = 0; index < myPRTStr.split("^").length; index++){ 
+							var InvRowID=myPRTStr.split("^")[index]
+							if (InvRowID!="")
+							{
+								var rollRtn = DHCWebOPYB_DeleteHISData(InvRowID,"")
+							}
+						}
+						
+						return ;
+				}
+			}else {
+				//HIS结算界面，如果勾选多种支付方式或者优惠券处不为空，需要判断实付金额是否小于结算金额 add by wangminglong 2018-12-3 start
+				if(couponNo != ""){
+					alert("优惠券号已使用或输入错误");
+					return;
+				}
+			}
+			//
+			//Lid 2010-07-05 更新多种支付方式,对于卡消费在界面上控制, 在此不做控制
+			var rtn = UpdatePayment(myPRTStr);  //入参:发票Rowid串
 			if (!rtn) {
 				alert("多种支付方式结算失败");
 				return;
 			}
-			//add by FangT 调用CRM接口获取优惠券信息 2018-09-13
-			//alert("myPRTStr"+myPRTStr)
-			var FavourNo=document.getElementById("FavourNo").value;
-			var rtn = tkMakeServerCall("DHCBillCRMPay.OPBillPay","GetFavourInfoFromCRM",myPRTStr,session['LOGON.USERID'],FavourNo)
-			//alert("CRM接口返回rtn="+rtn)
-			if (rtn!=""){
-				var ret=rtn.split("!")[0]
-				if (ret==0)
-				{
-					//var lnk = 'websys.default.csp?WEBSYS.TCOMPONENT=UDHCOPBillCRMInfo';
-					var iHeight = 800;
-					var iWidth = 1000;
-					var iTop = (window.screen.availHeight - 30 - iHeight) / 2; //获得窗口的垂直位置
-					var iLeft = (window.screen.availWidth - 10 - iWidth) / 2; //获得窗口的水平位置
-					var parm = {
-					AdmStr: myAdmstr,
-					Guser: session['LOGON.USERID'],
-					myPRTStr:myPRTStr
-				};
-				var lnk = "websys.default.csp?WEBSYS.TCOMPONENT=UDHCOPBillCRMInfo&myPRTStr="+myPRTStr+"&Guser="+session['LOGON.USERID'];
-				
-				rtnValue = window.showModalDialog(lnk,window,'dialogHeight:' + iHeight + 'px;dialogWidth:' + iWidth + 'px;dialogHeight:' + iHeight + 'px;dialogLeft:' + iLeft + 'px;dialogTop:' + iTop + 'px;resizable:no;status:yes;scroll:no');
-				//rtnValue = window.showModalDialog(lnk,parm,'dialogHeight:' + iHeight + 'px;dialogWidth:' + iWidth + 'px;dialogHeight:' + iHeight + 'px;dialogLeft:' + iLeft + 'px;dialogTop:' + iTop + 'px;resizable:no;status:no;scroll:no');
-				//rtnValue = window.open(lnk,"",'dialogHeight:' + iHeight + 'px;dialogWidth:' + iWidth  + 'px;dialogLeft:' + iLeft + 'px;dialogTop:' + iTop + 'px;resizable:no;status:no;scroll:no');
-				if (rtnValue=="-1")
-				{
-					alert("优惠券信息保存失败");
-				}
-				}
-			}
-			//HIS结算界面，如果勾选多种支付方式或者优惠券处不为空，需要判断实付金额是否小于结算金额 add by wangminglong 2018-12-3 start
-			else{
-				  if(FavourNo!=""){
-					  alert("优惠券号已使用或输入错误");
-				 	 return;
-				  } 	
-				}
-			//HIS结算界面，如果勾选多种支付方式或者优惠券处不为空，需要判断实付金额是否小于结算金额 add by wangminglong 2018-12-3 end
-			/*
-			if (myAdmstr=="160724^")
-			{
-				alert("测试end")
-				return ;
-			}
-			*/
+			
 			//支付接口Service start DHCBillPayService.js
 			var myPRTStr=OPPayService(myPRTStr,PayMode);
 			if (myPRTStr=="")
@@ -795,7 +805,7 @@ function BillPrint(INVstr){
 	var Group = session['LOGON.GROUPID'];
 	var myExpStr = Group + "^^^";
 	var PrintData = tkMakeServerCall("web.DHCOPBILLOrdDirectList", "GetDirectListByPrtRowidXH", INVstr, myExpStr);
-	console.log(PrintData);
+	//console.log(PrintData);
 	DHCP_GetXMLConfig("InvPrintEncrypt","DHCChargePrint");
 	var BaseInfo=PrintData.split("\u0001")[0] //病人基本信息
 	var PrintArr=BaseInfo.split("^");
@@ -819,24 +829,32 @@ function BillPrint(INVstr){
 		for(var j=0;j<RecLocStrList.length;j++){
 		var OrdType=RecLocStrList[j]  //
 		if(OrdType=="药品"){
-			var DurgDepLoc=RecLocStrList[j+1].split("\u0005")[0].split("^")[0] //药品科室
-			var Dispensing=RecLocStrList[j+1].split("\u0005")[0].split("^")[4] //发药窗口
-			var MedicineSite=DurgDepLoc
-			var medtxt="请到"+Dispensing+"窗口取药"       //导诊单显示取药窗口超常，放到第二行
-			//alert(medtxt)
-			//inlist="取药地点"+"^"+MedicineSite+PDlime+medtxt+"^"+""+PDlime+"药品名称"+"^"+""+PDlime
-			inlist="取药地点"+"^"+"^"+PDlime+medtxt+"^"+""+PDlime+"药品名称"+"^"+""+PDlime
-			var DurgInfo=RecLocStrList[j+1].split("\u0005")[1].split("!")   //药品信息
-			var DurgList=[]
-			for(var i=0;i<DurgInfo.length;i++){
-				var DurgName=DurgInfo[i].split("^")[0]  //药品名称
-				var DurgQty=DurgInfo[i].split("^")[1]	//药品数量
-				var DurgPrice=DurgInfo[i].split("^")[2]	//药品单价
-				var DurgPackUOM=DurgInfo[i].split("^")[3]	//药品单位
-				var PhyAcount=DurgInfo[i].split("^")[5]		//序号
-				inlist=inlist+"^"+PhyAcount+DurgName+PDlime
+			for (var index=0;index<RecLocStrList[j+1].split("\u0004").length;index++)
+			{
+				var DurgListInfo=RecLocStrList[j+1].split("\u0004")[index]
+				var DurgDepLoc=DurgListInfo.split("\u0005")[0].split("^")[0] //药品科室
+				var Dispensing=DurgListInfo.split("\u0005")[0].split("^")[4] //发药窗口
+				var MedicineSite=DurgDepLoc
+				if (Dispensing=="急诊输液室") {
+					var medtxt="请到"+Dispensing+"等待"       //导诊单显示取药窗口超常，放到第二行
+				} else{
+					var medtxt="请到"+Dispensing+"窗口取药"       //导诊单显示取药窗口超常，放到第二行
+				}
+				//alert(medtxt)
+				//inlist="取药地点"+"^"+MedicineSite+PDlime+medtxt+"^"+""+PDlime+"药品名称"+"^"+""+PDlime
+				inlist=inlist+"取药地点"+"^"+"^"+PDlime+medtxt+"^"+""+PDlime+"药品名称"+"^"+""+PDlime
+				var DurgInfo=DurgListInfo.split("\u0005")[1].split("!")   //药品信息
+				var DurgList=[]
+				for(var i=0;i<DurgInfo.length;i++){
+					var DurgName=DurgInfo[i].split("^")[0]  //药品名称
+					var DurgQty=DurgInfo[i].split("^")[1]	//药品数量
+					var DurgPrice=DurgInfo[i].split("^")[2]	//药品单价
+					var DurgPackUOM=DurgInfo[i].split("^")[3]	//药品单位
+					var PhyAcount=DurgInfo[i].split("^")[5]		//序号
+					inlist=inlist+"^"+PhyAcount+DurgName+PDlime
+				}
+				inlist=inlist+"-----------------------------------------"+"^"+""+PDlime
 			}
-			inlist=inlist+"--------------------------------------------------"+"^"+""+PDlime
 		}
 		if(OrdType=="检查"){
 			var InspectInfo=RecLocStrList[j+1].split("\u0004") //检查科室
@@ -861,7 +879,7 @@ function BillPrint(INVstr){
 						inlist=inlist+""+"^"+JCAcount+InspectInfoName+PDlime   //检查医嘱(注意事项为空时不显示此行)
 					}
 				}
-				inlist=inlist+"--------------------------------------------------"+"^"+""+PDlime
+				inlist=inlist+"----------------------------------------"+"^"+""+PDlime
 				}	
 			
 		}	
@@ -884,7 +902,7 @@ function BillPrint(INVstr){
 						var InspectInfoName=InspectInfoStr[m].split("^")[0]  //检验医嘱名称
 						inlist=inlist+""+"^"+InspectInfoName+PDlime   //检验医嘱
 					}
-				inlist=inlist+"--------------------------------------------------"+"^"+""+PDlime
+				inlist=inlist+"----------------------------------------"+"^"+""+PDlime
 				}	
 			
 		}	
@@ -908,7 +926,7 @@ function BillPrint(INVstr){
 					*/
 					inlist=inlist+""+"^"+ZLAcount+InspectInfoName+PDlime   //治疗医嘱(注意事项为空时不显示此行)
 					}
-				inlist=inlist+"--------------------------------------------------"+"^"+""+PDlime
+				inlist=inlist+"----------------------------------------"+"^"+""+PDlime
 				}	
 			
 		}	
@@ -1902,6 +1920,7 @@ function OPPayService(myPRTStr,PayMode)
 	var payPRTStr = prtRowIDAry.join("!");
 	var OPPatobj = parent.frames["udhcOPPatinfo"].document.getElementById("PARowid");
 	var ExpStr = session['LOGON.CTLOCID'] + "^" + session['LOGON.GROUPID'] + "^" + session['LOGON.HOSPID'] + "^" + session['LOGON.USERID'] + "^" + OPPatobj.value + "^" + "" + "^" + payPRTStr;
+	var PayMode=tkMakeServerCall("DHCBILL.Common.DHCBILLCommon","GetBillPayModeByInv",myPRTStr)
 	var PayRtn = PayService("OP", PayMode, "", ExpStr);   //DHCBillPayService.js
 	//根据POS配置m_RefFlag处理(0-表示差额退费;1表示全退再收;)
 	if(m_RefFlag=="1"){
@@ -2077,5 +2096,6 @@ function verifyQRCode2(payMode,payQRCode){
 	
 	return bool;
 }
-document.body.onload = BodyLoadHandler;]]></CSP>
+document.body.onload = BodyLoadHandler;
+]]></CSP>
 </Export>

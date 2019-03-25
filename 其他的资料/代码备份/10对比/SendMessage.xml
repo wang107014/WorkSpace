@@ -793,6 +793,7 @@ w ##class(web.DHCPE.SendMessage).DirectSenMessage("Register",14444)
 		s VIPLevelID=$P(^DHCPEPreIADM(PreIAdm),"^",18)  
 		s VIPLevel=$p($g(^DHCPEVIPLevel("VIP",VIPLevelID)),"^",2)
 		//VIP等级 add by wangminglong 2018-12-29 end
+		s PIADMHPNo=$P(^DHCPEPreIADM(PreIAdm),"^",27)   //体检编号 add by wangminglnog 2019-3-14 start
 	}elseif NetPreID'=""
 	{
 		s PAPMINo=$lg(^User.DHCPENetPreRecordD(NetPreID),2)
@@ -820,6 +821,7 @@ w ##class(web.DHCPE.SendMessage).DirectSenMessage("Register",14444)
 	.d UpdateDateNoticeContent
 	;s:PreIAdm=14444 ^tmplx("UpdateDateNoticeContent",PreIAdm)=Type_"^"_Mobile_"^"_Content
 	;q Mobile_"^"_Content
+	s ^tempwml("Mobile",PreIAdm)=$lb(PreIAdm,Mobile,Content)
 	d ##class(web.DHCENS.STBLL.SendMSG).sendMsg(Mobile_"^"_Content)
 	q 0
 RegisterContent
@@ -828,8 +830,15 @@ RegisterContent
 	.s Content=$G(^DHCPEDataNewEx("Message","VIPPENoticeOneDay"))
 	e  d
 	.s Content=$G(^DHCPEDataNewEx("Message","Register"))
-	;s Content=$G(^DHCPEDataNewEx("Message","Register"))
 	//VIP病人发送别的短信格式 add by wangminglong 2018-12-29 end
+	
+	//团体导入客户没有填写预约时间时需要发送的短信格式 add by wangminglong 2019-3-14 start
+	i ($d(^DHCPEPreDate("date",PreIAdm))&&(^DHCPEPreDate("date",PreIAdm)=1)) d
+	.s Content=$G(^DHCPEDataNewEx("Message","PENoticeDay"))
+	.s Content=$replace(Content,"[PIADMHPNo]",PIADMHPNo)
+	.s ^tempwml("PreIAdm",PreIAdm)=$lb(PreIAdm)
+	//团体导入客户没有填写预约时间时需要发送的短信格式 add by wangminglong 2019-3-14 end
+	
 	s Content=$replace(Content,"[Name]",Name)
 	s Content=$replace(Content,"[PreDate]",PreDate)
 	q
