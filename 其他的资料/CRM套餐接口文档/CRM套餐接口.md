@@ -23,8 +23,10 @@
 ##CRM订单信息推送给HIS
 
 	 w ##class(DHCBILL.Package.DataInteface.DHCPkgPatintBill).ReceivePatintBillFromCRM()
-	
-
+		1、在BS_Bill.Pkg_PatientBill(订单表)新增一条订单数据
+		2、在BS_Bill.Pkg_BillDiscount(订单优惠政策表)中新增一条数据
+		3、有几条套餐明细则就在BS_Bill.Pkg_PatPackage(客户套餐(订单明细))中新增几条数据
+		4、有一条套餐中有几条医嘱项就在BS_Bill.Pkg_OrderDetails(套餐医嘱项明细表)中新增几条数据
 
 ##CRM退费订单信息推送给HIS
 
