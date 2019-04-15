@@ -1278,7 +1278,19 @@ open(o) 开启一个设备以备使用
 	
 	    //点击行时调用的方法。selectedRowObj是行对象
 		var SelectRowHandler = function(){
-		   alert("你选择的是第"+selectedRowObj.rowIndex+"行")
+			var eSrc=window.event.srcElement;
+			var rowObj=getRow(eSrc);
+			var SelRowObj,obj;
+			var selectrow=rowObj.rowIndex;
+			SelRowObj=document.getElementById('TUserID'+'z'+selectrow);
+			obj=document.getElementById("UserID");
+			if (SelRowObj && obj) { obj.value=trim(SelRowObj.innerText); }
+			alert(rowObj.rowIndex)	   
+		}
+		function trim(s) {
+		if (""==s) { return ""; }
+		var m = s.match(/^\s*(\S+(\s+\S+)*)\s*$/);
+		return (m == null) ? "" : m[1];
 		}
 
 

@@ -1,0 +1,2 @@
+SELECT * FROM SS_User WHERE SSUSR_Name["³Ì"
+

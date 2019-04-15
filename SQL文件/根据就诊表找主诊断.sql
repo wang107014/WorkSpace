@@ -17,9 +17,9 @@ AND zdlx.DTYP_RowId IN ("1","4")
 --AND zdb.MRADM_RowId="10243"
 --AND dia.MRDIA_Childsub IN (SELECT max(MRDIA_Childsub) FROM MR_Diagnos WHERE MRDIA_MRADM_ParRef=zdb.MRADM_RowId)
 
-SELECT PAADM_MainMRADM_DR,* FROM PA_Adm WHERE PAADM_RowID="10243"
-SELECT * FROM MR_Adm WHERE MRADM_RowId="10243"          --诊断主表
-SELECT * FROM MR_Diagnos WHERE MRDIA_MRADM_ParRef="4102"  --诊断子表
+SELECT PAADM_MainMRADM_DR,* FROM PA_Adm WHERE PAADM_RowID="8158"
+SELECT * FROM MR_Adm WHERE MRADM_RowId="8158"          --诊断主表
+SELECT * FROM MR_Diagnos WHERE MRDIA_MRADM_ParRef="8158"  --诊断子表
 SELECT * FROM MRC_DiagnosStatus WHERE DSTAT_RowId=3   --诊断状态
 SELECT * FROM MRC_ICDDx WHERE MRCID_RowId="13795"   --诊断ICD码
 select * from MR_DiagType WHERE TYP_ParRef IN ('4102||1','4102||3','4102||4','4102||2')  --诊断类型关联表

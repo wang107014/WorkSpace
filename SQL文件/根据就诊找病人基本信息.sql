@@ -17,3 +17,4 @@ AND patm.PAPMI_Sex_DR=sex.CTSEX_RowId
 AND patm.PAPMI_RowId1=per.PAPER_RowId
 AND jz.PAADM_PAPMI_DR=patm.PAPMI_RowId1
 
+SELECT * FROM SS_User WHERE SSUSR_Name="³Ì¼ü"
