@@ -12,10 +12,18 @@ SELECT ETP_Papmi_Dr, * FROM DHC_BillExtTradePay WHERE ETP_PayMode=4 AND ETP_Papm
 SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_OutTradeNo IN ('113943235391','152634249177','110641249070','183400249212','164244249692')
 
 //His交易明细表
-SELECT ETP_Papmi_Dr, * FROM DHC_BillExtTradePay WHERE ETP_PayMode=4 AND ETP_Papmi_Dr="11196"
+SELECT ETP_Papmi_Dr, * FROM DHC_BillExtTradePay WHERE ETP_PayMode=4 AND ETP_Papmi_Dr=11613
 
 //第三方交易明细表
-SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_OutTradeNo='110641249070'
+SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_OutTradeNo IN ('232918250118','233154250119')
+
+SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_TradeDate="2019-4-11"
+
+SELECT * FROM PA_PatMas WHERE PAPMI_Name['陈传群'
+
+
+
+
 
 
 ///PRT_FairType:收费类型R:挂号，F：门诊收费、H：体检
@@ -55,3 +63,4 @@ SELECT c.PAYM_PayMode_DR,* FROM DHC_INVPRTZY a,AR_Receipts b,Ar_rcptpaymode c WH
 AND b.ARRCP_RowId=c.PAYM_ParRef --AND c.PAYM_PayMode_DR="4"
 
 
+SELECT * FROM SS_User WHERE SSUSR_Name['季'

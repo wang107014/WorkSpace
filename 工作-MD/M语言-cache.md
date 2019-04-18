@@ -1253,6 +1253,10 @@ open(o) 开启一个设备以备使用
 	s val=rs.Data("Score")
 
 	Custom：自定义Item或Table Item ,如按钮,就把它的Display Type 改为Button。注意：当按钮设置为查询按钮时，需要在查询按钮的Link中关联自己的组件,即在LinkComponent中填写自己的组件名。
+
+	LinkUrl:websys.default.csp
+	LinkComponent:DHCPENewDiagnosis(组件名)
+	LinkExPression:"DHCPENewDiagnosis&MainDoctor=N&OnlyRead=&EpisodeID="_rs.GetDataByName("EpisodeID")
   
 3、设置组件布局
 点击 component layout

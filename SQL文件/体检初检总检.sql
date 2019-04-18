@@ -1,0 +1,20 @@
+SELECT * FROM SS_User WHERE SSUSR_Name['薛'
+
+
+//GS_AuditUser_DR 有值为已初检
+SELECT GS_AuditUser_DR, * FROM DHC_PE_GeneralSummarize
+
+SELECT * FROM DHC_PE_IADM
+
+SELECT * FROM DHC_PE_PreIADM WHERE PIADM_RowId="20184"
+
+SELECT * FROM PA_Adm WHERE PAADM_RowID="20184"
+
+SELECT * FROM INSU_ReferralInfo
+
+
+SELECT peg.*, PIBI_Name,PIBI_PAPMINo FROM DHC_PE_GeneralSummarize peg,DHC_PE_IADM pei,PA_Adm pdm,DHC_PE_PreIADM pri,DHC_PE_PreIBaseInfo pbi
+WHERE peg.GS_IADM_DR=pei.IADM_RowId
+AND pei.IADM_PAADM_DR=pdm.PAADM_RowID
+AND pei.IADM_CRMADM=pri.PIADM_RowId
+AND pri.PIADM_PIBI_DR=pbi.PIBI_RowId
