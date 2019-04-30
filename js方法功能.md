@@ -333,4 +333,58 @@ DHCWebTabCSS_InitTab();
 
 
 
+##26、打印excel.xls格式
 
+
+	1、在UDHCJFinfro.js中的print_click方法中
+
+	function print_click() {
+	var Rows = DHCWeb_GetTBRows('tUDHCJFinfro');
+	var path="http://10.65.142.202/dthealth/med/Results/Template/"
+	if (Rows == 0) {
+		alert("没有要打印的数据！");
+		return;
+	}
+	if (Guser == "") {
+		return;
+	}
+	var job = DHCWeb_GetColumnData('Tjob', 1);
+	if (job == "") {
+		return;
+	}
+	//web.UDHCJFinfro.getnum
+	var encmeth = DHCWebD_GetObjValue('getnum');
+	patnum = cspRunServerMethod(encmeth, Guser, job);
+	var xlApp;
+	var obook;
+	var osheet;
+	var xlBook;
+	var Template = path + "JF_PATInfo.xls";
+	xlApp = new ActiveXObject("Excel.Application");
+	xlBook = xlApp.Workbooks.Add(Template);
+	xlsheet = xlBook.ActiveSheet;
+	for (i = 1; i <= patnum; i++) {
+		//web.UDHCJFinfro.getdata
+		var encmeth = DHCWebD_GetObjValue('getdata');
+		var str = cspRunServerMethod(encmeth, i, Guser, job);
+		myData1 = str.split("^");
+		for (j = 0; j < myData1.length; j++) {
+			xlsheet.cells(i + 3, j + 2) = myData1[j];
+		}
+		addgrid(xlsheet, 0, 2, 1, 13, i + 2, 2);
+	}
+	var stDate = websys_$V("stdate");
+	var endDate = websys_$V("enddate");
+	xlsheet.cells(2, 4) = stDate + "至" + endDate;
+	xlsheet.cells(2, 11) = session['LOGON.USERCODE'];
+	xlsheet.printout;
+	xlBook.Close(savechanges = false);
+	xlApp.Quit();
+	xlApp = null;
+	xlsheet = null;
+	}
+	
+
+##easyui的选择框
+
+	dhcipbillpatcostinquriy.js中的initRegNoCombo

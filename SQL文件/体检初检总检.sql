@@ -12,9 +12,11 @@ SELECT * FROM PA_Adm WHERE PAADM_RowID="20184"
 
 SELECT * FROM INSU_ReferralInfo
 
+SELECT * FROM SS_User
 
-SELECT peg.*, PIBI_Name,PIBI_PAPMINo FROM DHC_PE_GeneralSummarize peg,DHC_PE_IADM pei,PA_Adm pdm,DHC_PE_PreIADM pri,DHC_PE_PreIBaseInfo pbi
+SELECT peg.*, PIBI_Name,PIBI_PAPMINo,SSUSR_Name FROM DHC_PE_GeneralSummarize peg,DHC_PE_IADM pei,PA_Adm pdm,DHC_PE_PreIADM pri,DHC_PE_PreIBaseInfo pbi,SS_User sr
 WHERE peg.GS_IADM_DR=pei.IADM_RowId
 AND pei.IADM_PAADM_DR=pdm.PAADM_RowID
 AND pei.IADM_CRMADM=pri.PIADM_RowId
 AND pri.PIADM_PIBI_DR=pbi.PIBI_RowId
+AND peg.GS_AuditUser_DR=sr.SSUSR_RowId

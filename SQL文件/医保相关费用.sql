@@ -21,7 +21,10 @@ SELECT * FROM DHC_INVPRTZY WHERE PRT_Adm="15853"
 SELECT * FROM INSU_Divide WHERE INPAY_DHCpblDr='442462'
 
 //医保就诊信息
-select * from INSU_AdmInfo WHERE INADM_Rowid='186'
+select * from INSU_AdmInfo WHERE INADM_InsuType="AHC"
+
+
+SELECT TOP 10 * FROM INSU_DicData WHERE INDID_DicType='InsuCenterAHC'
 
 
 //////////医保结算信息

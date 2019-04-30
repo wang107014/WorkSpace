@@ -79,7 +79,7 @@
 	//医嘱表
 	SELECT OEORI_ItmMast_DR->ARCIM_Desc,* FROM OE_OrdItem WHERE OEORI_OEORD_ParRef=2178
 	
-		//医嘱项表
+	//医嘱项表
 	SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId IN ('18757||1')
 	
 	//医嘱执行表
