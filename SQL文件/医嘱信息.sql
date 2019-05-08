@@ -1,4 +1,5 @@
 
+SELECT * FROM PA_PatMas 
 
 SELECT * FROM PA_Adm WHERE PAADM_RowID="8505"
 
@@ -11,6 +12,9 @@ SELECT * FROM OE_OrdItem WHERE OEORI_ItemStat_DR="12"
 SELECT * FROM OE_OrdItem WHERE OEORI_ItmMast_DR->ARCIM_ItemCat_DR->ARCIC_Desc['饮食' 
 AND OEORI_OEORD_ParRef->OEORD_Adm_DR='5743' 
 AND OEORI_ItemStat_DR="4"      --医嘱状态
+
+////医嘱项表
+SELECT ARCIM_ItemCat_DR, * FROM ARC_ItmMast WHERE ARCIM_RowId IN ('1583||1')
 
 //医嘱状态
 SELECT * FROM OEC_OrderStatus WHERE OSTAT_RowId IN (2,4)

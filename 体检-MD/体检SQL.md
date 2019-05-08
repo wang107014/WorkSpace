@@ -207,7 +207,9 @@
  
 	SELECT * FROM OEC_OrderStatus 
 
+##扫码付支付成功记录信息表
 
+	SELECT * FROM DHC_PE_TradeOrder
 
 
 ##根据登记号查找项目名称,是否体检,是否延迟,是否放弃

@@ -311,6 +311,9 @@ DHCWebTabCSS_InitTab();
 	lnk += "&ReceipID=" + invPrtRowid + "&ReceipNO=" + myReceipNO + "&TabFlag=" + Reload;
 	window.location.href = lnk;
 
+	var obj = document.getElementById("BFind");
+	obj.onclick();
+
 ##24、记录操作电脑的名字
 
 	var WshNetwork = new ActiveXObject("WScript.NetWork");

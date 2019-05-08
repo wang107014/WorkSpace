@@ -65,5 +65,8 @@ SELECT * FROM Ar_rcptpaymode WHERE PAYM_ParRef IN (15265)
 SELECT c.PAYM_PayMode_DR,* FROM DHC_INVPRTZY a,AR_Receipts b,Ar_rcptpaymode c WHERE a.PRT_ARRCP_DR=b.ARRCP_RowId
 AND b.ARRCP_RowId=c.PAYM_ParRef --AND c.PAYM_PayMode_DR="4"
 
+///体检第三方支付表
+SELECT * FROM DHC_PE_TradeOrder
+
 
 SELECT * FROM SS_User WHERE SSUSR_Name['季'
