@@ -19,7 +19,7 @@ SELECT ETC_HISPRT_DR, * from DHC_BillExtTradeConSub WHERE ETC_TradeType="DEP" AN
 //第三方交易明细表
 SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_OutTradeNo IN ('232918250118','233154250119')
 
-SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_TradeDate="2019-4-11"
+SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_TradeDate="2019-5-7"
 
 SELECT * FROM PA_PatMas WHERE PAPMI_Name['陈传群'
 
