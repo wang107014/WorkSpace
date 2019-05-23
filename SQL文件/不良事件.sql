@@ -7,10 +7,21 @@ SELECT MEDADR_CurStatus_DR,MEDADR_ReportType, * FROM DHC_MedAdrReport WHERE MEDA
 ///MEDADR_Receive:接收状态：1接收、2驳回、3直接提交
 SELECT MEDADR_Receive, * FROM DHC_MedAdrRepAudit WHERE MEDADR_AuditDate="2019-5-18"
 
+////药品不良事件
+///ADVDR_ReportType:报告类型
+///ADVDR_CurStatus_DR:当前状态
+SELECT ADVDR_ReportType,ADVDR_CurStatus_DR, * from DHC_AdvDrugReport
+
+//状态
+select * from DHC_AdrEvtWorkFlowItm
+
+//MEDADR_Receive:接收状态("1":"接收","2":"驳回","3":"直接提交")
+SELECT MEDADR_Receive, * from DHC_MedAdrRepAudit WHERE MEDADR_Type=2 AND MEDADR_Pointer IN (1,4)
+
 
 
 //护理不良事件表
-SELECT ADV_RepStaus_Dr, * FROM DHC_AdvMaster WHERE ADV_RepDate="2019-4-24"
+SELECT ADV_RepStaus_Dr, * FROM DHC_AdvMaster WHERE ADV_RepDate="2019-3-11"
 
 
 SELECT ADVDR_CurStatus_DR, * FROM DHC_AdvDrugReport
@@ -31,3 +42,6 @@ select * from DHC_AdrEvtWorkFlow WHERE ADREW_RowID=20
 
 //工作流项目
 select * from DHC_AdrEvtWorkFlowItm
+
+
+
