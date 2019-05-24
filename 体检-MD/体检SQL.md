@@ -56,6 +56,8 @@
 
 	//体检人员表ADM
 	SELECT IADM_GADM_DR,IADM_AsCharged, * FROM DHC_PE_IADM WHERE IADM_CRMADM='12321'	
+
+
 	1、当字段(IADM_AsCharged)视同收费为N和字段(IADM_GADM_DR)对应团体ADM不为空时,可能会有交费的记录,否则没有。
 
 	//根据个人ADM表中的Rowid在团体和个人ADM审核表这两字段的值

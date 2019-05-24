@@ -119,7 +119,8 @@
 	DHC-APP>w $zd($p($h,",",1),3)
 	2018-04-08
 
-	w ##class(websys.Conversions).DateHtmlToLogical()
+	w ##class(websys.Conversions).DateHtmlToLogical("2018-04-08")
+	w ##class(websys.Conversions).DateLogicalToHtml(64253)
 	w ##class(websys.Conversions).TimeLogicalToHtml(submittime, 1)
 3、$zdh反转换日期格式
 
