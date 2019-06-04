@@ -105,7 +105,7 @@
 	
 
 
-###二、共用方法
+##二、共用方法
 		DHCBillPayService.js中PayService
 		DHCBillPayService.js中posPay
 		DHCBillMisPosPay.js中的BankCardPay

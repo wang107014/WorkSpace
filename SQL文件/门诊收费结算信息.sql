@@ -1,0 +1,49 @@
+SELECT * FROM PA_PatMas WHERE PAPMI_No="020000015785"
+
+///PAADM_AdmReason_DR:费别
+SELECT PAADM_AdmReason_DR, * FROM PA_Adm WHERE PAADM_PAPMI_DR=17558
+
+SELECT * FROM DHC_BillConINV WHERE DHCBCI_ADMDR=31905
+
+////////////////////////发票表////////////////////////////////////
+///PRT_InsType_DR:结算费别
+///PRT_ACCPINV_DR:集中打印发票id
+SELECT * FROM DHC_INVPRT WHERE PRT_Rowid IN ('412808')         ---根据id查
+SELECT PRT_InsType_DR,PRT_ACCPINV_DR,PRT_ARRCP_DR, * FROM DHC_INVPRT WHERE PRT_PAPMI_DR=17558     ---根据病人id查
+SELECT PRT_initInv_DR,PRT_OldINV_DR, * FROM DHC_INVPRT WHERE PRT_ACCPINV_DR IN ('23942','23943')                 ---根据集中打印发票id查
+
+
+///发票表和集中打印发票表的关联表
+select * from DHC_AccPINVCONPRT WHERE ACP_APINV_DR IN (23942,23943,23949)
+
+SELECT * FROM AR_Receipts WHERE ARRCP_RowId='30740'
+
+
+
+///发票支付方式表
+SELECT * FROM DHC_INVPayMode WHERE IPM_PRT_ParRef='411238'
+
+//集中打印发票
+SELECT API_INVRep_DR,* from DHC_AccPayINV WHERE API_RowID IN (23942,23943,23949)
+
+///集中打印发票支付方式表
+SELECT * FROM DHC_AccPayINVMode WHERE APM_API_ParRef IN  (23942,23943,23949)
+
+SELECT * FROM CT_PayMode WHERE CTPM_RowId=6
+
+
+////HIS交易表
+SELECT * FROM DHC_BillExtTradeConSub WHERE ETC_HISPRT_DR=411175
+SELECT * FROM DHC_BillExtTradePay WHERE ETP_RowID=25481
+
+//账单主表
+SELECT * FROM DHC_PatientBill WHERE PB_RowId IN ('468325')
+
+SELECT * FROM SS_User WHERE SSUSR_RowId=7572
+
+///帐单的费别表：PAC_ADMReason  
+SELECT * FROM PAC_AdmReason WHERE REA_RowId=1
+
+
+///检验项目对应的外部codeid
+SELECT * FROM ARC_ItemExternalCodes WHERE EXT_Desc['肺炎'

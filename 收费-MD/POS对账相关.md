@@ -1,5 +1,8 @@
 #POS对账相关
 
+##从FTP上下载银行对账文件
+	d ##class(web.DHCBillBankLogic).GetRecTXTFromFTPHFJDF()
+
 ##第三方对账平台
 
 	dhcbill.reconciliations.csp

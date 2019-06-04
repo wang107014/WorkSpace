@@ -1,8 +1,8 @@
-SELECT * FROM SS_User WHERE SSUSR_Name['薛'
+SELECT * FROM SS_User WHERE SSUSR_Name['胡海洋'
 
 
 //GS_AuditUser_DR 有值为已初检
-SELECT GS_AuditUser_DR, * FROM DHC_PE_GeneralSummarize
+SELECT GS_AuditUser_DR, * FROM DHC_PE_GeneralSummarize WHERE GS_UpdateDate="2019-5-18"
 
 SELECT * FROM DHC_PE_IADM
 

@@ -15,10 +15,13 @@ SELECT INADM_States,INADM_InsuType, * FROM INSU_AdmInfo WHERE INADM_States IN ('
 SELECT TOP 100 * FROM INSU_Divide 
 
 //医保字典维护 
+///INDID_DicDesc:医保名称(统筹区)
 SELECT TOP 100 * FROM INSU_DicData WHERE INDID_DicCode IN ('340121','340181','340122','340124','340199')
 
+
+
 //医保返回甲乙丙类
-SELECT * FROM INSU_DivideSub
+SELECT TOP 100 * FROM INSU_DivideSub
 
 
 ///医保收费项分类分解表,本地算法专有
