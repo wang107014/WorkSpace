@@ -1239,6 +1239,7 @@ open(o) 开启一个设备以备使用
 
 开始：TSTART 
 提交：TCOMMIT
+回滚：Trollback	
 
 #<font color=red>2018-04-12 星期四 晴</font>
 
