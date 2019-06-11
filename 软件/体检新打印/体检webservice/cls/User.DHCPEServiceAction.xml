@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736U)" ts="2018-01-27 17:04:47">
+<Class name="User.DHCPEServiceAction">
+<ClassType>persistent</ClassType>
+<SqlTableName>DHC_PE_ServiceAction</SqlTableName>
+<StorageStrategy>CacheStorage</StorageStrategy>
+<Super>%Persistent,%Populate,%XML.Adaptor</Super>
+<TimeChanged>64674,59540.591147</TimeChanged>
+<TimeCreated>64670,38483.792081</TimeCreated>
+
+<Property name="ActionCode">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="ActionName">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="ClassName">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Property name="MethodName">
+<Type>%String</Type>
+<Parameter name="TRUNCATE" value="1"/>
+</Property>
+
+<Index name="ActionCode">
+<Properties>ActionCode:Upper</Properties>
+</Index>
+
+<Index name="ActionName">
+<Properties>ActionName:Upper</Properties>
+</Index>
+
+<Index name="MethodName">
+<Properties>MethodName:Upper</Properties>
+</Index>
+
+<Index name="ClassName">
+<Properties>ClassName:Upper</Properties>
+</Index>
+
+<Index name="UnqIdxCode">
+<Properties>ActionCode</Properties>
+<Unique>1</Unique>
+</Index>
+
+<Storage name="CacheStorage">
+<Type>%CacheStorage</Type>
+<DataLocation>^User.DHCPEServiceActionD</DataLocation>
+<DefaultData>DHCPEServiceActionDefaultData</DefaultData>
+<IdLocation>^User.DHCPEServiceActionD</IdLocation>
+<IndexLocation>^User.DHCPEServiceActionI</IndexLocation>
+<StreamLocation>^User.DHCPEServiceActionS</StreamLocation>
+<ExtentSize>100000</ExtentSize>
+<Data name="DHCPEServiceActionDefaultData">
+<Value name="1">
+<Value>%%CLASSNAME</Value>
+</Value>
+<Value name="2">
+<Value>ActionCode</Value>
+</Value>
+<Value name="3">
+<Value>ActionName</Value>
+</Value>
+<Value name="4">
+<Value>ClassName</Value>
+</Value>
+<Value name="5">
+<Value>MethodName</Value>
+</Value>
+</Data>
+</Storage>
+</Class>
+</Export>

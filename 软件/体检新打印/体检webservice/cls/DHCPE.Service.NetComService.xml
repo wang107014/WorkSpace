@@ -1,0 +1,135 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736U)" ts="2018-01-27 17:01:44">
+<Class name="DHCPE.Service.NetComMethod">
+<ClassType/>
+<ProcedureBlock>0</ProcedureBlock>
+<Super>%RegisteredObject</Super>
+<TimeChanged>64675,60414.744367</TimeChanged>
+<TimeCreated>64667,62725.405788</TimeCreated>
+
+<Method name="RunRequestMethod">
+<Description>
+w ##Class(DHCPE.Service.NetComMethod).RunRequestMethod(ActionCode,Parm)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ActionCode:%String="",Param:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	Set $ZTrap = "MessageCatch"
+	s ResultCode=0
+	s ResultDesc="成功"
+	s RetStr=""
+	s Action=""
+	i ActionCode="" d
+	.s ReurnCode=100
+	.s ReurnDesc="业务代码为空!"
+	e  d
+	.s ID=$O(^User.DHCPEServiceActionI("ActionCode",ActionCode,""))
+	.i ID'="" d
+	..s ActionObj=##class(User.DHCPEServiceAction).%OpenId(ID)
+	..s ClassName=ActionObj.ClassName
+	..s MethodName=ActionObj.MethodName
+	..i (MethodName="")||(ClassName="") d
+	...s ReurnCode=101
+	...s ReurnDesc="业务代码未定义!"
+	..e  d
+	...s Action="##Class("_ClassName_")."_MethodName
+	i Action="" d
+	.s ResultCode=101
+	.s ResultDesc="业务代码未定义!"
+	e  d
+	.s CommandStr="RetStr="_Action_"("""_Param_""")"
+	.s @CommandStr
+
+	i (RetStr'="")&&($P(RetStr,"<",2)="") s ResultDesc=RetStr
+	i $P(RetStr,"^",2)'="" s ResultDesc=$P(RetStr,"^",2)
+	i (+RetStr)'=0 d 
+	.s ResultCode=+RetStr
+	.s ResultDesc=$P(RetStr,"^",2)
+	.s RetStr=""
+	s RetXML="<Response><ResultCode>"_ResultCode_"</ResultCode><ResultDesc>"_ResultDesc_"</ResultDesc><ResultList>"_RetStr_"</ResultList></Response>"	
+	q RetXML
+MessageCatch
+	s ResultCode=-200
+	s ResultDesc=$ZError
+	s ResultDesc=$TR(ResultDesc,"<"," ")
+	s ResultDesc=$TR(ResultDesc,">"," ")
+	s RetXML="<Response><ResultCode>"_ResultCode_"</ResultCode><ResultDesc>"_ResultDesc_"</ResultDesc></Response>"
+  	Quit RetXML
+]]></Implementation>
+</Method>
+</Class>
+
+
+<Class name="DHCPE.Service.NetComService">
+<Description>
+DHCPE.Service.NetComService
+体检网上公用接口</Description>
+<ProcedureBlock>1</ProcedureBlock>
+<Super>%SOAP.WebService</Super>
+<TimeChanged>64672,38764.67203</TimeChanged>
+<TimeCreated>64667,54420.56318</TimeCreated>
+
+<Parameter name="SERVICENAME">
+<Description>
+WebService 的名称.</Description>
+<Default>DHCPEService</Default>
+</Parameter>
+
+<Parameter name="NAMESPACE">
+<Description>
+WebService 的 SOAP Namespace</Description>
+<Default>http://webservice.dhcpe.org</Default>
+</Parameter>
+
+<Parameter name="USECLASSNAMESPACES">
+<Description>
+引用类的 Namespace 将在 WSDL 中使用.</Description>
+<Default>1</Default>
+</Parameter>
+
+<Method name="Test">
+<Description>
+TODO:添加自变量和实施.
+Test</Description>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[	Quit "Test"
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// w ##class(DHCPE.Service.NetComService).RequestSubmit("HS10222","<Request></Request>")
+
+]]></Content>
+</UDLText>
+
+<Method name="RequestSubmit">
+<Description>
+RequestCode:业务代码  RequestXML:业务代码对应对的参数</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RequestCode:%String="",RequestXML:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	s ^wgy("RequestSubmit")=RequestCode_"^"_RequestXML
+	Set $ZTrap = "MessageCatch"
+	q:RequestCode="" ""
+	Set RetStr=##Class(DHCPE.Service.NetComMethod).RunRequestMethod(RequestCode,RequestXML)
+	s ^wgy("RetStr")=RetStr
+	Quit RetStr
+MessageCatch
+	Set $ZTrap = ""
+	s ResultCode=-100
+	s ResultDesc=$ZError
+	s ResultDesc=$TR(ResultDesc,"<"," ")
+	s ResultDesc=$TR(ResultDesc,">"," ")
+	s RetXML="<Response><ResultCode>"_ResultCode_"</ResultCode><ResultDesc>"_ResultDesc_"</ResultDesc></Response>"
+  	s ^wgy("RetStr")=RetStr
+  	Quit RetXML
+]]></Implementation>
+</Method>
+</Class>
+
+
+</Export>
