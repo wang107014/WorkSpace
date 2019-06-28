@@ -1,4 +1,4 @@
-SELECT * FROM PA_Adm WHERE PAADM_RowID=3951
+SELECT * FROM PA_Adm WHERE PAADM_RowID=33970
 SELECT * FROM PAC_AdmReason
 
 SELECT * FROM OE_OrdItem WHERE OEORI_OEORD_ParRef=3545
@@ -16,6 +16,17 @@ SELECT * FROM PA_Adm WHERE PAADM_RowID='21650'
 SELECT * FROM PA_Adm WHERE PAADM_PAPMI_DR="13245"
 
 SELECT * FROM ARC_ItmMast WHERE ARCIM_RowId='1672||1'
+
+
+SELECT * FROM OE_Order WHERE OEORD_Adm_DR=33970
+SELECT OEORI_Date, OEORI_TimeOrd,OEORI_ItmMast_DR->ARCIM_Desc,* FROM OE_OrdItem WHERE OEORI_OEORD_ParRef=28735  AND OEORI_OrdDept_DR=48 AND OEORI_RowId IN ("28735||140","28735||149","28735||155","28735||145")
+
+
+///医嘱子分类 
+select * from ARC_ItemCat WHERE ARCIC_RowId IN (57,58)
+ 
+//医嘱大类 
+SELECT * FROM OEC_OrderCategory WHERE ORCAT_RowId=8
 
 
 /////////////////////////////////查找可以结算的医嘱信息////////////////////////////////////

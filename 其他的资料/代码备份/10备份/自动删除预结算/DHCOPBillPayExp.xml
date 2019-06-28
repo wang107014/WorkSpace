@@ -1,0 +1,3410 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-06-17 11:06:16">
+<Class name="DHCBILL.SelfPay.BLL.DHCOPBillPayExp">
+<Description>
+wangjian
+2018-03-14
+门诊第三方及自助支付业务类</Description>
+<ClassType/>
+<ProcedureBlock>0</ProcedureBlock>
+<Super>%RegisteredObject</Super>
+<TimeChanged>65169,71639.252885</TimeChanged>
+<TimeCreated>64721,52465.047431</TimeCreated>
+
+<Parameter name="PackUOMFlag">
+<Description>
+1 明细按整包装单位 0 明细按收费项单位</Description>
+<Default>1</Default>
+</Parameter>
+
+<Parameter name="AccLimitAmt">
+<Description>
+充值限额</Description>
+<Default>2000</Default>
+</Parameter>
+
+<Method name="GetAdmByCardNo">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-14
+Desc: 根据卡号及日期查询就诊记录
+Debug: w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).GetAdmByCardNo("<Request><TradeCode>4902</TradeCode><HospitalCode/><PATCardNum/><PATCardType/><PATCardCheckNum/><PATPatientID>101100001045</PATPatientID><UserCode>ZZ002</UserCode><TerminalID/><StartDate>2018-09-06</StartDate><EndDate>2018-09-16</EndDate><ExpStr/></Request>").Read()]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="GetAdmByCardNoET"
+	s ^TMPXHM(222)=Input
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.GetAdmByCardNo.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set PAADMVisitNumber = InputObj.PAADMVisitNumber
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set StDate=InputObj.StartDate 
+    Set EndDate=InputObj.EndDate
+    Set HospitalCode=InputObj.HospitalID
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+ 	If (StDate["-") Set StDate=$zdh(StDate,3)
+    If (EndDate["-") Set EndDate=$zdh(EndDate,3)
+    s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetAdmByCardNo.Res.Response).%New()
+ 	
+	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}	
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	If (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	;组织输出就诊记录
+    Set AdmStr=""
+    Set AdmInfo=##class(web.DHCOPCashierIF).GetToDayAdmStr(Papmi,"N")
+    For i=1:1:$l(AdmInfo,"^") Do
+    .Set Adm=$p(AdmInfo,"^",i)
+    .Quit:(+Adm=0)
+    .Quit:((PAADMVisitNumber)&&(PAADMVisitNumber'=Adm)) //新增就诊号，传入就诊号只返回该就诊号的记录 by tangwanwan 2018年10月18日
+    .Set AdmData=$g(^PAADM(Adm))
+    .Set AdmDate=$p(AdmData,"^",6)
+    .Set AdmTime=$p(AdmData,"^",7)
+    .Set AdmStatus=$p(AdmData,"^",20)
+    .Quit:((StDate'="")&&(AdmDate<StDate))||((EndDate'="")&&(AdmDate>EndDate))
+    .Quit:AdmStatus["C"
+    .Set BillRtn=##class(web.UDHCJFBILL).BILL(Adm,UserID)
+	.quit:+BillRtn'=0
+	.Set BillPaidFlag="",AdmTotalAmt=0
+	.Set PBRowID=0
+	.For  Set PBRowID=$o(^DHCPB(0,"ADM", Adm, PBRowID)) Quit:(PBRowID="")  Do
+	..Set BillPaidFlag=$p($g(^DHCPB(PBRowID)),"^",16)
+	..Quit:(BillPaidFlag'="B")
+	..Set PBO="0"
+	..For  Set PBO=$o(^DHCPB(PBRowID,"O",PBO))  Quit:(PBO="")  Do
+	...Quit:($d(^DHCPB(PBRowID,"O",PBO))=10)
+	...Set OEORI=$p($g(^DHCPB(PBRowID,"O",PBO)),"^",4)
+	...Set OrdStat=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1)),"^",13)
+	...Set:OrdStat'="" OrdStat=$p($g(^OEC("OSTAT",OrdStat)),"^",1)
+	...;w !,Adm,"=",OEORI,"=",OrdStat,PBRowID,"=2===="
+	...Quit:((OrdStat'="V")&(OrdStat'="E"))	
+	...Set PatShare=$p($g(^DHCPB(PBRowID,"O",PBO)),"^",11)
+	...i (+PatShare=0)  d
+	...Quit:(+PatShare=0)
+	...b //add by bzt 增加药房处方审核判断 start
+	...set ArcimRowid=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1)),"^",2)
+	...set ItemCatDR=$p(^ARCIM(+ArcimRowid,$p(ArcimRowid,"||",2),1),"^",10) ;ARC_ItmMast->ARCIM_ItemCat_DR
+	...set OrderType=$P(^ARC("IC",ItemCatDR),"^",7)  ;ARC_ItemCat->ARCIC_OrderType
+	...set Prescno=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1)),"^",14) ;处方号
+	...If (OrderType="R")&&(Prescno'="")  d
+	....Set OrdRecLoc=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),3)),"^",6)
+	....s OrdRecLocDesc=$p($g(^CTLOC(OrdRecLoc)),"^",2)
+	....i ($l(OrdRecLocDesc,"-")>1) d  s OrdRecLocDesc=$p(OrdRecLocDesc,"-",2)
+	....i OrdRecLocDesc["药房" d
+	....s PHLRowid=$o(^DHCPHLOCi("LOC",OrdRecLoc,""))
+	....i PHLRowid'="" d
+	.....s PHLAutidFlag=$p(^DHCPHLOC(PHLRowid),"^",7)
+	.....i PHLAutidFlag="Y" d
+	......s PrescAuditFlag=##class(web.DHCSTCNTSCOMMON).GetPresNoAudit(Prescno,"")
+	......i PrescAuditFlag'="Y" s PatShare="0"
+	...b //add by bzt 增加药房处方审核判断 end
+	...set LimitListFlag=##class(web.DHCOPAdmFind).CheckPrescnoSkinFlag(Prescno,"","")
+	...if LimitListFlag="Y" set PatShare="0"
+	...Quit:(+PatShare=0)
+	...Set AdmTotalAmt=AdmTotalAmt+PatShare
+	.Quit:(+AdmTotalAmt=0)
+	.Set AdmStr=Adm_"^"_AdmStr
+	.Set (AdmDept,AdmDoctor)=""
+    .Set AdmDepDr=$p(AdmData,"^",4)
+    .If (AdmDepDr'="") Do
+    ..Set AdmDept=$p($g(^CTLOC(AdmDepDr)),"^",2)
+	.Set AdmDocDr=$p(AdmData,"^",9)
+	.If (AdmDocDr'="") Do
+	..Set AdmDoctor=$p($g(^CTPCP(AdmDocDr,1)),"^",2)
+    .Set AdmItemObj=##class(DHCBILL.SelfPay.Entity.GetAdmByCardNo.Res.AdmItem).%New()
+    .Set AdmItemObj.Adm=Adm
+ 	.Set AdmItemObj.AdmDate=$zd(AdmDate,3)
+ 	.Set AdmItemObj.AdmTime=$zt(AdmTime,1)
+ 	.Set AdmItemObj.AdmDept=AdmDept
+ 	.Set AdmItemObj.AdmDoctor=AdmDoctor
+ 	.Set AdmItemObj.AdmAmt=$j(AdmTotalAmt,3,2)
+ 	.//q:AdmItemObj.AdmAmt="0" //排除为0的数据
+ 	.Do OutputObj.AdmList.Insert(AdmItemObj)
+    If (AdmStr'=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","获取就诊记录成功")
+	}Else{
+		//Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-4","无待缴费就诊记录")
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","无待缴费就诊记录")	
+	}
+  	b ;w123
+  	Quit OutputXML
+GetAdmByCardNoET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetAdmByCardNo.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="GetChargeOrder">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-15
+Desc: 获取结算单
+Debug:w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).GetChargeOrder("<Request><TradeCode>4911</TradeCode><HospitalCode>HFJDFYY</HospitalCode><PATCardNum/><PATCardType/><PATCardCheckNum/><PATPatientID>020000000157</PATPatientID><UserCode>V0028</UserCode><TerminalID/><PAADMVisitNumber>2785</PAADMVisitNumber><ExpStr/></Request>").Read()]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="GetChargeOrderET"
+	s ^tmpxhm("GetChargeOrderET")=Input
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set StDate=InputObj.StartDate 
+    Set EndDate=InputObj.EndDate
+    Set HospitalCode=InputObj.HospitalID
+    Set Adm=InputObj.Adm
+    b ;w1111
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+ 	If (StDate["-") Set StDate=$zdh(StDate,3)
+    If (EndDate["-") Set EndDate=$zdh(EndDate,3)
+    If (StDate="") Set StDate=+$h
+    If (EndDate="") Set EndDate=+$h
+    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.Response).%New()
+ 	
+	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}	
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	If (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	b ;2
+	;创建或查询待缴费结算单 返回结算单串 ETPRowID!OrderNo^ETPRowID!OrderNo^ETPRowID!OrderNo
+	Set OrderStr=""
+	Set OrdExpStr=UserID_"^"_Grup_"^"_GLoc_"^"_HospitalID
+	If (Adm'="") Do
+	.Set OrderStr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetOrder(CardNo,Adm,OrdExpStr)
+	.b ;w234
+	Else  Do
+	.Set AdmType=""
+	.For  Set AdmType=$o(^PAPERdr(Papmi,"ADM",AdmType)) Quit:(AdmType="")  Do
+	..Quit:(AdmType'="O")&(AdmType'="E")
+	..Set Adm=""
+	..b ;Adm
+	..For  Set Adm=$O(^PAPERdr(Papmi,"ADM",AdmType,Adm),-1) Quit:Adm=""  Do
+	...Set AdmDate=$p($g(^PAADM(Adm)),"^",6)
+	...Quit:(AdmDate<StDate)||(AdmDate>EndDate)
+	...b ;Adm
+	...;Set AdmDep=$p(^PAADM(Adm),"^",4)
+	...;Set AdmDepHosDr=##class(web.UDHCHospitalGroup).GetHospitalIDByLocID(AdmDep)
+	...;Quit:((HospitalID'=AdmDepHosDr)&(AdmDepHosDr'="")&(HospitalID'=""))
+	...Set AdmOrdStr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetOrder(CardNo,Adm,OrdExpStr)
+	...b ;w123
+	...If (OrderStr="") Set OrderStr=AdmOrdStr
+	...Else  Set OrderStr=OrderStr_"^"_AdmOrdStr
+	;组织输出结算单内容
+	Set PayOrdCount=0
+	b ;11
+	For i=$l(OrderStr,"^"):-1:1 Do
+	.Set OrderInfo=$p(OrderStr,"^",i)
+	.Set ETPRowID=$p(OrderInfo,"!",1)
+	.Set OrderNo=$p(OrderInfo,"!",2)
+	.Quit:(+ETPRowID=0)
+	.Set PayOrdObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.PayOrder).%New()
+	.Set OrderSum=$p(^DHCBILLETP(ETPRowID),"^",23)
+	.Set IBPInsType=$p(^DHCBILLETP(ETPRowID),"^",44)
+	.Set OrderInsType=$p(^PAC("ADMREA",IBPInsType),"^",2)
+	.Set AdmReaSrc=$p(^PAC("ADMREA",IBPInsType),"^",9)
+	.Set OrderInsuFlag="N"
+	.If (+AdmReaSrc>0) Set OrderInsuFlag="Y"
+	.Set OrdInsuData=""
+	.Set PayOrdCount=PayOrdCount+1
+	.Set PayOrdObj.OrderNo=OrderNo
+	.Set PayOrdObj.OrderSum=$j(OrderSum,3,2)
+	.Set PayOrdObj.OrderInsuFlag=OrderInsuFlag
+	.Set PayOrdObj.OrderInsType=OrderInsType
+	.Set ETOSub="0"
+	.For  Set ETOSub=$o(^DHCBILLETP(ETPRowID,"O",ETOSub)) Quit:ETOSub=""  Do
+	..Set OEORI=$p(^DHCBILLETP(ETPRowID,"O",ETOSub),"^",1)
+	..Set ArcimRowID=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1)),"^",2)
+	..set ArcimDesc=$p(^ARCIM(+ArcimRowID,$p(ArcimRowID,"||",2),1),"^",2)
+    ..Set ItemCatDR=$p(^ARCIM(+ArcimRowID,$p(ArcimRowID,"||",2),1),"^",10) ;ARC_ItmMast->ARCIM_ItemCat_DR
+	..Set OrderType=$P(^ARC("IC",ItemCatDR),"^",7)  ;ARC_ItemCat->ARCIC_OrderType
+	..set UnitPrice=$fn($p(^DHCBILLETP(ETPRowID,"O",ETOSub),"^",4),"",3)
+	..set OEORIQty=$p(^DHCBILLETP(ETPRowID,"O",ETOSub),"^",5)
+	..set OrderPrice=$fn($p(^DHCBILLETP(ETPRowID,"O",ETOSub),"^",6),"",3)
+	..Set ItemSpecs=""   ;初始化规格
+	..If (OrderType="R") Do
+	...Set PackUOMRowid=$p($g(^ARCIM(+ArcimRowID,1,8)),"^",14) ;整包装单位
+	...Set PackQty=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),9)),"^",4)
+	...If PackUOMRowid'=""  Set Packaging=$p(^CT("UOM",PackUOMRowid),"^",2)
+	...Set INCI=$o(^INCI(0,"ARCIM_DR",+ArcimRowID,""))		;INC_Itm->RowID
+	...If (INCI'="") Do 
+	....Set INCIUOM=$p(^INCI(INCI,1),"^",10)   ;INC_Itm->INCI_CTUOM_DR
+	....Set ItemSpecs=##class(web.DHCST.Common.DrugInfoCommon).GetSpec("", INCI)    //调用药房组接口取规格
+	....Set ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+	....If ConFacDr="" Set ConFac=1
+	....Else  Set ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	...Else  Set ConFac=1
+	..s OrderBodyName=##class(web.DHCEMInComUseMethod).GetstrOrderName(OEORI)
+	..i $g(OrderBodyName)'=""  d
+	...s OrderBodyNum=$l(OrderBodyName,"^") 
+	...i OrderBodyNum>1  d
+	....s OrderBodyNameStr=""
+	....f j=1:1:OrderBodyNum  d
+	.....s TempOrderBodyNameStr=$p($p(OrderBodyName,"^",j),":",2)
+	.....i OrderBodyNameStr'="" s OrderBodyNameStr=OrderBodyNameStr_"+"_TempOrderBodyNameStr
+	.....e  d  s OrderBodyNameStr=TempOrderBodyNameStr
+	....s ArcimDesc=ArcimDesc_"("_OrderBodyNameStr_")"
+	...e  d
+	....s ArcimDesc=ArcimDesc_"("_$p(OrderBodyName,":",2)_")"
+	..set Uom=##class(web.DHCOPCashier).GetPackUom(ArcimRowID,OEORI)
+	..set ItemTotalObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.ItemTotal).%New()
+	..set ItemTotalObj.OEORIARCItmMastDesc=ArcimDesc
+	..set ItemTotalObj.OEORIPrice=UnitPrice
+	..set ItemTotalObj.OEORIOrderQty=OEORIQty
+	..set ItemTotalObj.Total=OrderPrice
+	..set ItemTotalObj.OEORIARCItmMastUom=Uom
+	..Set TradeRowID=ETPRowID_"||"_ETOSub
+	..Set ETTSub="0"
+	..For  Set ETTSub=$o(^DHCBILLETPi(0,"TradeSub",TradeRowID,ETPRowID,"T",ETTSub)) Quit:ETTSub=""  Do
+	...Set ItemDr=$p($g(^DHCBILLETP(ETPRowID,"T",ETTSub)),"^",3)
+	...Set ItemCode=$p($g(^DHCTARI(ItemDr)),"^",1)
+	...Set ItemName=$p($g(^DHCTARI(ItemDr)),"^",2)
+	...Set ItemSubCat=$p($g(^DHCTARI(ItemDr)),"^",15)
+	...Set ItemCat=$p(^DHCTarC("OC",ItemSubCat),"^",3)
+	...Set ItemCategory=$p(^DHCTarC("TOC",ItemCat),"^",2)
+	...Set ItemPrice=$p($g(^DHCBILLETP(ETPRowID,"T",ETTSub)),"^",4)
+	...Set ItemQty=$p($g(^DHCBILLETP(ETPRowID,"T",ETTSub)),"^",5)
+	...Set ItemSum=$p($g(^DHCBILLETP(ETPRowID,"T",ETTSub)),"^",7)
+	...Set UomID=$p(^DHCTARI(ItemDr),"^",3)
+	...Set ItemUom=$p(^CT("UOM",UomID),"^",2)
+	...Set PackUOMFlag=..#PackUOMFlag
+	...If (PackUOMFlag=1)&&(OrderType="R") Do
+	....Set ItemUom=Packaging
+  	....Set ItemQty=PackQty
+  	....Set ItemPrice=$fn(ItemPrice*ConFac,"",4)		;4--->6
+	...Set ItemObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.Item).%New()
+	...Set ItemObj.ItemCode=ItemCode
+	...Set ItemObj.ItemName=ItemName
+	...Set ItemObj.ItemCategory=ItemCategory
+	...Set ItemObj.ItemPrice=$fn(ItemPrice,"",4)
+	...Set ItemObj.ItemQty=ItemQty
+	...Set ItemObj.ItemSum=$j(ItemSum,3,2)
+	...Set ItemObj.ItemUom=ItemUom
+	...Set ItemObj.ItemSpecs=ItemSpecs
+	...;Do ItemTotalObj.Item.Insert(ItemObj)
+	...;Do ItemObj.%Close()
+	...do PayOrdObj.ItemList.Insert(ItemObj)
+	...do ItemTotalObj.%Close()
+	..;do PayOrdObj.ItemList.Insert(ItemTotalObj)
+	
+	.Set PayOrdObj.OrdInsuData=OrdInsuData ;这里可以调用方法
+	.Do OutputObj.PayOrdList.Insert(PayOrdObj)
+	
+	Set OutputObj.PayOrdCount=PayOrdCount
+	//s ^tmpxhm(22)=PayOrdCount>0
+	if (PayOrdCount>0){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj, "0", "获取结算单明细成功")
+	}Else{
+		//Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj, "-5", "无待缴费结算单")
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj, "0", "-5无待缴费结算单")
+	}
+  	
+  	Quit OutputXML
+GetChargeOrderET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="GetChargeOrderForZZJ">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-15
+Desc: 获取结算单
+Debug:w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).GetChargeOrder("<Request><Header><SourceSystem/><MessageID/></Header><Body><GetChargeOrderForZZJRt><TradeCode>4911</TradeCode><HospitalCode>HFJDFYY</HospitalCode><PATCardNum/><PATCardType/><PATCardCheckNum/><PATPatientID>020000000157</PATPatientID><UserCode>V0028</UserCode><TerminalID/><PAADMVisitNumber>2785</PAADMVisitNumber><ExpStr/></GetChargeOrderForZZJRt></Body></Request>").Read()]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="GetChargeOrderZZJET"
+	s ^tmpxhm("GetChargeOrderZZJET")=Input
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set StDate=InputObj.StartDate 
+    Set EndDate=InputObj.EndDate
+    Set HospitalCode=InputObj.HospitalID
+    Set Adm=InputObj.Adm
+    set HospitalID=""
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+ 	If (StDate["-") Set StDate=$zdh(StDate,3)
+    If (EndDate["-") Set EndDate=$zdh(EndDate,3)
+    If (StDate="") Set StDate=+$h
+    If (EndDate="") Set EndDate=+$h
+    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.Response).%New()
+ 	
+	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}	
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	If (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	b ;2
+	;创建或查询待缴费结算单 返回结算单串 ETPRowID!OrderNo^ETPRowID!OrderNo^ETPRowID!OrderNo
+	Set OrderStr=""
+	Set OrdExpStr=UserID_"^"_Grup_"^"_GLoc_"^"_HospitalID
+	If (Adm'="") Do
+	.Set OrderStr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetOrder(CardNo,Adm,OrdExpStr)
+	.b ;w234
+	Else  Do
+	.Set AdmType=""
+	.For  Set AdmType=$o(^PAPERdr(Papmi,"ADM",AdmType)) Quit:(AdmType="")  Do
+	..Quit:(AdmType'="O")&(AdmType'="E")
+	..Set Adm=""
+	..b ;Adm
+	..For  Set Adm=$O(^PAPERdr(Papmi,"ADM",AdmType,Adm),-1) Quit:Adm=""  Do
+	...Set AdmDate=$p($g(^PAADM(Adm)),"^",6)
+	...Quit:(AdmDate<StDate)||(AdmDate>EndDate)
+	...b ;Adm
+	...;Set AdmDep=$p(^PAADM(Adm),"^",4)
+	...;Set AdmDepHosDr=##class(web.UDHCHospitalGroup).GetHospitalIDByLocID(AdmDep)
+	...;Quit:((HospitalID'=AdmDepHosDr)&(AdmDepHosDr'="")&(HospitalID'=""))
+	...Set AdmOrdStr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetOrder(CardNo,Adm,OrdExpStr)
+	...b ;w123
+	...If (OrderStr="") Set OrderStr=AdmOrdStr
+	...Else  Set OrderStr=OrderStr_"^"_AdmOrdStr
+	;组织输出结算单内容
+	Set PayOrdCount=0
+	b ;11
+	For i=$l(OrderStr,"^"):-1:1 Do
+	.Set OrderInfo=$p(OrderStr,"^",i)
+	.Set ETPRowID=$p(OrderInfo,"!",1)
+	.Set OrderNo=$p(OrderInfo,"!",2)
+	.Quit:(+ETPRowID=0)
+	.Set PayOrdObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.PayOrderZZJ).%New()
+	.Set OrderSum=$p(^DHCBILLETP(ETPRowID),"^",23)
+	.Set IBPInsType=$p(^DHCBILLETP(ETPRowID),"^",44)
+	.Set OrderInsType=$p(^PAC("ADMREA",IBPInsType),"^",2)
+	.Set AdmReaSrc=$p(^PAC("ADMREA",IBPInsType),"^",9)
+	.Set OrderInsuFlag="N"
+	.If (+AdmReaSrc>0) Set OrderInsuFlag="Y"
+	.Set OrdInsuData=""
+	.Set PayOrdCount=PayOrdCount+1
+	.Set PayOrdObj.OrderNo=OrderNo
+	.Set PayOrdObj.OrderSum=$j(OrderSum,3,2)
+	.Set PayOrdObj.OrderInsuFlag=OrderInsuFlag
+	.Set PayOrdObj.OrderInsType=OrderInsType
+	.Set ETOSub="0"
+	.For  Set ETOSub=$o(^DHCBILLETP(ETPRowID,"O",ETOSub)) Quit:ETOSub=""  Do
+	..Set OEORI=$p(^DHCBILLETP(ETPRowID,"O",ETOSub),"^",1)
+	..Set ArcimRowID=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1)),"^",2)
+	..set ArcimDesc=$p(^ARCIM(+ArcimRowID,$p(ArcimRowID,"||",2),1),"^",2)
+    ..Set ItemCatDR=$p(^ARCIM(+ArcimRowID,$p(ArcimRowID,"||",2),1),"^",10) ;ARC_ItmMast->ARCIM_ItemCat_DR
+	..Set OrderType=$P(^ARC("IC",ItemCatDR),"^",7)  ;ARC_ItemCat->ARCIC_OrderType
+	..set UnitPrice=$fn($p(^DHCBILLETP(ETPRowID,"O",ETOSub),"^",4),"",3)
+	..set OEORIQty=$p(^DHCBILLETP(ETPRowID,"O",ETOSub),"^",5)
+	..set OrderPrice=$fn($p(^DHCBILLETP(ETPRowID,"O",ETOSub),"^",6),"",3)
+	..Set ItemSpecs="",PackQty=""   ;初始化规格	
+	..If (OrderType="R") Do
+	...Set PackUOMRowid=$p($g(^ARCIM(+ArcimRowID,1,8)),"^",14) ;整包装单位
+	...Set PackQty=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),9)),"^",4)
+	...If PackUOMRowid'=""  Set Packaging=$p(^CT("UOM",PackUOMRowid),"^",2)
+	...Set INCI=$o(^INCI(0,"ARCIM_DR",+ArcimRowID,""))		;INC_Itm->RowID
+	...If (INCI'="") Do 
+	....Set INCIUOM=$p(^INCI(INCI,1),"^",10)   ;INC_Itm->INCI_CTUOM_DR
+	....Set ItemSpecs=##class(web.DHCST.Common.DrugInfoCommon).GetSpec("", INCI)    //调用药房组接口取规格
+	....Set ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+	....If ConFacDr="" Set ConFac=1
+	....Else  Set ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	...Else  Set ConFac=1
+	..s OrderBodyName=##class(web.DHCEMInComUseMethod).GetstrOrderName(OEORI)
+	..i $g(OrderBodyName)'=""  d
+	...s OrderBodyNum=$l(OrderBodyName,"^") 
+	...i OrderBodyNum>1  d
+	....s OrderBodyNameStr=""
+	....f j=1:1:OrderBodyNum  d //修改i为j by tangwanwan 2019年1月4日
+	.....s TempOrderBodyNameStr=$p($p(OrderBodyName,"^",j),":",2)
+	.....i OrderBodyNameStr'="" s OrderBodyNameStr=OrderBodyNameStr_"+"_TempOrderBodyNameStr
+	.....e  d  s OrderBodyNameStr=TempOrderBodyNameStr
+	....s ArcimDesc=ArcimDesc_"("_OrderBodyNameStr_")"
+	...e  d
+	....s ArcimDesc=ArcimDesc_"("_$p(OrderBodyName,":",2)_")"
+	..set Uom=##class(web.DHCOPCashier).GetPackUom(ArcimRowID,OEORI)
+	..set ItemTotalObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.ItemTotal).%New()
+	..set ItemTotalObj.OEORIARCItmMastDesc=ArcimDesc
+	..set ItemTotalObj.OEORIPrice=UnitPrice
+	..//整包装价格  edit huangchuanqi 20190215 start
+	..If (..#PackUOMFlag=1)&&(OrderType="R") Do
+	...set ItemTotalObj.OEORIPrice=$fn(UnitPrice*ConFac,"",4)
+	..//整包装价格  edit huangchuanqi 20190215 end
+	..set ItemTotalObj.OEORIOrderQty=OEORIQty
+	..// add by xhm qty改为整包装单位数量
+	..i PackQty'="" set ItemTotalObj.OEORIOrderQty=PackQty
+	..set ItemTotalObj.Total=OrderPrice
+	..set ItemTotalObj.OEORIARCItmMastUom=Uom
+	..Set TradeRowID=ETPRowID_"||"_ETOSub
+	..Set ETTSub="0"
+	..For  Set ETTSub=$o(^DHCBILLETPi(0,"TradeSub",TradeRowID,ETPRowID,"T",ETTSub)) Quit:ETTSub=""  Do
+	...Set ItemDr=$p($g(^DHCBILLETP(ETPRowID,"T",ETTSub)),"^",3)
+	...Set ItemCode=$p($g(^DHCTARI(ItemDr)),"^",1)
+	...Set ItemName=$p($g(^DHCTARI(ItemDr)),"^",2)
+	...Set ItemSubCat=$p($g(^DHCTARI(ItemDr)),"^",15)
+	...Set ItemCat=$p(^DHCTarC("OC",ItemSubCat),"^",3)
+	...Set ItemCategory=$p(^DHCTarC("TOC",ItemCat),"^",2)
+	...Set ItemPrice=$p($g(^DHCBILLETP(ETPRowID,"T",ETTSub)),"^",4)
+	...Set ItemQty=$p($g(^DHCBILLETP(ETPRowID,"T",ETTSub)),"^",5)
+	...Set ItemSum=$p($g(^DHCBILLETP(ETPRowID,"T",ETTSub)),"^",7)
+	...Set UomID=$p(^DHCTARI(ItemDr),"^",3)
+	...Set ItemUom=$p(^CT("UOM",UomID),"^",2)
+	...Set PackUOMFlag=..#PackUOMFlag
+	...If (PackUOMFlag=1)&&(OrderType="R") Do
+	....Set ItemUom=Packaging
+  	....Set ItemQty=PackQty
+  	....Set ItemPrice=$fn(ItemPrice*ConFac,"",4)		;4--->6
+	...Set ItemObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.Item).%New()
+	...Set ItemObj.ItemCode=ItemCode
+	...Set ItemObj.ItemName=ItemName
+	...Set ItemObj.ItemCategory=ItemCategory
+	...Set ItemObj.ItemPrice=$fn(ItemPrice,"",4)
+	...Set ItemObj.ItemQty=ItemQty
+	...Set ItemObj.ItemSum=$j(ItemSum,3,2)
+	...Set ItemObj.ItemUom=ItemUom
+	...Set ItemObj.ItemSpecs=ItemSpecs
+	...Do ItemTotalObj.Item.Insert(ItemObj)
+	...Do ItemObj.%Close()
+	..do PayOrdObj.ItemList.Insert(ItemTotalObj)
+	..do ItemTotalObj.%Close()
+	.Set PayOrdObj.OrdInsuData=OrdInsuData ;这里可以调用方法
+	.Do OutputObj.PayOrdList.Insert(PayOrdObj)
+	
+	Set OutputObj.PayOrdCount=PayOrdCount
+	//s ^tmpxhm(22)=PayOrdCount>0
+	if (PayOrdCount>0){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj, "0", "获取结算单明细成功")
+	}Else{
+		//Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj, "-5", "无待缴费结算单")
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj, "0", "-5无待缴费结算单")
+	}
+  	
+  	Quit OutputXML
+GetChargeOrderZZJET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="PreBillCharge">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-16
+Desc: 预结算
+Debug: w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).PreBillCharge("<Request><TradeCode>4905</TradeCode><HospitalId>2</HospitalId><ExtUserID>zz002</ExtUserID><PatientID>101100000281</PatientID><Adm>1291</Adm><OrderNo>20180726143237HFJD0123</OrderNo><OrderSum>15.51</OrderSum><PayModeCode>WX</PayModeCode><UserCode>zz002</UserCode></Request>").Read()]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="PreBillChargeET"
+	s ^tmpxhm("PreBillChargeET")=Input
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.PreBillCharge.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set HospitalCode=InputObj.HospitalID
+    Set Adm=InputObj.Adm
+    Set OrderNo=InputObj.OrderNo
+    Set OrderSum=InputObj.OrderSum
+    Set PayModeCode=InputObj.PayModeCode
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+     s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.PreBillCharge.Res.Response).%New()
+ 	
+ 	Set Paymode=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).TransPaymodeByOutCode(PayModeCode)
+
+	If (Paymode=""){
+			Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj, "-18", "支付方式不能为空")
+			Quit OutputXML
+	}
+ 	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	if (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	b //02
+	Set AccountID=$p(PatInfo,"^",2)
+	If (PayModeCode="CPP")&&(AccountID="")
+	{
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-19","患者无有效账户不能以院内卡支付")
+		Quit OutputXML	
+		
+	}
+	
+	;校验并获取订单相关信息
+    If (OrderNo=""){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-6","订单号不能为空")
+		Quit OutputXML
+    } 
+	Set ETPRowID=$o(^DHCBILLETPi(0,"HISTradeID",OrderNo,""))
+	If (+ETPRowID=0) {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-7","不存在的结算单号")
+		Quit OutputXML
+	}
+	Set IBPRc=$p(^DHCBILLETP(ETPRowID),"^",1)
+	If (IBPRc'="01") {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-8","结算单已失效")
+		Quit OutputXML
+	}
+	Set IBPPaySum=$p(^DHCBILLETP(ETPRowID),"^",23)
+	If (IBPPaySum-OrderSum'=0){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-9","结算单金额传入有误")
+		Quit OutputXML	
+	}
+	Set AdmInfo=$p(^DHCBILLETP(ETPRowID),"^",43)
+	Set CurIns=$p(^DHCBILLETP(ETPRowID),"^",44)
+	
+	l +^DHCBILLSelfPayLock("PreBillCharge",OrderNo):3
+	
+	;判断订单是否已经预结算 已经预结算直接返回票据信息 用于一致性校验
+	Set PreChargeFlag=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).CheckPreCharge(OrderNo,OrderSum)
+	If (PreChargeFlag="N"){
+		Set UnBillOrdStr=""
+		;订单预结算
+		Set OrderOEORIStr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetInTradeSubOrd(OrderNo) ;获取订单医嘱串
+		Set OEORD=$o(^OEORD(0,"Adm",AdmInfo,""))
+		Set OrdItem="0"
+		For  Set OrdItem=$o(^OEORD(OEORD,"I",OrdItem))  Quit:(OrdItem="")  Do
+		.Set OrdRecLoc=$p($g(^OEORD(OEORD,"I",OrdItem,3)),"^",6)
+		.Set OrdIns=$p($g(^OEORD(+OEORD,"I",OrdItem,11)),"^",18)
+		.Set OEORDI=OEORD_"||"_OrdItem
+		.Set Billed=$p($g(^OEORD(+OEORD,"I",OrdItem,3)),"^",5)
+		.Quit:(Billed="P")!(Billed="I")
+		.Set OrdStat=$p($g(^OEORD(+OEORD,"I",OrdItem,1)),"^",13)
+		.Set:OrdStat'="" OrdStat=$p($g(^OEC("OSTAT",OrdStat)),"^",1)
+		.Quit:(OrdStat'="V")&&(OrdStat'="E")
+		.Set TestOrder="^"_OEORD_"||"_OrdItem_"^"
+		.If (OrderOEORIStr'[TestOrder) Do
+		..If UnBillOrdStr=""  Set UnBillOrdStr=OEORDI
+		..Else  Set UnBillOrdStr=UnBillOrdStr_"^"_OEORDI
+		
+		
+	    Set IPayinfo=Paymode_"^^^^"
+		Set IExpStr=Grup_"^"_GLoc_"^"_AccountID_"^Y^F^^0^"
+		TSTART
+		
+		;自动撤销自费患者存在的预结算记录 add by wangminglong 2019-5-31
+		s myExpStr=UserID_"^"_GLoc
+		Set rtn=##class(web.DHCOPBillChargExcepiton).CheckTPFlagByEpisodeIDNew(AdmInfo,myExpStr) 
+		;自动撤销自费患者存在的预结算记录 add by wangminglong 2019-5-31
+		
+		b ;开始结算
+		Set RtnVal=##class(web.DHCOPINVCons).OPBillCharge(AdmInfo, UserID, UnBillOrdStr, CurIns, OrderSum, IPayinfo, GLoc, "0", "", "0",IExpStr) 
+		b ;结算结束
+		If (+RtnVal'=0) {
+			l -^DHCBILLSelfPayLock("PreBillCharge", OrderNo)
+			Trollback
+			Set ChargeErr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetPreChargeErrMsg(+RtnVal)
+			Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj, +RtnVal, ChargeErr)
+			Quit OutputXML
+		}
+		
+		Set InvRowidStr=$p(RtnVal,$c(2),1)
+		
+		;删除无效关联(针对关联后预结算被撤销)
+		Set IBSSub=$o(^DHCBILLETP(ETPRowID,"C",0))
+		If (IBSSub'="") {
+			Set RtnVal=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).DelInvBankConsub(ETPRowID)
+		}
+		If (+RtnVal'=0) {
+			l -^DHCBILLSelfPayLock("PreBillCharge",OrderNo)
+			Trollback
+			Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,+RtnVal,"预结算数据处理错误")
+			Quit OutputXML
+		}
+		b ;预结算后创建关联
+		Set IBPTradeType=$p(^DHCBILLETP(ETPRowID),"^",25)
+		Set ConExpStr=IBPTradeType
+		Set RtnVal=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).InsertExtTradeConSub(ETPRowID,InvRowidStr,ConExpStr)
+		If (+RtnVal'=0) {
+			l -^DHCBILLSelfPayLock("PreBillCharge",OrderNo)
+			Trollback
+			Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,+RtnVal,"预结算数据处理错误")
+			Quit OutputXML
+		}
+		;预结算结束
+		TCOMMIT
+	}Else{
+		;获取已经预结算票据信息
+		Set RtnVal=0
+		Set InvRowidStr=0_"^"_##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetPrtStrByOrder(OrderNo,ETPRowID)
+	}
+	l -^DHCBILLSelfPayLock("PreBillCharge",OrderNo)
+	;组织返回值
+	For i=2:1:$l(InvRowidStr,"^")  Do
+	.Set PrtInvRowid=$p(InvRowidStr,"^",i)
+	.Quit:(+PrtInvRowid=0)
+	.Set InvoiceAmt=$p(^DHCINVPRT(PrtInvRowid),"^",1)
+	.Set PrtInsType=$p(^DHCINVPRT(PrtInvRowid),"^",9)
+	.Set AdmReasrc=$p(^PAC("ADMREA",PrtInsType),"^",9)
+	.Set InsuFlag="N"
+	.If (+AdmReasrc>0) Set InsuFlag="Y"
+	.Set InvoiceObj=##class(DHCBILL.SelfPay.Entity.PreBillCharge.Res.Invoice).%New()
+	.Set InvoiceObj.InvoiceNo=PrtInvRowid
+	.Set InvoiceObj.InvoiceAmt=InvoiceAmt
+	.Set InvoiceObj.InsuFlag=InsuFlag
+	.Set InvoiceObj.OutInsuInfo=""
+	.Do OutputObj.InvoiceList.Insert(InvoiceObj)
+	.Do InvoiceObj.%Close()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","预结算成功")
+  	Quit OutputXML
+PreBillChargeET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.PreBillCharge.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="CompleteCharge">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-17
+Desc: 确认收费完成
+w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).CompleteCharge("<Request><TradeCode>4904</TradeCode><HospitalID>2</HospitalID><CardNo>0019890501</CardNo><CardType></CardType><SecrityNo></SecrityNo><PatientID></PatientID><UserCode>cashier</UserCode><TerminalID>ZZJ001</TerminalID><OrderNo>20180504125008DHSZ0005</OrderNo><InvoiceNoStr></InvoiceNoStr><PayDetails><PayModeCode>CARDCPP</PayModeCode><TradeChannel>KLE</TradeChannel><PayAccountNo>0000000262</PayAccountNo><PayAmt>44.6</PayAmt><PlatformNo>2018032011123000001</PlatformNo><OutPayNo>987654321</OutPayNo><PayChannel>25</PayChannel><POSPayStr></POSPayStr><PayDate>2018-03-20</PayDate><PayTime>11:12:22</PayTime></PayDetails><ExpStr/></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="CompleteChargeET"
+	s ^TMPXHM(333)=Input
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.CompleteCharge.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set HospitalID=InputObj.HospitalID
+    Set OrderNo=InputObj.OrderNo
+    Set InvoiceNoStr=InputObj.InvoiceNoStr
+    Set InsuPersonInfo=InputObj.InsuPersonInfo
+    Set InsuDivide=InputObj.InsuDivide
+    Set InsuTradeOut=InputObj.InsuTradeOut
+    Set PayDetailsObj=##class(DHCBILL.SelfPay.Entity.CompleteCharge.Req.PayDetails).%New()
+    Set PayDetailsObj=InputObj.PayDetails
+    Set PayModeCode=PayDetailsObj.PayModeCode
+    Set TradeChannel=PayDetailsObj.TradeChannel
+    Set PayAmt=PayDetailsObj.PayAmt
+    /*
+    Set PayAccountNo=PayDetailsObj.PayAccountNo
+    Set PlatformNo=PayDetailsObj.PlatformNo
+    Set OutPayNo=PayDetailsObj.OutPayNo
+    Set PayChannel=PayDetailsObj.PayChannel
+    Set POSPayStr=PayDetailsObj.POSPayStr
+    Set PayDate=PayDetailsObj.PayDate
+    Set PayTime=PayDetailsObj.PayTime
+    */
+    If (HospitalID="") Set HospitalID=$o(^CT("HOSP","0"))
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.CompleteCharge.Res.Response).%New()
+ 	
+ 	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	if (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	Set AccountID=$p(PatInfo,"^",2)
+	If (PayModeCode="CPP")&&(AccountID="")
+	{
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-19","患者无有效账户不能以院内卡支付")
+		Quit OutputXML	
+		
+	}
+	If (OrderNo="") {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-6","订单号不能为空")
+		Quit OutputXML
+	}
+	Set ETPRowID=$o(^DHCBILLETPi(0,"HISTradeID",OrderNo,""))
+	If (+ETPRowID=0) {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-7","不存在的结算单号")
+		Quit OutputXML
+	}
+	
+	Set IBPRc=$p(^DHCBILLETP(ETPRowID),"^",1)
+	If (IBPRc="00") {
+		Set TradeDate=$p($g(^DHCBILLETP(ETPRowID)),"^",21)
+		Set:(TradeDate'="") TradeDate=$zd(TradeDate,3)
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","确认已完成，成功日期:"_TradeDate)
+		Quit OutputXML
+	}
+
+	If (IBPRc'="01") {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-8","结算单已失效")
+		Quit OutputXML
+	}	
+    
+    Set EquFlag=0
+    Set OrderInvoiceNoStr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetPrtStrByOrder(OrderNo,ETPRowID)
+    If (InvoiceNoStr=""){
+		Set InvoiceNoStr=OrderInvoiceNoStr
+    }Else  {
+    	
+		For i=1:1:$l(InvoiceNoStr,"^") quit:(EquFlag'=0)  do
+		.Set InvoiceNo=$p(InvoiceNoStr,"^",i)
+		.Quit:(InvoiceNo="")
+		.Quit:(("^"_OrderInvoiceNoStr_"^")[("^"_InvoiceNo_"^"))
+		.Set EquFlag=1
+	}
+    If (EquFlag'=0){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-9","订单号与票据流水号不匹配")
+		Quit OutputXML
+	}
+	Set ExtTradeAmt=$p(^DHCBILLETP(ETPRowID),"^",23)
+	If (ExtTradeAmt-PayAmt'=0){
+			Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-20","确认完成传入金额不符!")
+			Quit OutputXML
+	}
+   		
+	Set ErrCode=0
+	Do ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).tb()
+	;1医保结算
+	Set OPDivideInfo=""
+	If (InsuPersonInfo'=""){
+		;医保一次结算必须一张发票
+		Set OPDivideInfo=##class(web.DHCINSUPort).InsuOPDivide(UserID,InvoiceNoStr,InsuPersonInfo,DivideOut,TradeOut)
+		If ((OPDivideInfo'="-1")&&(+OPDivideInfo'=-1)) Do
+		.Set UpDataYBInfo=##class(web.DHCBillConsIF).UpdateINVPRTYBInfo(OPDivideInfo, "")
+		.Set ErrCode=$p(UpDataYBInfo,"^",1)
+		If ((OPDivideInfo="-1")||(+OPDivideInfo=-1)){
+	   		;回滚
+	   		TROLLBACK
+	   		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-11","医保结算失败")
+			Quit OutputXML
+		}
+	}
+	
+	Set TradeType="OP"
+	Set SaveExpStr=UserID_"^"_Grup_"^"_GLoc_"^"_HospitalID_"^"_TerminalID_"^"_TradeType_"^"_TradeChannel
+	Set ErrCode=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).SavePayInfo(OrderNo,InvoiceNoStr,.PayDetailsObj,SaveExpStr)
+	
+	If (+ErrCode'=0){ 
+		;回滚
+		TROLLBACK
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-12","保存支付信息失败")
+		Quit OutputXML
+	}
+	Set InsType=$p(^DHCBILLETP(ETPRowID),"^",44)
+	Set myExpStr=Grup_"^"_GLoc_"^"_AccountID_"^Y^F^^0^^"
+	Set Rtn=##class(web.DHCBillConsIF).CompleteCharge("7",UserID,InsType,InvoiceNoStr,"0","",myExpStr)
+	Set ErrCode=ErrCode+Rtn
+	If (+ErrCode'=0){ 
+		;回滚
+		TROLLBACK
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-13","HIS端确认完成失败")
+		Quit OutputXML
+	}
+	Do ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).tc()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","确认完成成功")
+	Quit OutputXML
+CompleteChargeET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.CompleteCharge.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	b ;err
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="CancelCharge">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-17
+Desc: 取消预结算
+Debug:w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).CancelCharge("<Request><TradeCode>4910</TradeCode><HospitalID>01</HospitalID><OrderNo>20180504125008DHSZ0005</OrderNo><CardNo>0019890501</CardNo><CardType></CardType><SecrityNo></SecrityNo><PatientID></PatientID><UserCode>cashier</UserCode><TerminalID>ZZJ001</TerminalID><StartDate></StartDate><EndDate></EndDate><ExpStr></ExpStr></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="CancelChargeET"
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.CancelCharge.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set HospitalCode=InputObj.HospitalID
+    Set OrderNo=InputObj.OrderNo
+    Set InvoiceNoStr=InputObj.InvoiceNoStr
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.CancelCharge.Res.Response).%New()
+ 	
+ 	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	If (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	
+	;根据订单取就诊
+	Set ETPRowID=$o(^DHCBILLETPi(0,"HISTradeID",OrderNo,""))
+	If (+ETPRowID=0) {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-7","不存在的结算单号")
+		Quit OutputXML
+	}
+	Set IBPRc=$p(^DHCBILLETP(ETPRowID),"^",1)
+	If (IBPRc="00") {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-9","收费成功不可撤销")
+		Quit OutputXML
+	}
+	
+	Set OrderInvoiceNoStr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetPrtStrByOrder(OrderNo,ETPRowID)	
+	Set EquFlag=0
+	If (InvoiceNoStr=""){
+		
+		Set InvoiceNoStr=OrderInvoiceNoStr
+		
+	}Else{
+		
+		For i=1:1:$l(InvoiceNoStr,"^") quit:(EquFlag'=0)  do
+		.Set InvoiceNo=$p(InvoiceNoStr,"^",i)
+		.Quit:(InvoiceNo="")
+		.Quit:(("^"_OrderInvoiceNoStr_"^")[("^"_InvoiceNo_"^"))
+		.Set EquFlag=1
+		
+	
+	}
+	If (EquFlag'=0) {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-21","票据流水与结算单不符")
+		Quit OutputXML
+	}
+	b ;InvoiceNoStr
+	Set ErrCode=##class(web.DHCBillConsIF).DelINVPRTForYB(InvoiceNoStr,Grup)
+	b ;ErrCode
+	
+	;删除无效关联(默认这里撤销订单所有关联需要重新结算订单)
+	Set IBSSub=$o(^DHCBILLETP(ETPRowID,"C",0))
+	If (IBSSub'="") {
+		Set RtnVal=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).DelInvBankConsub(ETPRowID)
+	}
+	
+	
+	
+	If +ErrCode=0 {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj, "0", "撤销预结算成功")
+	}Else{
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj, "-14", "撤销预结算失败")		
+	}
+	Quit OutputXML
+	
+CancelChargeET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.CancelCharge.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="GetPaidRecord">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-18
+Desc: 查询已缴费记录
+Debug: w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).GetPaidRecord("<Request><TradeCode>4092</TradeCode><HospitalID></HospitalID><CardNo>0000000262</CardNo><CardType></CardType><SecrityNo></SecrityNo><PatientID>0000000262</PatientID><UserCode>sf01</UserCode><TerminalID>ZZJ001</TerminalID><StartDate></StartDate><EndDate></EndDate><Adm></Adm><OrderNo>20180320140958DHSZ0107</OrderNo><InvoiceNo>223304</InvoiceNo><PrtInvNo></PrtInvNo><ExpStr></ExpStr></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="GetPaidRecordET"
+	s ^tempwml("GetPaidRecordRT")=$lb(Input)
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecord.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set StDate=InputObj.StartDate 
+    Set EndDate=InputObj.EndDate
+    Set HospitalCode=InputObj.HospitalID
+    Set OrderNo=InputObj.OrderNo
+    Set Adm=InputObj.Adm
+    Set InvoiceNo=InputObj.InvoiceNo
+    Set PrtInvNo=InputObj.PrtInvNo
+    Set StartNo=InputObj.StartNo
+    Set EndNo=InputObj.EndNo
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+ 	If (StDate["-") Set StDate=$zdh(StDate,3)
+    If (EndDate["-") Set EndDate=$zdh(EndDate,3) 
+    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecord.Res.Response).%New()
+ 	
+	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}	
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	if (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}	
+	
+	Set PrtStr=""
+	If ((PrtInvNo'="")){	
+		Set PrtInvNo=$ZConvert(PrtInvNo, "U")
+		If $d(^DHCINVPRT(0,"INV",PrtInvNo)) Do
+		.Set INVPRTRowid=""  
+		.For  Set INVPRTRowid=$o(^DHCINVPRT(0,"INV",PrtInvNo,INVPRTRowid)) Quit:INVPRTRowid=""  Do
+		..Quit:+INVPRTRowid=0
+		
+		..//把挂号诊察费去掉 add by wangminglong  2018-09-06 start
+		..s conRowid=0 f  s conRowid=$o(^DHCBCI(0,"INV",INVPRTRowid,conRowid)) q:conRowid=""  d
+		...s bill=$p($g(^DHCBCI(conRowid)),"^",2)
+		..s PBOChildsub=0  f  s PBOChildsub=$o(^DHCPB(bill,"O",PBOChildsub)) q:PBOChildsub=""  d
+		...q:($d(^DHCPB(bill,"O",PBOChildsub))=10)
+		...s Arcim=$p(^DHCPB(bill,"O",PBOChildsub),"^",3) ;DHC_PatBillOrder->PBO_ARCIM_DR
+		...s ArcimDesc=$p($g(^ARCIM(+Arcim,$p(Arcim,"||",2),1)),"^",2) ;名称
+		..q:ArcimDesc["诊察费" 
+		..//把挂号诊察费去掉 add by wangminglong  2018-09-06 end
+		
+		..Set FairType=$p($g(^DHCINVPRT(INVPRTRowid)),"^",34)
+		..;Quit:FairType'="F"
+		..Set PrtStr=INVPRTRowid
+		
+		If $d(^DHCINVPRTAPi(0,"INVNo",PrtInvNo))  Do
+		.Set APIRowID=$o(^DHCINVPRTAPi(0,"INVNo",PrtInvNo,""),-1)
+		.Set ACPRowid=""  
+		.For  Set ACPRowid=$o(^DHCINVPRTCAPi(0,"APINVDR",APIRowID,ACPRowid)) Quit:ACPRowid=""  Do
+		..Quit:ACPRowid=0
+		..Set INVPRTRowid=$p($g(^DHCINVPRTCAP(ACPRowid)),"^",1)
+		
+		..//把挂号诊察费去掉 add by wangminglong  2018-09-06 start
+		..Quit:+INVPRTRowid=0
+		..s conRowid=0 f  s conRowid=$o(^DHCBCI(0,"INV",INVPRTRowid,conRowid)) q:conRowid=""  d
+		...s bill=$p($g(^DHCBCI(conRowid)),"^",2)
+		..s PBOChildsub=0  f  s PBOChildsub=$o(^DHCPB(bill,"O",PBOChildsub)) q:PBOChildsub=""  d
+		...q:($d(^DHCPB(bill,"O",PBOChildsub))=10)
+		...s Arcim=$p(^DHCPB(bill,"O",PBOChildsub),"^",3) ;DHC_PatBillOrder->PBO_ARCIM_DR
+		...s ArcimDesc=$p($g(^ARCIM(+Arcim,$p(Arcim,"||",2),1)),"^",2) ;名称
+		..q:ArcimDesc["诊察费" 
+		..//把挂号诊察费去掉 add by wangminglong  2018-09-06 end
+		
+		
+		
+		..If PrtStr="" Set PrtStr=INVPRTRowid
+		..Else  Set PrtStr=PrtStr_"^"_INVPRTRowid
+		
+	}ElseIf(InvoiceNo'=""){
+		Set PrtStr=InvoiceNo
+	}ElseIf(OrderNo'=""){
+		Set PrtStr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetPrtStrByOrder(OrderNo,"")
+	}ElseIf(Adm'=""){
+		Set BCIRowID="0"
+		For  Set BCIRowID=$o(^DHCBCI(0,"ADM",Adm,BCIRowID)) Quit:BCIRowID=""  Do
+		.Set INVPRTRowid=$p(^DHCBCI(BCIRowID),"^",1)
+		
+    	.//把挂号诊察费去掉 add by wangminglong  2018-09-06 start
+    	.Quit:+INVPRTRowid=0
+		.s conRowid=0 f  s conRowid=$o(^DHCBCI(0,"INV",INVPRTRowid,conRowid)) q:conRowid=""  d
+		..s bill=$p($g(^DHCBCI(conRowid)),"^",2)
+		.s PBOChildsub=0  f  s PBOChildsub=$o(^DHCPB(bill,"O",PBOChildsub)) q:PBOChildsub=""  d
+		..q:($d(^DHCPB(bill,"O",PBOChildsub))=10)
+		..s Arcim=$p(^DHCPB(bill,"O",PBOChildsub),"^",3) ;DHC_PatBillOrder->PBO_ARCIM_DR
+		..s ArcimDesc=$p($g(^ARCIM(+Arcim,$p(Arcim,"||",2),1)),"^",2) ;名称
+		.q:ArcimDesc["诊察费" 
+		.//把挂号诊察费去掉 add by wangminglong  2018-09-06 end
+		
+		
+		.If PrtStr="" Set PrtStr=INVPRTRowid
+		.Else  Set PrtStr=PrtStr_"^"_INVPRTRowid
+	}Else{
+		;日期优先级最低
+	 	If (StDate="") Set StDate=+$h
+    	If (EndDate="") Set EndDate=+$h
+     	For Date=EndDate:-1:StDate Do
+    	.Set INVPRTRowid=""
+    	.For  Set INVPRTRowid=$o(^DHCINVPRT(0,"DatePAPMI",Date,Papmi,INVPRTRowid),-1) Quit:INVPRTRowid=""  Do
+    	..Quit:+INVPRTRowid=0
+    	
+    	..//把挂号诊察费去掉 add by wangminglong  2018-09-06 start
+		..s conRowid=0 f  s conRowid=$o(^DHCBCI(0,"INV",INVPRTRowid,conRowid)) q:conRowid=""  d
+		...s bill=$p($g(^DHCBCI(conRowid)),"^",2)
+		..s PBOChildsub=0  f  s PBOChildsub=$o(^DHCPB(bill,"O",PBOChildsub)) q:PBOChildsub=""  d
+		...q:($d(^DHCPB(bill,"O",PBOChildsub))=10)
+		...s Arcim=$p(^DHCPB(bill,"O",PBOChildsub),"^",3) ;DHC_PatBillOrder->PBO_ARCIM_DR
+		...s ArcimDesc=$p($g(^ARCIM(+Arcim,$p(Arcim,"||",2),1)),"^",2) ;名称
+		..q:ArcimDesc["诊察费" 
+		..//把挂号诊察费去掉 add by wangminglong  2018-09-06 end
+    	..If PrtStr="" Set PrtStr=INVPRTRowid
+		..Else  Set PrtStr=PrtStr_"^"_INVPRTRowid
+	}
+	
+	If (PrtStr=""){
+		//Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-4","未找到相关缴费记录")
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","未找到相关缴费记录")
+		Quit OutputXML
+	}
+	b ;组织输出
+	i (StartNo'="")&(EndNo'="") s PrtStr=$p(PrtStr,"^",StartNo,EndNo)
+	b ;w111
+	Set RecordCount=0
+	For i=1:1:$l(PrtStr,"^")  Do
+	.Set PrtInvRowid=$p(PrtStr,"^",i)
+	.Quit:(+PrtInvRowid=0)	
+	.Set (OrderNo,InvDate,InvTime,TotalAmt,InsuShareAmt,PatShareAmt,PayModeInfo,PrintFlag,PrtInvNo)=""
+	.Set PrtFlag=$p(^DHCINVPRT(PrtInvRowid),"^",8)
+	.Quit:(PrtFlag'="N")
+	.Set PrtDate=$p(^DHCINVPRT(PrtInvRowid),"^",5)
+	.Set PrtTime=$p(^DHCINVPRT(PrtInvRowid),"^",20)
+	.Set InvDate=$zd(PrtDate,3)
+	.Set InvTime=$zt(PrtTime,1)
+	.Set PrintFlag=$p(^DHCINVPRT(PrtInvRowid),"^",3)
+	.If (PrintFlag="P") Set PrintFlag="Y"
+	.Set TotalAmt=$p(^DHCINVPRT(PrtInvRowid),"^",1)
+	.Set InsuShareAmt=$p(^DHCINVPRT(PrtInvRowid),"^",31)
+	.Set PatShareAmt=TotalAmt-InsuShareAmt
+	.Set PrtInvNo=$p(^DHCINVPRT(PrtInvRowid),"^",14)
+	.Set PrtAccPDr=$p(^DHCINVPRT(PrtInvRowid),"^",4)
+	.If (PrtInvNo="")&&(PrtAccPDr'="") Do
+	..Set PrtInvNo=$p(^DHCINVPRTAP(PrtAccPDr),"^",6)
+	..Set PayModeInfo=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetInvPaymodeInfo(PrtAccPDr,"API")
+	.Else  Do
+	..Set PayModeInfo=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetInvPaymodeInfo(PrtInvRowid,"PRT")
+	.If $d(^DHCBILLETPi(0,"TTypePRT","OP","PRT",PrtInvRowid)) Do
+	..Set ETPRowID=$o(^DHCBILLETPi(0,"TTypePRT","OP","PRT",PrtInvRowid,"0"))
+	..Set OrderNo=$p(^DHCBILLETP(ETPRowID),"^",32)
+	.Set (AdmDate,AdmTime,AdmDept,AdmDoctor)=""
+	.Set RecordCount=$i(RecordCount)    //记录条数
+	.Set BCIRowid="0"
+	.For  Set BCIRowid=$o(^DHCBCI(0,"INV",PrtInvRowid,BCIRowid)) Quit:(BCIRowid="")  Do
+	..Set AdmID=$p(^DHCBCI(BCIRowid),"^",3)
+    ..Set AdmDate=$p(^PAADM(AdmID),"^",6)
+    ..Set AdmTime=$p(^PAADM(AdmID),"^",7)
+    ..Set AdmDate=$zd(AdmDate,3)
+    ..Set AdmTime=$zt(AdmTime,1)
+	..Set AdmDepDr=$p(^PAADM(AdmID),"^",4)
+    ..If (AdmDepDr'="") Set AdmDept=$p($g(^CTLOC(AdmDepDr)),"^",2)
+	..Set AdmDocDr=$p(^PAADM(AdmID),"^",9)
+	..If (AdmDocDr'="") Set AdmDoctor=$p($g(^CTPCP(AdmDocDr,1)),"^",2)
+	.Set RecordListObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecord.Res.Record).%New()
+	.Set RecordListObj.OrderNo=OrderNo
+	.Set RecordListObj.InvoiceNo=PrtInvRowid
+	.Set RecordListObj.InvDate=InvDate
+	.Set RecordListObj.InvTime=InvTime
+	.Set RecordListObj.TotalAmt=$j(TotalAmt,3,2)
+	.Set RecordListObj.InsuShareAmt=$j(InsuShareAmt,3,2)
+	.Set RecordListObj.PatShareAmt=$j(PatShareAmt,3,2)
+	.Set RecordListObj.PayModeInfo=PayModeInfo
+	.Set RecordListObj.PrintFlag=PrintFlag
+	.Set RecordListObj.PrtInvNo=PrtInvNo
+	.Set RecordListObj.AdmDate=AdmDate
+	.Set RecordListObj.AdmTime=AdmTime
+	.Set RecordListObj.AdmDept=AdmDept
+	.Set RecordListObj.AdmDoctor=AdmDoctor
+	.Do OutputObj.RecordList.Insert(RecordListObj)
+	.Do OutputObj.%Close()
+	
+	Set OutputObj.RecordCount=RecordCount
+	If (+RecordCount=0){
+		//Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-5","没有缴费记录")
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","-5没有缴费记录")
+	}Else {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","获取缴费记录成功")
+	}
+	Quit OutputXML
+GetPaidRecordET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecord.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="GetPaidRecordDetails">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-18
+Desc: 查询已缴费记录明细
+Debug: w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).GetPaidRecordDetails("<Request><TradeCode>4092</TradeCode><HospitalID></HospitalID><CardNo>0000000262</CardNo><CardType></CardType><SecrityNo></SecrityNo><PatientID>0000000262</PatientID><UserCode>sf01</UserCode><TerminalID>ZZJ001</TerminalID><StartDate></StartDate><EndDate></EndDate><Adm></Adm><OrderNo>20180320143218DHSZ0106</OrderNo><InvoiceNo></InvoiceNo><PrtInvNo></PrtInvNo><ExpStr></ExpStr></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+    s ^TMPXHM(444)=Input
+	Set $ZT="GetPaidRecordDetailsET"
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecordDetails.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set StDate=InputObj.StartDate 
+    Set EndDate=InputObj.EndDate
+    Set HospitalCode=InputObj.HospitalID
+    Set OrderNo=InputObj.OrderNo
+    Set Adm=InputObj.Adm
+    Set InvoiceNo=InputObj.InvoiceNo
+    Set PrtInvNo=InputObj.PrtInvNo
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+ 	If (StDate["-") Set StDate=$zdh(StDate,3)
+    If (EndDate["-") Set EndDate=$zdh(EndDate,3)
+    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecordDetails.Res.Response).%New()
+ 	
+	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}	
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	if (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	b ;1312312
+	Set PrtStr=""
+	If ((PrtInvNo'="")){
+		Set PrtInvNo=$zcvt(PrtInvNo, "U")
+		If $d(^DHCINVPRT(0,"INV",PrtInvNo)) Do
+		.Set INVPRTRowid=""  
+		.For  Set INVPRTRowid=$o(^DHCINVPRT(0,"INV",PrtInvNo,INVPRTRowid)) Quit:INVPRTRowid=""  Do
+		..Quit:+INVPRTRowid=0
+		..Set FairType=$p($g(^DHCINVPRT(INVPRTRowid)),"^",34)
+		..;Quit:FairType'="F"
+		..Set PrtStr=INVPRTRowid
+		
+		If $d(^DHCINVPRTAPi(0,"INVNo",PrtInvNo))  Do
+		.Set APIRowID=$o(^DHCINVPRTAPi(0,"INVNo",PrtInvNo,""),-1)
+		.Set ACPRowid=""  
+		.For  Set ACPRowid=$o(^DHCINVPRTCAPi(0,"APINVDR",APIRowID,ACPRowid)) Quit:ACPRowid=""  Do
+		..Quit:ACPRowid=0
+		..Set INVPRTRowid=$p($g(^DHCINVPRTCAP(ACPRowid)),"^",1)
+		..If (PrtStr="") Set PrtStr=INVPRTRowid
+		..Else  Set PrtStr=PrtStr_"^"_INVPRTRowid
+		
+	}ElseIf(InvoiceNo'=""){
+		Set PrtStr=InvoiceNo
+	}ElseIf(OrderNo'=""){
+		Set PrtStr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetPrtStrByOrder(OrderNo,"")	
+	}ElseIf(Adm'=""){
+		Set BCIRowID="0"
+		For  Set BCIRowID=$o(^DHCBCI(0,"ADM",Adm,BCIRowID)) Quit:BCIRowID=""  Do
+		.Set INVPRTRowid=$p(^DHCBCI(BCIRowID),"^",1)
+		.If PrtStr="" Set PrtStr=INVPRTRowid
+		.Else  Set PrtStr=PrtStr_"^"_INVPRTRowid
+	}Else {
+		;日期优先级最低
+	 	If (StDate="") Set StDate=+$h
+    	If (EndDate="") Set EndDate=+$h
+     	For Date=StDate:1:EndDate Do
+    	.Set INVPRTRowid="0"
+    	.For  Set INVPRTRowid=$o(^DHCINVPRT(0,"DatePAPMI",Date,Papmi,INVPRTRowid)) Quit:INVPRTRowid=""  Do
+    	..Quit:+INVPRTRowid=0
+    	..If PrtStr="" Set PrtStr=INVPRTRowid
+		..Else  Set PrtStr=PrtStr_"^"_INVPRTRowid
+	}
+	
+	If (PrtStr=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","未找到相关缴费记录")
+		Quit OutputXML
+	}
+	
+	b ;组织输出
+	Set RecordCount=0
+	For i=1:1:$l(PrtStr,"^")  Do
+	.Set PrtInvRowid=$p(PrtStr,"^",i)
+	.Quit:(+PrtInvRowid=0)
+	.Set (OrderNo,InvDate,InvTime,TotalAmt,InsuShareAmt,PatShareAmt,PayModeInfo,PrintFlag,PrtInvNo)=""
+	.Set PrtFlag=$p(^DHCINVPRT(PrtInvRowid),"^",8)
+	.Quit:(PrtFlag'="N")
+	.Set PrtDate=$p(^DHCINVPRT(PrtInvRowid),"^",5)
+	.Set PrtTime=$p(^DHCINVPRT(PrtInvRowid),"^",20)
+	.Set InvDate=$zd(PrtDate,3)
+	.Set InvTime=$zt(PrtTime,1)
+	.Set PrintFlag=$p(^DHCINVPRT(PrtInvRowid),"^",3)
+	.If (PrintFlag="P") Set PrintFlag="Y"
+	.Set TotalAmt=$p(^DHCINVPRT(PrtInvRowid),"^",1)
+	.Set InsuShareAmt=$p(^DHCINVPRT(PrtInvRowid),"^",31)
+	.Set PatShareAmt=TotalAmt-InsuShareAmt
+	.Set PrtInvNo=$p(^DHCINVPRT(PrtInvRowid),"^",14)
+	.Set PrtAccPDr=$p(^DHCINVPRT(PrtInvRowid),"^",4)
+	.If (PrtInvNo="")&&(PrtAccPDr'="") Do
+	..Set PrtInvNo=$p(^DHCINVPRTAP(PrtAccPDr),"^",6)
+	..Set PayModeInfo=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetInvPaymodeInfo(PrtAccPDr,"API")
+	.Else  Do
+	..Set PayModeInfo=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetInvPaymodeInfo(PrtInvRowid,"PRT")
+	.If $d(^DHCBILLETPi(0,"TTypePRT","OP","PRT",PrtInvRowid)) Do
+	..Set ETPRowID=$o(^DHCBILLETPi(0,"TTypePRT","OP","PRT",PrtInvRowid,"0"))
+	..Set OrderNo=$p(^DHCBILLETP(ETPRowID),"^",32)
+	.Set (AdmDate,AdmTime,AdmDept,AdmDoctor,DurgWin)=""
+	.Set RecordCount=$i(RecordCount)
+	.Set BCIRowid="0"
+	.For  Set BCIRowid=$o(^DHCBCI(0,"INV",PrtInvRowid,BCIRowid)) Quit:(BCIRowid="")  Do
+	..Set AdmID=$p(^DHCBCI(BCIRowid),"^",3)
+    ..Set AdmDate=$p(^PAADM(AdmID),"^",6)
+    ..Set AdmTime=$p(^PAADM(AdmID),"^",7)
+    ..Set AdmDate=$zd(AdmDate,3)
+    ..Set AdmTime=$zt(AdmTime,1)
+	..Set AdmDepDr=$p(^PAADM(AdmID),"^",4)
+    ..If (AdmDepDr'="") Set AdmDept=$p($g(^CTLOC(AdmDepDr)),"^",2)
+	..Set AdmDocDr=$p(^PAADM(AdmID),"^",9)
+	..If (AdmDocDr'="") Set AdmDoctor=$p($g(^CTPCP(AdmDocDr,1)),"^",2)
+	..Set RecordListObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecordDetails.Res.Record).%New()
+	..Set BillNo=$p(^DHCBCI(BCIRowid),"^",2)
+	..Set BillOrd="0"
+	..For  Set BillOrd=$o(^DHCPB(BillNo,"O",BillOrd))  Quit:BillOrd=""   Do
+	...Quit:('$d(^DHCPB(BillNo,"O",BillOrd)))||($d(^DHCPB(BillNo,"O",BillOrd))=10)
+	...Set OEORI=$p(^DHCPB(BillNo,"O",BillOrd),"^",4)
+	...Set ItemSpecs="", RecDept=""    ;初始化
+	...Set ArcimRowID=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1)),"^",2)
+    ...Set ItemCatDR=$p(^ARCIM(+ArcimRowID,$p(ArcimRowID,"||",2),1),"^",10) ;ARC_ItmMast->ARCIM_ItemCat_DR
+	...Set OrderType=$P(^ARC("IC",ItemCatDR),"^",7)  ;ARC_ItemCat->ARCIC_OrderType
+	...If (OrderType="R") Do
+	....Set PackUOMRowid=$p($g(^ARCIM(+ArcimRowID,1,8)),"^",14) ;整包装单位
+	....Set PresNo=$p(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1),"^",14)
+	....Set Window=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).MedicineWin(PrtInvRowid,PresNo)
+	....If (DurgWin="") Set DurgWin=Window
+	....Else   Do
+	.....If (DurgWin'[Window) Set DurgWin=DurgWin_" ,"_Window
+	....Set PackQty=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),9)),"^",4)
+	....If PackUOMRowid'=""  Set Packaging=$p(^CT("UOM",PackUOMRowid),"^",2)
+	....Set INCI=$o(^INCI(0,"ARCIM_DR",+ArcimRowID,""))		;INC_Itm->RowID
+	....If (INCI'="") Do
+	.....Set INCIUOM=$p(^INCI(INCI,1),"^",10)   ;INC_Itm->INCI_CTUOM_DR
+	.....Set ItemSpecs=##class(web.DHCST.Common.DrugInfoCommon).GetSpec("", INCI)    //调用药房组接口取规格
+	.....Set ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+	.....If (ConFacDr="") Set ConFac=1
+	.....Else  Set ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	....Else  Set ConFac=1
+	...Set RecDepDr=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),3)),"^",6) ;接收科室
+	...If (RecDepDr'="") Set RecDept=$p($g(^CTLOC(RecDepDr)),"^",2)
+	...Set BillDetsub="0"
+	...For  Set BillDetsub=$o(^DHCPB(BillNo,"O",BillOrd,"D",BillDetsub))   Quit:BillDetsub=""   Do
+	....Set ItemDr=$p(^DHCPB(BillNo,"O",BillOrd,"D",BillDetsub),"^",3)
+	....Set ItemCode=$p($g(^DHCTARI(ItemDr)),"^",1)
+	....Set ItemName=$p($g(^DHCTARI(ItemDr)),"^",2)
+	....Set ItemSubCat=$p($g(^DHCTARI(ItemDr)),"^",15)
+	....Set ItemCat=$p(^DHCTarC("OC",ItemSubCat),"^",3)
+	....Set ItemCategory=$p(^DHCTarC("TOC",ItemCat),"^",2)
+	....Set ItemPrice=$p(^DHCPB(BillNo,"O",BillOrd,"D",BillDetsub),"^",4)
+	....Set ItemQty=$p(^DHCPB(BillNo,"O",BillOrd,"D",BillDetsub),"^",5)
+	....Set ItemSum=$p(^DHCPB(BillNo,"O",BillOrd,"D",BillDetsub),"^",7)
+	....Set UomID=$p(^DHCTARI(ItemDr),"^",3)
+	....Set ItemUom=$p(^CT("UOM",UomID),"^",2)
+	....Set PackUOMFlag=..#PackUOMFlag
+	....If (PackUOMFlag=1)&&(OrderType="R") Do
+	.....Set ItemUom=Packaging
+  	.....Set ItemQty=PackQty
+  	.....Set ItemPrice=$fn(ItemPrice*ConFac,"",4)		;4--->6
+	....Set ItemObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecordDetails.Res.Item).%New()
+	....Set ItemObj.ItemCode=ItemCode
+	....Set ItemObj.ItemName=ItemName
+	....Set ItemObj.ItemCategory=ItemCategory
+	....Set ItemObj.ItemRecDept=RecDept
+	....Set ItemObj.ItemPrice=$fn(ItemPrice,"",4)
+	....Set ItemObj.ItemQty=ItemQty
+	....Set ItemObj.ItemSum=$j(ItemSum,2,2) //修改小数点问题 by tangwanwan 2018年10月23日
+	....Set ItemObj.ItemUom=ItemUom
+	....Set ItemObj.ItemSpecs=ItemSpecs
+	....Do RecordListObj.ItemList.Insert(ItemObj)
+	....Do ItemObj.%Close()
+	.;
+	.Set RecordListObj.OrderNo=OrderNo
+	.Set RecordListObj.InvoiceNo=PrtInvRowid
+	.Set RecordListObj.InvDate=InvDate
+	.Set RecordListObj.InvTime=InvTime
+	.Set RecordListObj.DurgWin=DurgWin
+	.Set RecordListObj.TotalAmt=$j(TotalAmt,2,2) //修改小数点问题 by tangwanwan 2018年10月23日
+	.Set RecordListObj.InsuShareAmt=InsuShareAmt
+	.Set RecordListObj.PatShareAmt=$j(PatShareAmt,2,2) //修改小数点问题 by tangwanwan 2018年10月23日
+	.Set RecordListObj.PayModeInfo=PayModeInfo
+	.Set RecordListObj.PrintFlag=PrintFlag
+	.Set RecordListObj.PrtInvNo=PrtInvNo
+	.Set RecordListObj.AdmDate=AdmDate
+	.Set RecordListObj.AdmTime=AdmTime
+	.Set RecordListObj.AdmDept=AdmDept
+	.Set RecordListObj.AdmDoctor=AdmDoctor
+	.Do OutputObj.RecordList.Insert(RecordListObj)
+	.Do OutputObj.%Close()
+	 
+	Set OutputObj.RecordCount=RecordCount
+	If (+RecordCount=0){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-5","没有缴费记录明细")
+	}Else {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","获取缴费记录明细成功")
+	}
+	Quit OutputXML
+GetPaidRecordDetailsET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecord.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="GetPaidRecordDetailsZZJ">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-18
+Desc: 查询已缴费记录明细
+Debug: w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).GetPaidRecordDetails("<Request><TradeCode>4092</TradeCode><HospitalID></HospitalID><CardNo>0000000262</CardNo><CardType></CardType><SecrityNo></SecrityNo><PatientID>0000000262</PatientID><UserCode>sf01</UserCode><TerminalID>ZZJ001</TerminalID><StartDate></StartDate><EndDate></EndDate><Adm></Adm><OrderNo>20180320143218DHSZ0106</OrderNo><InvoiceNo></InvoiceNo><PrtInvNo></PrtInvNo><ExpStr></ExpStr></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+    s ^TMPXHM(444)=Input
+	Set $ZT="GetPaidRecordDetailsET"
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecordDetails.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set StDate=InputObj.StartDate 
+    Set EndDate=InputObj.EndDate
+    Set HospitalCode=InputObj.HospitalID
+    Set OrderNo=InputObj.OrderNo
+    Set Adm=InputObj.Adm
+    Set InvoiceNo=InputObj.InvoiceNo
+    Set PrtInvNo=InputObj.PrtInvNo
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+ 	If (StDate["-") Set StDate=$zdh(StDate,3)
+    If (EndDate["-") Set EndDate=$zdh(EndDate,3)
+    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecordDetails.Res.Response).%New()
+ 	
+	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}	
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	if (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	b ;1312312
+	Set PrtStr=""
+	If ((PrtInvNo'="")){
+		Set PrtInvNo=$zcvt(PrtInvNo, "U")
+		If $d(^DHCINVPRT(0,"INV",PrtInvNo)) Do
+		.Set INVPRTRowid=""  
+		.For  Set INVPRTRowid=$o(^DHCINVPRT(0,"INV",PrtInvNo,INVPRTRowid)) Quit:INVPRTRowid=""  Do
+		..Quit:+INVPRTRowid=0
+		..Set FairType=$p($g(^DHCINVPRT(INVPRTRowid)),"^",34)
+		..;Quit:FairType'="F"
+		..Set PrtStr=INVPRTRowid
+		
+		If $d(^DHCINVPRTAPi(0,"INVNo",PrtInvNo))  Do
+		.Set APIRowID=$o(^DHCINVPRTAPi(0,"INVNo",PrtInvNo,""),-1)
+		.Set ACPRowid=""  
+		.For  Set ACPRowid=$o(^DHCINVPRTCAPi(0,"APINVDR",APIRowID,ACPRowid)) Quit:ACPRowid=""  Do
+		..Quit:ACPRowid=0
+		..Set INVPRTRowid=$p($g(^DHCINVPRTCAP(ACPRowid)),"^",1)
+		..If (PrtStr="") Set PrtStr=INVPRTRowid
+		..Else  Set PrtStr=PrtStr_"^"_INVPRTRowid
+		
+	}ElseIf(InvoiceNo'=""){
+		Set PrtStr=InvoiceNo
+	}ElseIf(OrderNo'=""){
+		Set PrtStr=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetPrtStrByOrder(OrderNo,"")	
+	}ElseIf(Adm'=""){
+		Set BCIRowID="0"
+		For  Set BCIRowID=$o(^DHCBCI(0,"ADM",Adm,BCIRowID)) Quit:BCIRowID=""  Do
+		.Set INVPRTRowid=$p(^DHCBCI(BCIRowID),"^",1)
+		.If PrtStr="" Set PrtStr=INVPRTRowid
+		.Else  Set PrtStr=PrtStr_"^"_INVPRTRowid
+	}Else {
+		;日期优先级最低
+	 	If (StDate="") Set StDate=+$h
+    	If (EndDate="") Set EndDate=+$h
+     	For Date=StDate:1:EndDate Do
+    	.Set INVPRTRowid="0"
+    	.For  Set INVPRTRowid=$o(^DHCINVPRT(0,"DatePAPMI",Date,Papmi,INVPRTRowid)) Quit:INVPRTRowid=""  Do
+    	..Quit:+INVPRTRowid=0
+    	..If PrtStr="" Set PrtStr=INVPRTRowid
+		..Else  Set PrtStr=PrtStr_"^"_INVPRTRowid
+	}
+	
+	If (PrtStr=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","未找到相关缴费记录")
+		Quit OutputXML
+	}
+	
+	b ;组织输出
+	Set RecordCount=0
+	For i=1:1:$l(PrtStr,"^")  Do
+	.Set PrtInvRowid=$p(PrtStr,"^",i)
+	.Quit:(+PrtInvRowid=0)
+	.Set (OrderNo,InvDate,InvTime,TotalAmt,InsuShareAmt,PatShareAmt,PayModeInfo,PrintFlag,PrtInvNo)=""
+	.Set PrtFlag=$p(^DHCINVPRT(PrtInvRowid),"^",8)
+	.Quit:(PrtFlag'="N")
+	.Set PrtDate=$p(^DHCINVPRT(PrtInvRowid),"^",5)
+	.Set PrtTime=$p(^DHCINVPRT(PrtInvRowid),"^",20)
+	.Set InvDate=$zd(PrtDate,3)
+	.Set InvTime=$zt(PrtTime,1)
+	.Set PrintFlag=$p(^DHCINVPRT(PrtInvRowid),"^",3)
+	.If (PrintFlag="P") Set PrintFlag="Y"
+	.Set TotalAmt=$p(^DHCINVPRT(PrtInvRowid),"^",1)
+	.Set InsuShareAmt=$p(^DHCINVPRT(PrtInvRowid),"^",31)
+	.Set PatShareAmt=TotalAmt-InsuShareAmt
+	.Set PrtInvNo=$p(^DHCINVPRT(PrtInvRowid),"^",14)
+	.Set PrtAccPDr=$p(^DHCINVPRT(PrtInvRowid),"^",4)
+	.If (PrtInvNo="")&&(PrtAccPDr'="") Do
+	..Set PrtInvNo=$p(^DHCINVPRTAP(PrtAccPDr),"^",6)
+	..Set PayModeInfo=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetInvPaymodeInfo(PrtAccPDr,"API")
+	.Else  Do
+	..Set PayModeInfo=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetInvPaymodeInfo(PrtInvRowid,"PRT")
+	.If $d(^DHCBILLETPi(0,"TTypePRT","OP","PRT",PrtInvRowid)) Do
+	..Set ETPRowID=$o(^DHCBILLETPi(0,"TTypePRT","OP","PRT",PrtInvRowid,"0"))
+	..Set OrderNo=$p(^DHCBILLETP(ETPRowID),"^",32)
+	.Set (AdmDate,AdmTime,AdmDept,AdmDoctor,DurgWin)=""
+	.Set RecordCount=$i(RecordCount)
+	.Set BCIRowid="0"
+	.For  Set BCIRowid=$o(^DHCBCI(0,"INV",PrtInvRowid,BCIRowid)) Quit:(BCIRowid="")  Do
+	..Set AdmID=$p(^DHCBCI(BCIRowid),"^",3)
+    ..Set AdmDate=$p(^PAADM(AdmID),"^",6)
+    ..Set AdmTime=$p(^PAADM(AdmID),"^",7)
+    ..Set AdmDate=$zd(AdmDate,3)
+    ..Set AdmTime=$zt(AdmTime,1)
+	..Set AdmDepDr=$p(^PAADM(AdmID),"^",4)
+    ..If (AdmDepDr'="") Set AdmDept=$p($g(^CTLOC(AdmDepDr)),"^",2)
+	..Set AdmDocDr=$p(^PAADM(AdmID),"^",9)
+	..If (AdmDocDr'="") Set AdmDoctor=$p($g(^CTPCP(AdmDocDr,1)),"^",2)
+	..Set RecordListObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecordDetails.Res.Record).%New()
+	..Set BillNo=$p(^DHCBCI(BCIRowid),"^",2)
+	..Set BillOrd="0"
+	..For  Set BillOrd=$o(^DHCPB(BillNo,"O",BillOrd))  Quit:BillOrd=""   Do
+	...Quit:('$d(^DHCPB(BillNo,"O",BillOrd)))||($d(^DHCPB(BillNo,"O",BillOrd))=10)
+	...Set OEORI=$p(^DHCPB(BillNo,"O",BillOrd),"^",4)
+	...Set ItemSpecs="", RecDept=""    ;初始化
+	...Set ArcimRowID=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1)),"^",2)
+    ...Set ItemCatDR=$p(^ARCIM(+ArcimRowID,$p(ArcimRowID,"||",2),1),"^",10) ;ARC_ItmMast->ARCIM_ItemCat_DR
+	...Set OrderType=$P(^ARC("IC",ItemCatDR),"^",7)  ;ARC_ItemCat->ARCIC_OrderType
+	...If (OrderType="R") Do
+	....Set PackUOMRowid=$p($g(^ARCIM(+ArcimRowID,1,8)),"^",14) ;整包装单位
+	....Set PresNo=$p(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1),"^",14)
+	....Set Window=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).MedicineWin(PrtInvRowid,PresNo)
+	....If (DurgWin="") Set DurgWin=Window
+	....Else   Do
+	.....If (DurgWin'[Window) Set DurgWin=DurgWin_" ,"_Window
+	....Set PackQty=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),9)),"^",4)
+	....If PackUOMRowid'=""  Set Packaging=$p(^CT("UOM",PackUOMRowid),"^",2)
+	....Set INCI=$o(^INCI(0,"ARCIM_DR",+ArcimRowID,""))		;INC_Itm->RowID
+	....If (INCI'="") Do
+	.....Set INCIUOM=$p(^INCI(INCI,1),"^",10)   ;INC_Itm->INCI_CTUOM_DR
+	.....Set ItemSpecs=##class(web.DHCST.Common.DrugInfoCommon).GetSpec("", INCI)    //调用药房组接口取规格
+	.....Set ConFacDr=$o(^CT("CTCF",0,"UOM",PackUOMRowid,INCIUOM,""))
+	.....If (ConFacDr="") Set ConFac=1
+	.....Else  Set ConFac=$P(^CT("CTCF",ConFacDr),"^",3)
+	....Else  Set ConFac=1
+	...Set RecDepDr=$p($g(^OEORD(+OEORI,"I",$p(OEORI,"||",2),3)),"^",6) ;接收科室
+	...If (RecDepDr'="") Set RecDept=$p($g(^CTLOC(RecDepDr)),"^",2)
+	...//add by xhm 
+	...set ArcimDesc=$p(^ARCIM(+ArcimRowID,$p(ArcimRowID,"||",2),1),"^",2)
+	...s OrderBodyName=##class(web.DHCEMInComUseMethod).GetstrOrderName(OEORI)
+	...i $g(OrderBodyName)'=""  d
+	....s OrderBodyNum=$l(OrderBodyName,"^") 
+	....i OrderBodyNum>1  d
+	.....s OrderBodyNameStr=""
+	.....f j=1:1:OrderBodyNum  d //修改i 成 j  防止变量覆盖 by tangwanwan 2019年1月4日
+	......s TempOrderBodyNameStr=$p($p(OrderBodyName,"^",j),":",2)
+	......i OrderBodyNameStr'="" s OrderBodyNameStr=OrderBodyNameStr_"+"_TempOrderBodyNameStr
+	......e  d  s OrderBodyNameStr=TempOrderBodyNameStr
+	.....i OrderBodyNameStr'="" s ArcimDesc=ArcimDesc_"("_OrderBodyNameStr_")"
+	.....e  s ArcimDesc=ArcimDesc
+	...e  d
+	....i $p(OrderBodyName,":",2)'="" s ArcimDesc=ArcimDesc_"("_$p(OrderBodyName,":",2)_")"
+	....e  s ArcimDesc=ArcimDesc
+	...set ItemUom=##class(web.DHCOPCashier).GetPackUom(ArcimRowID,OEORI)
+	...;set ItemTotalObj=##class(DHCBILL.SelfPay.Entity.GetChargeOrder.Res.ItemTotal).%New()
+	...;set ItemTotalObj.OEORIARCItmMastDesc=ArcimDesc
+	...;set ^tmpxhm("dd")=ArcimRowID
+	...;set ItemTotalObj.OEORIPrice=##class(web.DHCBL.CT.ARCItmMast).GetOrderPriceForBoe(ArcimRowID)  ;"" ;UnitPrice
+	...;set OEORIPhQtyOrd=$p(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1),"^",12)
+	...;set ItemTotalObj.OEORIOrderQty=OEORIPhQtyOrd ;OEORIQty
+    ...// add by xhm qty改为整包装单位数量UnitPrice
+    ...;i PackQty'="" set ItemTotalObj.OEORIOrderQty="" ;PackQty
+	...;set ItemTotalObj.Total=$P(^DHCINVPRT(PrtInvRowid),"^",1) ;OrderPrice
+	...//set ARCIMBillingUOMDR=$p(^ARCIM(+ArcimRowID,$p(ArcimRowID,"||",2),8),"^",14)
+	...;set ItemTotalObj.OEORIARCItmMastUom=Uom
+	...;Do RecordListObj.ItemList.Insert(ItemTotalObj)
+	...;Do ItemTotalObj.%Close()
+	...;Set TradeRowID=ETPRowID_"||"_ETOSub
+	
+	...Set ItemDr=ArcimRowID
+	...Set ItemCode=$p(^ARCIM(+ArcimRowID,$p(ArcimRowID,"||",2),1),"^",1)
+	...Set ItemName=ArcimDesc
+	...Set ItemPrice=$p(^DHCPB(BillNo,"O",BillOrd),"^",7)
+	...Set ItemQty=$p(^DHCPB(BillNo,"O",BillOrd),"^",5)+$p(^DHCPB(BillNo,"O",BillOrd),"^",6)
+	...Set ItemSum=$p(^DHCPB(BillNo,"O",BillOrd),"^",8)
+	...Set PackUOMFlag=..#PackUOMFlag
+	...If (PackUOMFlag=1)&&(OrderType="R") Do
+	....Set ItemUom=Packaging
+  	....Set ItemQty=PackQty
+  	....Set ItemPrice=$fn(ItemPrice*ConFac,"",4)		;4--->6
+	...Set ItemObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecordDetails.Res.Item).%New()
+	...Set ItemObj.ItemCode=ItemCode
+	...Set ItemObj.ItemName=ItemName
+	...Set ItemObj.ItemCategory=""
+	...Set ItemObj.ItemRecDept=RecDept
+	...Set ItemObj.ItemPrice=$fn(ItemPrice,"",4)
+	...Set ItemObj.ItemQty=ItemQty
+	...Set ItemObj.ItemSum=$j(ItemSum,2,2) //修改小数点问题 by tangwanwan 2018年10月23日
+	...Set ItemObj.ItemUom=ItemUom
+	...Set ItemObj.ItemSpecs=ItemSpecs
+	...;Do ItemTotalObj.Item.Insert(ItemObj)
+	...do RecordListObj.ItemList.Insert(ItemObj)
+	...;Do ItemTotalObj.ItemList.Insert(ItemObj)
+	...;Do ItemObj.%Close()
+	;
+	Set RecordListObj.OrderNo=OrderNo
+	Set RecordListObj.InvoiceNo=PrtInvRowid
+	Set RecordListObj.InvDate=InvDate
+	Set RecordListObj.InvTime=InvTime
+	Set RecordListObj.DurgWin=DurgWin
+	Set RecordListObj.TotalAmt=$j(TotalAmt,2,2) //修改小数点问题 by tangwanwan 2018年10月23日
+	Set RecordListObj.InsuShareAmt=InsuShareAmt
+	Set RecordListObj.PatShareAmt=$j(PatShareAmt,2,2) //修改小数点问题 by tangwanwan 2018年10月23日
+	Set RecordListObj.PayModeInfo=PayModeInfo
+	Set RecordListObj.PrintFlag=PrintFlag
+	Set RecordListObj.PrtInvNo=PrtInvNo
+	Set RecordListObj.AdmDate=AdmDate
+	Set RecordListObj.AdmTime=AdmTime
+	Set RecordListObj.AdmDept=AdmDept
+	Set RecordListObj.AdmDoctor=AdmDoctor
+	Do OutputObj.RecordList.Insert(RecordListObj)
+	Do OutputObj.%Close()
+	 
+	Set OutputObj.RecordCount=RecordCount
+	If (+RecordCount=0){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-5","没有缴费记录明细")
+	}Else {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","获取缴费记录明细成功")
+	}
+	Quit OutputXML
+GetPaidRecordDetailsZZJET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetPaidRecord.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="CheckCharge">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-17
+Desc: 取消预结算
+Debug:w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).CheckCharge("<Request><TradeCode>4092</TradeCode><HospitalID>01</HospitalID><CardNo>000000000910</CardNo><CardType></CardType><SecrityNo>0</SecrityNo><PatientID>0000000262</PatientID><UserCode>5</UserCode><TerminalID>ZZJ001</TerminalID><StartDate>2018-03-10</StartDate><EndDate>2018-03-14</EndDate><ExpStr></ExpStr></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="CheckChargeET"
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.CheckCharge.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set HospitalID=InputObj.HospitalID
+    Set OrderNo=InputObj.OrderNo
+    
+    If (HospitalID="") Set HospitalID=$o(^CT("HOSP","0"))
+    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.CheckCharge.Res.Response).%New()
+ 	
+ 	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	If (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	
+	;校验结算单
+	If (OrderNo="") {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-6","订单号不能为空")
+		Quit OutputXML
+	}
+	Set ETPRowID=$o(^DHCBILLETPi(0,"HISTradeID",OrderNo,""))
+	If (+ETPRowID=0) {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-7","不存在的结算单号")
+		Quit OutputXML
+	}
+	Set IBPRc=$p(^DHCBILLETP(ETPRowID),"^",1)
+	If (IBPRc="00")	{
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","结算单结算成功")
+		Quit OutputXML
+	}
+	If (IBPRc="01")	{
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-8","结算单未结算")
+		Quit OutputXML
+	}
+	If (IBPRc'="01") {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-9","结算单失效")
+		Quit OutputXML
+	}
+CheckChargeET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.CheckCharge.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="GetInvPayList">
+<Description><![CDATA[
+Creator:zfb
+CreatDate:2018-3-20
+Desc:门诊收费未打印发票记录查询
+Input:<Request><TradeCode></TradeCode><CardNo>100000013589</CardNo><SecrityNo>6298057385</SecrityNo></Request>
+Return:
+Debug:w ##class(web.DHCOPBillAutoPayExp).GetInvPayList("<Request><TradeCode></TradeCode><CardNo></CardNo><SecrityNo></SecrityNo></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	Set $zt="GetPatAccListET"
+	Set InputObj=##Class(DHCBILL.SelfPay.Entity.GetPatAccList.Req.Request).%New()
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetPatAccList.Res.Response).%New()
+	Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+	
+	Set HospitalID=InputObj.HospitalID
+	Set StartDate=InputObj.StartDate
+	Set EndDate=InputObj.EndDate
+	Set CardNo=InputObj.CardNo
+	Set CardType=InputObj.CardType
+	Set SecrityNo=InputObj.SecrityNo
+	Set PatientID=InputObj.PatientID
+	Set UserCode=InputObj.UserCode
+	Set TerminalID=InputObj.TerminalID
+	Set ExpStr=InputObj.ExpStr
+	
+	If StartDate["-" Set StartDate=$zdh(StartDate,3)
+	If EndDate["-" Set EndDate=$zdh(EndDate,3)
+	If (CardNo=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	Set Data=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,"")
+	Set Papmi=$p(Data,"^",8)
+    if (Papmi="") {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+    Set PatSocialStatusDR=$p(^PAPER(Papmi,"PER",1),"^",10) ;PAPER_SocialStatus_DR -> CT_SocialStatus
+    Set PatSocialStatus=$p(^CT("SS",PatSocialStatusDR),"^",2)
+    Set AccMRowID=$p(Data,"^",2)
+    Set AccMBalance=$p(Data,"^",5)
+    Set AccMBalance=AccMBalance
+    Set AccMDepPrice=$p(Data,"^",6)
+    Set AccMAccType=$p(Data,"^",11)
+    Set AccMCardTypeDR=$p(Data,"^",13)
+    Set AccMAccStatus=$p(^DHCACD("AccM",AccMRowID),"^",13)
+	Set PapNo=$p(^PAPER(Papmi,"PAT",1),"^",1)   ;登记号
+	Set PatName=$p(^PAPER(Papmi,"ALL"),"^",1)   ;姓名
+	Set Sex=$p(^PAPER(Papmi,"ALL"),"^",7)       ;性别
+	If Sex'="" Set Sex=$p(^CT("SEX",Sex),"^",2)
+	Set PatAge=""
+	Set PatientDOB=$P($G(^PAPER(Papmi,"ALL")),"^",6)
+	Set PatAge=##class(web.DHCDTHealthCommon).GetAgeDesc(PatientDOB,+$h)
+	;
+	Set OutputObj.PatientID=PapNo
+	Set OutputObj.PatName=PatName
+	Set OutputObj.PatAge=PatAge
+	Set OutputObj.PatSex=Sex
+	Set OutputObj.PatType=""
+	Set OutputObj.AccMRowID=AccMRowID
+	Set OutputObj.AccMOCDate=""
+	Set OutputObj.AccMOCTime=""
+	Set OutputObj.AccMBalance=AccMBalance
+	Set OutputObj.AccMDepPrice=""
+	Set OutputObj.AccMAccStatus=AccMAccStatus
+	;
+	Kill TMPReadAccPayList
+	;
+	Set myIdx=1,INVFlag="N",INVPrtFlag="N"
+	If ($d(^DHCACD("AccM",AccMRowID))) d
+	.;^DHCACD("AccM",{DHC_AccManager.AccM_RowID},"AccPL",{AccPL_Sub})
+	.Set mysub=""
+	.For  Set mysub=$o(^DHCACD("AccM",AccMRowID,"AccPL",mysub),-1) Quit:(mysub="")  Do
+	..Quit:(mysub=0)		;=0  保存节点索引
+	..Set myBillNo=$p((^DHCACD("AccM",AccMRowID,"AccPL",mysub)),"^",4)
+	..Set myPAPMIDR=$p((^DHCACD("AccM",AccMRowID,"AccPL",mysub)),"^",1)	;DHC_AccManager->
+	..Set myPAName=$p(^PAPER(myPAPMIDR,"ALL"),"^",1)		;PA_PatMas->Name
+	..Set myPAPMINo=$p((^DHCACD("AccM",AccMRowID,"AccPL",mysub)),"^",3)
+	..Set mySSUsrDR=$p((^DHCACD("AccM",AccMRowID,"AccPL",mysub)),"^",5)
+	..;Quit:((FUserDR'="")&&(mySSUsrDR'=FUserDR))			;按照操作员查询支付明细
+	..Set:(mySSUsrDR'="") mySSUDesc=$p(^SSU("SSUSR",mySSUsrDR),"^",2)
+	..Set mySSUInitials=$p(^SSU("SSUSR",mySSUsrDR),"^",1)		;操作员代码
+	..Set myPayDate=$p((^DHCACD("AccM",AccMRowID,"AccPL",mysub)),"^",6)
+	..q:((myPayDate<StartDate)||(myPayDate>EndDate))
+	..Set PrtDate=$zd(myPayDate,3)
+	..Set myPayTime=$p((^DHCACD("AccM",AccMRowID,"AccPL",mysub)),"^",7)
+	..Set PrtTime=$zt(myPayTime,1)
+	..Set myPayNum=$p((^DHCACD("AccM",AccMRowID,"AccPL",mysub)),"^",8)
+	..Set myPayNum=$fn(+myPayNum,"",2)
+	..Set myPayLeft=$p((^DHCACD("AccM",AccMRowID,"AccPL",mysub)),"^",9)
+	..Set myPayLeft=$fn(+myPayLeft,"",2)
+	..Set myPayLocDR=$p((^DHCACD("AccM",AccMRowID,"AccPL",mysub)),"^",10)
+	..Set:(myPayLocDR'="") myLocDesc=$p(^CTLOC(myPayLocDR),"^",2)
+	..Set myPRTRowID=$p((^DHCACD("AccM",AccMRowID,"AccPL",mysub)),"^",2)
+	..Quit:('$d(^DHCINVPRT(myPRTRowID)))
+	..Set myFairType=$p(^DHCINVPRT(myPRTRowID),"^",34)	;PRT_FairType
+	..Quit:(myFairType'="F")&(myFairType'="R")	;
+	..Set myINVFlag=$p(^DHCINVPRT(myPRTRowID),"^",8)		;发票的状态N , S 
+	..Quit:((INVFlag'="")&&(myINVFlag'=INVFlag))
+	..If (myINVFlag="N") Do  Set myINVFlagDesc="正常"
+	..If (myINVFlag="A") Do  Set myINVFlagDesc="作废"
+	..If (myINVFlag="S") Do  Set myINVFlagDesc="红冲"
+	..Set myINVPrtFlag=$p(^DHCINVPRT(myPRTRowID),"^",3)		;发票的打印标志
+	..Quit:((INVPrtFlag'="")&&(myINVPrtFlag'=INVPrtFlag))
+	..If (myINVPrtFlag="N") Do  Set myINVPrtFlagDesc="未打印"
+	..If (myINVPrtFlag="P") Do  Set myINVPrtFlagDesc="已打印"
+	..Set myPLRowID=AccMRowID_"||"_mysub
+	..Set TMPReadAccPayList(myPRTRowID)=""	;建一个索引
+	..Set OrderDetails=""
+	..Set OrderDetails=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetOrdDetailsByPrtRowID(myPRTRowID)
+	..Set AccListDetailObj=##class(DHCBILL.SelfPay.Entity.GetPatAccList.Res.InvDetail).%New()
+	..Set AccListDetailObj.Index=myIdx
+	..Set AccListDetailObj.PrtDate=PrtDate
+	..Set AccListDetailObj.PrtTime=PrtTime
+	..Set:myFairType="F" FairType="收费"
+	..Set:myFairType="R" FairType="挂号"
+	..Set AccListDetailObj.FairType=$g(FairType)
+	..Set AccListDetailObj.Amt=myPayNum
+	..Set AccListDetailObj.User=mySSUInitials
+	..Set AccListDetailObj.BillNo=myBillNo
+	..Set AccListDetailObj.Left=myPayLeft
+	..Set AccListDetailObj.PayDept=$g(myLocDesc)
+	..Set AccListDetailObj.PLRowID=myPLRowID
+	..Set AccListDetailObj.PRTRowID=myPRTRowID
+	..Set AccListDetailObj.OrderDetails=OrderDetails
+	..Set myIdx=+myIdx+1
+	..Do OutputObj.InvList.Insert(AccListDetailObj)
+	..Do AccListDetailObj.%Close()
+		
+	;
+	;查询发票表
+	If ($d(^DHCACD("AccM",AccMRowID))) Do
+	.Set myPAPMINo=$p(^DHCACD("AccM",AccMRowID),"^",3)
+	.Set myPAPMIDR=$p(^DHCACD("AccM",AccMRowID),"^",2)
+	.Set myPAName=$p(^PAPER(myPAPMIDR,"ALL"),"^",1)		;PA_PatMas->Name
+	.For date=StartDate:1:EndDate Do
+	..Set myPRTRowID=""
+	..For  Set myPRTRowID=$o(^DHCINVPRT(0,"DatePAPMI",date,myPAPMIDR,myPRTRowID)) Quit:myPRTRowID=""  Do
+	...Quit:$d(TMPReadAccPayList(myPRTRowID))
+	...Set myPLRowID=myPRTRowID
+	...Set myFairType=$p(^DHCINVPRT(myPRTRowID),"^",34)	;PRT_FairType
+	...Quit:(myFairType'="F")	;只查询收费记录
+	...Set myprtprintflag=$p(^DHCINVPRT(myPRTRowID),"^",3)
+	...Quit:myprtprintflag="P"
+	...Set myprtflag=$p(^DHCINVPRT(myPRTRowID),"^",8)
+	...Quit:((myprtflag="S")!(myprtflag="A")!(myprtflag="TP"))
+	...Set IPM="0",CardPayFlag=0
+	...For  Set IPM=$o(^DHCINVPRT(myPRTRowID,"P",IPM)) q:((IPM="")!(CardPayFlag=1))  d
+	....Set s=$g(^DHCINVPRT(myPRTRowID,"P",IPM))
+	....Set PayModeDr=$p(s,"^",1)
+	....Set:PayModeDr="CARDCPP" CardPayFlag=1
+	...;Quit:CardPayFlag'=0		;只有支付方式非CARDCPP且未打印发票的记录才查询出来
+	...Set mySSUsrDR=$p(^DHCINVPRT(myPRTRowID),"^",21)
+	...Set mySSUInitials=$p(^SSU("SSUSR",mySSUsrDR),"^",1)
+	...Set myPayDate=$zd($p(^DHCINVPRT(myPRTRowID),"^",5),3)
+	...Set PrtDate=$zd(myPayDate,3)
+	...Set myPayTime=$zt($p(^DHCINVPRT(myPRTRowID),"^",20),1)
+	...Set PrtTime=$zt(myPayTime,1)
+	...Set myPayNum=$fn($p(^DHCINVPRT(myPRTRowID),"^",1),"",2)
+	...Set myPayLeft=""
+	...s myLocDr=$p(^DHCINVPRT(myPRTRowID),"^",40)
+	...s myLocDesc=$p(^CTLOC(myLocDr),"^",2)
+	...;Set myLocDr=""		;自助机，多次就诊一起结算时，如何取“科室”？？？？暂取一个就诊显示
+	...;Set myLocDesc=""
+	...Set OrderDetails=""
+	...Set OrderDetails=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetOrdDetailsByPrtRowID(myPRTRowID)
+	...Set AccListDetailObj=##class(DHCBILL.SelfPay.Entity.GetPatAccList.Res.InvDetail).%New()
+	...Set AccListDetailObj.Index=myIdx
+	...Set AccListDetailObj.PrtDate=PrtDate
+	...Set AccListDetailObj.PrtTime=PrtTime
+	...Set:myFairType="F" FairType="收费"
+	...Set:myFairType="R" FairType="挂号"
+	...Set AccListDetailObj.FairType=$g(FairType)
+	...Set AccListDetailObj.Amt=myPayNum
+	...Set AccListDetailObj.User=mySSUInitials
+	...Set AccListDetailObj.BillNo=""
+	...Set AccListDetailObj.Left=myPayLeft
+	...Set AccListDetailObj.PayDept=$g(myLocDesc)
+	...Set AccListDetailObj.PLRowID=myPLRowID
+	...Set AccListDetailObj.PRTRowID=myPRTRowID
+	...Set AccListDetailObj.OrderDetails=OrderDetails
+	...Set myIdx=+myIdx+1
+	...Do OutputObj.InvList.Insert(AccListDetailObj)
+	...Do AccListDetailObj.%Close()
+	
+	Kill TMPReadAccPayList
+	
+	;Kill ^TMPAccPatList("QueryAccList",$j)
+	;
+	If myIdx>1 {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","成功")
+		Quit OutputXML	
+	}Else{
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-4","无可打印发票")
+		Quit OutputXML	
+	}
+	
+GetPatAccListET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetPatAccList.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="PrintInvoice">
+<Description><![CDATA[
+Creator:zfb
+CreatDate:2018-3-20
+Desc:门诊发票集中打印
+Input:<Request><TradeCode></TradeCode><InvPrtRowIDStr></InvPrtRowIDStr><UserCode></UserCode><AccMRowID></AccMRowID><PapmiRowid></PapmiRowid><ExpStr></ExpStr></Request>
+Return:
+Debug:w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).PrintInvoice("<Request><TradeCode></TradeCode><InvPrtRowIDStr></InvPrtRowIDStr><UserCode></UserCode><AccMRowID></AccMRowID><PapmiRowid></PapmiRowid><ExpStr></ExpStr></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	New (Input)
+	Set $zt="PrintInvoiceET"
+	;
+	Set ResultCode="100",ResultMsg="没有查询到人员信息"
+	Set InputObj=##Class(DHCBILL.SelfPay.Entity.PrintInvoice.Req.Request).%New()
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.PrintInvoice.Res.Response).%New()
+	Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+	Set TradeCode=InputObj.TradeCode
+	Set HospitalID=InputObj.HospitalID
+	Set CardNo=InputObj.CardNo
+	Set SecrityNo=InputObj.SecrityNo
+	Set CardType=InputObj.CardType
+	Set PatientID=InputObj.PatientID
+	Set UserCode=InputObj.UserCode
+	Set TerminalID=InputObj.TerminalID
+	Set AccMRowID=InputObj.AccMRowID
+	Set INVPrtStr=InputObj.PRTRowIDStr
+	;Set PapmiRowid=InputObj.PapmiRowid
+	Set ExpStr=InputObj.ExpStr
+	
+	If (CardNo=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	Set Data=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,"")
+	Set PapmiRowid=$p(Data,"^",8)
+    if (PapmiRowid="") {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	;
+	Set:UserCode'="" UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	Set:UserCode'="" Userid=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	If ((Userid="")||('$d(^SSU("SSUSR",Userid)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	Set gloc=$p($g(^SSU("SSUSR",Userid)),"^",4)	;SSUSR_DefaultDept
+	Set Grup=$p($g(^SSU("SSUSR",Userid)),"^",5)	;SSUSR_Group
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}	
+	;把数据压缩到发票
+	Set PrtColStr="",TMPGID=""
+	Set HospID=""
+	Set ParPrtToINVExpStr=gloc_"^"_Grup_"^"_Userid_"^"_HospID
+	Set rtn=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).ParPrtToINV(INVPrtStr,ParPrtToINVExpStr,.PrtColStr,.TMPGID)
+	If +rtn'=0 {
+		
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-15","发票分解错误.")
+		Quit OutputXML
+	}
+	
+	TSTART
+	
+	b ;插入发票表
+	Set AccINVPayInsertExpStr=gloc_"^"_Grup_"^"_HospID
+	Set InertRtn=##class(web.UDHCAccPrtPayFoot).AccINVPayInsert(PrtColStr,Userid,AccMRowID,PapmiRowid,AccINVPayInsertExpStr)
+	;
+	Set rtn=$p(InertRtn,"^",1)
+	If +rtn'=0{
+		
+		TROLLBACK
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,+rtn,"发票生成错误.")
+		Quit OutputXML	
+	}
+	b ;发票插入成功后，清除临时数据
+	Do ##class(web.UDHCACINVColPrt).KTMP()
+	Set err02=##class(web.UDHCACINVColPrt).KillINVTMP(TMPGID)
+	;
+	b ;获取打印数据
+	Set PrtDataExpStr=""
+	Set APIRowIDStr=$e(InertRtn,3,$l(InertRtn))	;InertRtn的格式：标志位^发票表Rowid^发票表Rowid^发票表Rowid...，所以在此截取一下。
+	Set OutputObj=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetInvoicePrintData(APIRowIDStr,PrtDataExpStr)
+	Set OutputObj.AccMRowID=AccMRowID
+	b ;TCOMMIT
+	TCOMMIT
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,0,"成功")
+	Quit OutputXML
+	
+PrintInvoiceET
+	TROLLBACK
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.PrintInvoice.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="GetOPPatAccInfo">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-14
+Desc: 获取患者基本信息及账户信息
+Debug: w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).GetOPPatAccInfo("<Request><TradeCode>4801</TradeCode><HospitalID>2</HospitalID><CardNo>0019890501</CardNo>1<CardType></CardType><SecrityNo></SecrityNo><PatientID></PatientID><UserCode>cashier</UserCode><TerminalID>ZZJ001</TerminalID><ExpStr></ExpStr></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="GetOPPatAccInfoET"
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.GetOPPatAccInfo.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.PATCardNum
+    Set CardType=InputObj.PATCardType
+    Set SecrityNo=InputObj.PATCardCheckNum
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set PassWord=InputObj.PATCardPassword 
+    Set HospitalCode=InputObj.HospitalCode
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+
+    s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+    
+    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetOPPatAccInfo.Res.Response).%New()
+ 	
+	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空或卡类型代码不正确")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}
+	Set Papmi=""
+	s ^bzt("papmi")=CardNo_"^"_CardType_"^"_SecrityNo_"^"_PatNo
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)'="0") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	
+	Set Papmi=$p(PatInfo,"^",8)
+	Set BaseInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatBaseInfo(Papmi)	
+	Set OutputObj.PatientID=$p(BaseInfo,"^",2)
+	Set OutputObj.PatientName=$p(BaseInfo,"^",3)
+	Set OutputObj.Sex=$p(BaseInfo,"^",4)
+	Set OutputObj.DOB=$p(BaseInfo,"^",5)
+	Set OutputObj.CredType=$p(BaseInfo,"^",9)
+	Set OutputObj.CredNo=$p(BaseInfo,"^",10)
+	Set OutputObj.AccountID=$p(PatInfo,"^",2)
+	Set OutputObj.BalanceAmt=$j($p(PatInfo,"^",4),3,2)
+	Set OutputObj.LimitAmt=..#AccLimitAmt
+	
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","成功")
+	Quit OutputXML
+GetOPPatAccInfoET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetOPPatAccInfo.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="AddOPDeposit">
+<Description><![CDATA[
+Creator:wangjian
+CreatDate:2018-03-14
+Desc: 院内账户预交金充值
+Debug: w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).AddOPDeposit("<Request><TradeCode>4802</TradeCode><HospitalID>2</HospitalID><CardNo>0019890501</CardNo><CardType>1</CardType><SecrityNo></SecrityNo><PatientID></PatientID><UserCode>cashier</UserCode><TerminalID>ZZJ001</TerminalID><AccountID>36476</AccountID><PayDetails><PayModeCode>CASH</PayModeCode><TradeChannel>KLE</TradeChannel><PayAccountNo>smk12345</PayAccountNo><PayAmt>1000</PayAmt><PlatformNo>2018032219013000001</PlatformNo><OutPayNo>201803221902</OutPayNo><PayChannel>CASH</PayChannel><POSPayStr></POSPayStr><PayDate>2018-05-05</PayDate><PayTime>22:04:22</PayTime></PayDetails><ExpStr></ExpStr></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+    S ^TMPXHM(11)=Input
+	Set $ZT="AddOPDepositET"
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Req.Request).%New()
+
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    b ;23
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set PassWord=InputObj.PassWord 
+    Set HospitalCode=InputObj.HospitalID
+    Set AccountID=InputObj.AccountID
+        b ;21
+    Set PayDetailsObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Req.PayDetails).%New()
+        b ;24
+    Set PayDetailsObj=InputObj.PayDetails
+    Set Amount=PayDetailsObj.PayAmt
+    Set PayModeCode=PayDetailsObj.PayModeCode
+    Set TradeChannel=PayDetailsObj.TradeChannel
+    Set PayAccountNo=PayDetailsObj.PayAccountNo
+    Set PayDate=PayDetailsObj.PayDate
+    Set OutPayNo=PayDetailsObj.OutPayNo
+    b ;25
+    If PayDate["-" Set PayDate=$zdh(PayDate,3)
+    
+    b ;2333
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+
+    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Res.Response).%New()
+ 	
+	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	b ;334
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	/*充值不用校验？
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")&&(CardType="02")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}
+	*/
+	b ;335
+	Set Papmi=""
+	s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	b ;31
+	If ($p(PatInfo,"^",1)'="0") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	b ;232
+	Set AccID=$p(PatInfo,"^",2)
+	Set Papmi=$p(PatInfo,"^",8)
+	Set BeforeBalAmt=$p(PatInfo,"^",4)
+	If (AccID'=AccountID){
+		b ;AccountID
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-16","传入账户与卡账户不符")
+		Quit OutputXML
+	}
+	
+	Set LimitAmt=..#AccLimitAmt
+	/*   后台不限制，前台js限制，方便利于以后调整限额操作  huangchuanqi 20181130
+ 	If (Amount>LimitAmt){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-17","充值金额不能大于充值限额")
+		Quit OutputXML
+	}
+	*/
+	
+	Set RetCode=0
+	Do ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).tb()
+	b ;申请交易流水
+	Set TradeType="PRE"
+	Set TExpstr=UserID_"^"_Grup_"^"_GLoc_"^"_HospitalID_"^"_TerminalID_"^"_TradeType_"^"_Papmi
+	Set InsTraderInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).SetHISTradeNo(CardNo,"","","C",Amount,TExpstr)
+	Set RetCode=$p(InsTraderInfo,"^",1)
+	If (RetCode'=0){
+		b ;回滚
+	   	TROLLBACK
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-45","HIS内部申请流水号失败")
+		Quit OutputXML	
+	}
+	Set OrderNo=$p(InsTraderInfo,"^",3)
+	Set ETPRowID=$p(InsTraderInfo,"^",2)
+	b ;交押金
+	
+	
+	;str="1.院内账户ID^2.充值金额^3.用户ID^4.收据号^5.退款原因^6.账户密码^7.支付方式ID^8.银行卡类型ID^9.支票号^10.银行ID^11.支付单位^12.支付账户号^13.支票日期^14.备注^15.押金类型^16.院区"
+	b ;AccountID_"^"_amt_"^"_user_"^"_ReceiptsNo_"^"_BackReason_"^"_Password_"^"_PayModeID_"^"_BankCardTypeID_"^"_CardChequeNo_"^"_BankID_"^"_Company_"^"_PayAccNo_"^"_ChequeDate_"^"_Remark_"^"_PDType_"^"_HospitalDr
+	s ReceiptsNo=""
+	Set Paymode=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).TransPaymodeByOutCode(PayModeCode)
+	set AddStr=AccountID_"^"_Amount_"^"_UserID_"^"_ReceiptsNo_"^^"_PassWord_"^"_Paymode_"^^"_"^"_""_"^^"_PayAccountNo_"^"_PayDate_"^"_OutPayNo_"^"_"P"_"^"_HospitalID
+	
+	Set DepositInfo=##Class(web.UDHCAccAddDeposit).AddDeposit(AddStr)
+	
+	Set RetCode=$p(DepositInfo,"^",1) ;判断返回值
+	If (RetCode'=0){
+		;回滚
+	   	TROLLBACK
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-46","交押金失败")
+		Quit OutputXML	
+	}
+    
+    Set PrtRowID=$p(DepositInfo,"^",7)
+   	b ;保存交易信息
+	Set SaveExpStr=UserID_"^"_Grup_"^"_GLoc_"^"_HospitalID_"^"_TerminalID_"^"_TradeType_"^"_TradeChannel
+	Set RetCode=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).SavePayInfo(OrderNo,PrtRowID,.PayDetailsObj,SaveExpStr)
+	
+	If (RetCode'=0){
+		;回滚
+	   	TROLLBACK
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-47","保存支付信息失败")
+		Quit OutputXML	
+	}
+	
+	b ;tro
+	Do ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).tc()
+	
+	Set Balance=$p(^DHCACD("AccM",AccID),"^",8)
+	Set DepPrice=$p(^DHCACD("AccM",AccID),"^",14)
+	Set BalanceAmt=Balance-DepPrice
+	Set OutputObj.SerialNo=OrderNo
+	Set OutputObj.BeforeBalAmt=BeforeBalAmt
+	Set OutputObj.BalanceAmt=BalanceAmt
+	Set OutputObj.LimitAmt=..#AccLimitAmt
+	
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","成功")
+	Quit OutputXML
+
+AddOPDepositET
+    b ;22
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="GetOPPatAccDetail">
+<Description><![CDATA[
+Desc: 院内账户预交金明细查询
+Debug: w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).GetOPPatAccDetail("<Request><TradeCode>4805</TradeCode><HospitalID>2</HospitalID><CardNo>101100000521</CardNo><CardType>1</CardType><SecrityNo></SecrityNo><PatientID></PatientID><UserCode>ZZ002</UserCode><TerminalID>ZZJ001</TerminalID><ExpStr></ExpStr></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="GetOPPatAccDetailET"
+	s ^TempZZJ("GetOPPatAccDetail")=Input
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.GetOPPatAccDetail.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set HospitalCode=InputObj.HospitalID
+    Set StartNo=InputObj.StartNo
+    Set EndNo=InputObj.EndNo
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))
+
+    b //
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetOPPatAccDetail.Res.Response).%New()
+ 	
+	If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}
+	Set Papmi=""
+	s ^tmpxhm(12)=CardNo_","_CardType_","_SecrityNo_","_PatNo
+	/*/add by xhm start 获取病人信息方法修改，app传输的用户没有 SecrityNo也能获取账户信息
+	s UserID=##class(DHCExternalService.RegInterface.GetRelate).GetUser(UserCode)
+    s GroupID=##class(DHCExternalService.RegInterface.GetRelate).GetGroup(UserID)
+    i GroupID=275 s CheckSecurityFlag="AppInfo"
+    e  s CheckSecurityFlag=""
+    Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfoNew(CardNo,CardType,SecrityNo,PatNo,CheckSecurityFlag)
+    //add by xhm /暂时不用*/
+	/*i CardType="01" s CardType="1"
+    i CardType="02" s CardType="2"*/
+    s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)'="0") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	
+	Set Papmi=$p(PatInfo,"^",8)
+	Set BaseInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatBaseInfo(Papmi)	
+	Set OutputObj.PatientID=$p(BaseInfo,"^",2)
+	Set OutputObj.PatientName=$p(BaseInfo,"^",3)
+	Set OutputObj.Sex=$p(BaseInfo,"^",4)
+	Set OutputObj.DOB=$p(BaseInfo,"^",5)
+	Set OutputObj.CredType=$p(BaseInfo,"^",9)
+	Set OutputObj.CredNo=$p(BaseInfo,"^",10)
+	Set OutputObj.BalanceAmt=$p(PatInfo,"^",4)
+	i $p(OutputObj.BalanceAmt,".",1)=""  s OutputObj.BalanceAmt=0_OutputObj.BalanceAmt
+	Set AccMRowid=$p(PatInfo,"^",2)
+	set Row=0,RecordCount=0
+	If (AccMRowid=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-17","患者无有效账户,不能查询记录")
+		Quit OutputXML
+	}
+	set rs=##Class(%ResultSet).%New("web.UDHCAccManageCLS:ReadPatAccList")
+	if rs.QueryIsValid() { 
+	Set Status=rs.Execute(AccMRowid,"","")
+	Set columns = rs.GetColumnCount()
+	While rs.Next() {
+		set Row=Row+1
+		set ResultCode="0",ErrorMsg="成功"
+		set AccDetailObj=##Class(DHCBILL.SelfPay.Entity.GetOPPatAccDetail.AccDetail).%New()
+		set AccDetailObj.Ind=rs.GetDataByName("No")
+		;i ((StartNo'="")&(EndNo'=""))  q:((AccDetailObj.Ind<StartNo)||(AccDetailObj.Ind>EndNo))
+		Continue:((StartNo'="")&(EndNo'=""))&&((AccDetailObj.Ind<StartNo)||(AccDetailObj.Ind>EndNo))
+		set AccDetailObj.APDate=rs.GetDataByName("APDate")
+		set AccDetailObj.APType=rs.GetDataByName("APType")
+		//修改显示费用详情里面 -0.01 改成0.01 by tangwanwan 2018年12月3日 start
+		set AccDetailObj.AccSum=$FNUMBER(rs.GetDataByName("AccSum"),"-")
+		//修改显示费用详情里面 -0.01 改成0.01 by tangwanwan 2018年12月3日 end
+		set AccDetailObj.AccUser=rs.GetDataByName("AccUser")
+		set AccDetailObj.ABillNo=rs.GetDataByName("ABillNo")
+		set AccDetailObj.ALeft=rs.GetDataByName("ALeft")
+		set AccDetailObj.myFlag=rs.GetDataByName("myFlag")
+		set AccDetailObj.myPRowID=rs.GetDataByName("myPRowID")
+		set AccDetailObj.myINVNo=rs.GetDataByName("myINVNo")
+		do OutputObj.AccDetailS.Insert(AccDetailObj)
+		kill AccDetailObj
+		set RecordCount=RecordCount+1
+		}
+	}
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","成功")
+	Quit OutputXML
+GetOPPatAccDetailET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.GetOPPatAccInfo.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="RefundOPDeposit">
+<Description><![CDATA[
+w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).RefundOPDeposit("<Request><TradeCode>4803</TradeCode><HospitalID></HospitalID><CardNo></CardNo><CardType></CardType><SecrityNo></SecrityNo><PassWord></PassWord><PatientID></PatientID><UserCode>cashier</UserCode><TerminalID></TerminalID><TradeChannel></TradeChannel><AccountID>35747</AccountID><RefundAmt>10</RefundAmt><RefundMode>CASH</RefundMode><RefundDepositDr>35747||1</RefundDepositDr><RefDepRowid></RefDepRowid><HisTradeNo></HisTradeNo><CommitFlag></CommitFlag><ExpStr></ExpStr></Request>").Read()]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="RefundOPDepositET"
+	s ^TMPZZJ("RefundOPDepositET")=Input
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set PassWord=InputObj.PassWord 
+    Set HospitalCode=InputObj.HospitalID
+    Set AccountID=InputObj.AccountID
+    Set RefAmt=InputObj.RefundAmt   
+    Set PayModeCode=InputObj.RefundMode
+    Set APPreRowid=InputObj.APPreRowid
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+   
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Res.Response).%New()
+ 	b ;kkk
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	
+	
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set GrupDesc=$p($g(^SSU("SSGRP",Grup)),"^",1)
+	if ((CardNo'="")&&(CardType'="")&&(SecrityNo'=""))
+	{
+		s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+		Set Papmi=""
+		Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+		If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+		If (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	}
+	/*
+	s CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+	If ((CardNo'="")&&(CardType="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡类型不能为空")
+		Quit OutputXML
+	}
+	If ((GrupDesc["自助")&&(CardNo'="")&&(SecrityNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","卡校验码不能为空,请重新读卡")
+		Quit OutputXML
+	}
+	b ;3
+	Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)="0")||($p(PatInfo,"^",1)="-201") Set Papmi=$p(PatInfo,"^",8)
+	If (Papmi="") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	*/
+	if (AccountID="")||('$d(^DHCACD("AccM",AccountID)))
+	{
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","账户ID传入有误或账户ID不存在")
+		Quit OutputXML
+		}
+	if (APPreRowid=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-12","传入的充值记录APPreRowid为空")
+		Quit OutputXML
+	}
+	Set AccLeftAmt=$p(^DHCACD("AccM",AccountID),"^",8)
+	If (RefAmt>AccLeftAmt){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-10","退款金额大于账户余额")
+		Quit OutputXML
+	}
+	b ;000
+	Set Paymode=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).TransPaymodeByOutCode(PayModeCode)
+	If (Paymode="1" && RefAmt-$p(RefAmt,".",1)>0){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-11","现金退款最小单位为元!")
+		Quit OutputXML	
+	}
+	Set RetCode=0
+	Do ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).tb()
+	b ;申请交易流水
+	Set TradeType="PRE"
+	Set Papmi=""
+	Set TExpstr=UserID_"^"_Grup_"^"_GLoc_"^"_HospitalID_"^"_TerminalID_"^"_TradeType_"^"_Papmi
+	Set InsTraderInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).SetHISTradeNo(CardNo,"","","T",RefAmt,TExpstr)
+	Set RetCode=$p(InsTraderInfo,"^",1)
+	If (RetCode'=0){
+		b ;回滚
+	   	TROLLBACK
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-45","HIS内部申请流水号失败")
+		Quit OutputXML	
+	}
+	Set OrderNo=$p(InsTraderInfo,"^",3)
+	Set ETPRowID=$p(InsTraderInfo,"^",2)
+	b ;交押金
+	
+	
+	;str="1.院内账户ID^2.充值金额^3.用户ID^4.收据号^5.退款原因^6.账户密码^7.支付方式ID^8.银行卡类型ID^9.支票号^10.银行ID^11.支付单位^12.支付账户号^13.支票日期^14.备注^15.押金类型^16.院区"
+	;AccountID_"^"_amt_"^"_user_"^"_ReceiptsNo_"^"_BackReason_"^"_Password_"^"_PayModeID_"^"_BankCardTypeID_"^"_CardChequeNo_"^"_BankID_"^"_Company_"^"_PayAccNo_"^"_ChequeDate_"^"_Remark_"^"_PDType_"^"_HospitalDr
+	set ReceiptsNo=""
+	
+	set AddStr=AccountID_"^"_RefAmt_"^"_UserID_"^"_ReceiptsNo_"^^"_PassWord_"^"_Paymode_"^^"_"^"_""_"^^^"_+$h_"^^"_"R"_"^"_HospitalID_"^"_APPreRowid
+	b ;123321
+	Set DepositInfo=##Class(web.UDHCAccAddDeposit).AddDeposit(AddStr)
+	
+	Set RetCode=$p(DepositInfo,"^",1) ;判断返回值
+	If (RetCode'=0){
+		;回滚
+	   	TROLLBACK
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-46","交押金失败")
+		Quit OutputXML	
+	}
+    
+    Set PrtRowID=$p(DepositInfo,"^",7)   
+	
+	b ;tro
+	Do ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).tc()
+	
+	Set Balance=$p(^DHCACD("AccM",AccountID),"^",8)
+	Set DepPrice=$p(^DHCACD("AccM",AccountID),"^",14)
+	Set BalanceAmt=Balance-DepPrice
+	Set OutputObj.SerialNo=OrderNo
+	Set OutputObj.BalanceAmt=BalanceAmt
+	Set OutputObj.RefundDepositDr=PrtRowID	
+	
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","成功")
+	Quit OutputXML
+
+RefundOPDepositET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="CommitRefundOPDeposit">
+<Description><![CDATA[
+w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).CommitRefundOPDeposit("<Request><TradeCode>4809</TradeCode><HospitalID></HospitalID><CardNo></CardNo><CardType></CardType><SecrityNo></SecrityNo><PassWord></PassWord><PatientID></PatientID><UserCode>cashier</UserCode><TerminalID></TerminalID><TradeChannel></TradeChannel><AccountID>35747</AccountID><RefundAmt>10</RefundAmt><RefundMode>CASH</RefundMode><RefundDepositDr></RefundDepositDr><RefDepRowid>35747||3</RefDepRowid><HisTradeNo></HisTradeNo><CommitFlag>N</CommitFlag><PayDetails><PayModeCode>CASH</PayModeCode><TradeChannel>KLE</TradeChannel><PayAccountNo>smk12345</PayAccountNo><PayAmt>1000</PayAmt><PlatformNo>2018032219013000001</PlatformNo><OutPayNo>201803221902</OutPayNo><PayChannel>CASH</PayChannel><POSPayStr></POSPayStr><PayDate>2018-05-05</PayDate><PayTime>22:04:22</PayTime></PayDetails><ExpStr></ExpStr></Request>").Read()
+w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).CommitRefundOPDeposit(^huangcq("CommitRefundOPDeposit")).Read()]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+    s ^huangcq("CommitRefundOPDeposit")=Input
+	Set $ZT="CommitRefundOPDepositET"
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set PassWord=InputObj.PassWord 
+    Set HospitalCode=InputObj.HospitalID
+    Set AccountID=InputObj.AccountID
+    Set HisTradeNo=InputObj.HisTradeNo
+    b ;324242
+    Set CommitFlag=InputObj.CommitFlag  ;Y 提交 N 回滚
+    Set RefAmt=InputObj.RefundAmt   
+    Set RefundDepositDr=InputObj.RefundDepositDr
+    Set PayDetailsObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Req.PayDetails).%New()
+    Set PayDetailsObj=InputObj.PayDetails
+    Set Amount=PayDetailsObj.PayAmt
+    Set PayModeCode=PayDetailsObj.PayModeCode
+    Set TradeChannel=PayDetailsObj.TradeChannel
+    Set PayAccountNo=PayDetailsObj.PayAccountNo
+    Set PayDate=PayDetailsObj.PayDate
+    Set OutPayNo=PayDetailsObj.OutPayNo
+   
+    
+    If PayDate["-" Set PayDate=$zdh(PayDate,3)
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Res.Response).%New()
+ 	 	
+ 	
+	/*If ((CardNo="")&&(PatNo="")){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号和登记号不能都为空")
+		Quit OutputXML
+	}*/
+	
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	
+	/*Set Papmi=""
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)'="0") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	Set AccID=$p(PatInfo,"^",2)
+	Set Papmi=$p(PatInfo,"^",8)
+	Set BeforeBalAmt=$p(PatInfo,"^",4)
+	If (AccID'=AccountID){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-16","传入账户与卡账户不符")
+		Quit OutputXML
+	}*/	
+	b ;1111222
+	Set RefHisAmt=$p(^DHCACD("AccM",+RefundDepositDr,"AccPD",$p(RefundDepositDr,"||",2)),"^",2)
+	If RefHisAmt<0 Set RefHisAmt=0-RefHisAmt
+	b ;kkk
+	If (RefHisAmt-RefAmt'=0){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-10","传入退款金额跟提交退款金额不一致")
+		Quit OutputXML
+	}	
+	Set RetCode=0
+	Do ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).tb()
+	If (CommitFlag="N"){
+		Set HandFlag=$p(^DHCACD("AccM",+RefundDepositDr,"AccPD",$p(RefundDepositDr,"||",2)),"^",10)
+		set AccType=$p(^DHCACD("AccM",+RefundDepositDr,"AccPD",$p(RefundDepositDr,"||",2)),"^",1)
+		If (AccType'="R"){
+	 		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","该记录:"_RefundDepositDr_" 不是退款记录,无法撤销!")
+		}
+ 		If (+HandFlag'=0)&(+HandFlag'=""){
+	 		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","该退款记录已交账,无法撤销!")
+		}
+		Else{
+ 		Set RollRtn=0
+ 		Set DelRtn=##class(web.UDHCAccPreDeposit).DELETE(RefundDepositDr)
+ 		Set RollRtn=RollRtn+DelRtn
+ 		Set UpAcLeftRtn=##Class(web.UDHCAccAddDeposit).UpdateAM(AccountID,RefHisAmt)
+ 		Set RollRtn=RollRtn+UpAcLeftRtn
+ 		If +RollRtn'=0{
+	 		TROLLBACK
+	 		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","撤销退款记录失败,请重试!")
+		}
+		Else{
+			Do ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).tc()
+			Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","撤销退款记录成功!")
+		}
+		}
+		
+	}
+	If (CommitFlag="Y"){
+	b ;申请交易流水
+	Set TradeType="PRE"		
+	b ;保存交易信息
+	Set SaveExpStr=UserID_"^"_Grup_"^"_GLoc_"^"_HospitalID_"^"_TerminalID_"^"_TradeType_"^"_TradeChannel
+	Set RetCode=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).SavePayInfo(HisTradeNo,RefundDepositDr,.PayDetailsObj,SaveExpStr)
+	b ;4422112
+	If (RetCode'=0){
+		;回滚
+	   	TROLLBACK
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-47","保存退款信息失败,请重试!")
+		Quit OutputXML	
+	} 
+	
+	b ;tro
+	Do ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).tc()
+	
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","保存退款信息成功")	
+	}
+	Quit OutputXML
+CommitRefundOPDepositET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="GetOPPatCanRefAccDetail">
+<Description><![CDATA[
+w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).GetOPPatCanRefAccDetail("<Request><TradeCode>4808</TradeCode><HospitalCode>02</HospitalCode><PATCardNum>101100000004</PATCardNum><PATCardTypeCoe>01</PATCardTypeCoe><PATCardCheckNum/><PATPatientID></PATPatientID><UserCode>ZZ001</UserCode><TerminalID>ZZ001</TerminalID><DepCanRefAmount/><PayAccountNo>37473</PayAccountNo><ExpStr/></Request>").Read()]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="GetCanRefundListET"
+	s ^tmpxhm("GetCanRefundListET")=Input
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.OPDepositList.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    ;b ;Set PassWord=InputObj.PassWord 
+    Set HospitalCode=InputObj.HospitalID
+    Set AccountID=InputObj.AccountID   
+    Set RefAmt=InputObj.DepCanRefAmount 
+    b ;bk00   
+    if HospitalCode'="" do
+    .set HospitalCode=$$ALPHAUP^SSUTIL4(HospitalCode)
+    .set HospitalID=$o(^CT("HOSP",0,"Code",HospitalCode,""))
+    If HospitalID="" Set HospitalID=$o(^CT("HOSP","0"))    
+    Set UserID=""
+    If (UserCode'="") {
+	    Set UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	    Set UserID=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	}
+    
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.OPDepositList.Res.Response).%New()
+	If (AccountID=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","账户ID不能为空")
+		Quit OutputXML
+	}
+	
+	If ((UserID="")||('$d(^SSU("SSUSR",UserID)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","用户代码传入有误")
+		Quit OutputXML
+	}
+	Set GLoc=$p($g(^SSU("SSUSR",UserID)),"^",4)
+	Set Grup=$p($g(^SSU("SSUSR",UserID)),"^",5)
+	Set AccLeftAmt=$p(^DHCACD("AccM",AccountID),"^",8)
+	
+	Set CardType=##class(DHCExternalService.RegInterface.GetRelate).GetHisCardTypeID(CardType,"")
+	Set PatInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,PatNo)
+	If ($p(PatInfo,"^",1)'="0") {
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	
+	Set Papmi=$p(PatInfo,"^",8)
+	Set BaseInfo=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatBaseInfo(Papmi)	
+	Set OutputObj.PatientID=$p(BaseInfo,"^",2)
+	Set OutputObj.PatientName=$p(BaseInfo,"^",3)
+	Set OutputObj.Sex=$p(BaseInfo,"^",4)
+	Set OutputObj.DOB=$p(BaseInfo,"^",5)
+	Set OutputObj.CredType=$p(BaseInfo,"^",9)
+	Set OutputObj.CredNo=$p(BaseInfo,"^",10)
+	Set OutputObj.BalanceAmt=$p(PatInfo,"^",4)
+	
+	If RefAmt="" Set RefAmt=AccLeftAmt
+	Set Ind=1
+	;倒序查充值记录
+	Set PreSub=""  f  s PreSub=$o(^DHCACD("AccM",AccountID,"AccPD",PreSub),-1) q:(PreSub="0")!(RefAmt=0)  d
+	.Set PreType=$p($g(^DHCACD("AccM",AccountID,"AccPD",PreSub)),"^",1)
+	.Quit:(PreType'="P")||(PreType="")
+	.Set PreSum=$p(^DHCACD("AccM",AccountID,"AccPD",PreSub),"^",2) 
+	.Set AddUser=$p(^DHCACD("AccM",AccountID,"AccPD",PreSub),"^",5) 
+	.Set AddDate=$zd($p(^DHCACD("AccM",AccountID,"AccPD",PreSub),"^",3),3)_" "_$zt($p(^DHCACD("AccM",AccountID,"AccPD",PreSub),"^",4),1)
+	.Set BillNo=$p(^DHCACD("AccM",AccountID,"AccPD",PreSub),"^",6) 
+	.Set PayModeDr=$p(^DHCACD("AccM",AccountID,"AccPD",PreSub,"P",1),"^",1) 
+	.Set PayModeCode=$p(^CT("CTPM",PayModeDr),"^",1)
+	.b ;123321	
+	.Set CanRefSum=PreSum	
+	.Set RefSub="" f  s RefSub=$o(^DHCACDi("AccM",0,"Ref",AccountID_"||"_PreSub,AccountID,"AccPD",RefSub)) q:RefSub=""  d
+	..Set YetRefSum=$p(^DHCACD("AccM",AccountID,"AccPD",RefSub),"^",2) 
+	..Set CanRefSum=CanRefSum+YetRefSum	
+	.If PayModeDr=1  Set CanRefSum=$p(CanRefSum,".",1) 
+	.Quit:+CanRefSum=0
+	.If CanRefSum>RefAmt Set CanRefSum=RefAmt 
+	.Set RefAmt=RefAmt-CanRefSum
+	.;quit:CanRefSum<10
+	.;set num=CanRefSum\10
+	.;if PayModeDr="1" set CanRefSum=num*10	;测试 返回给自助机的现金金额必须要是10的整数
+	.b ;000
+	.Set (OutPayNo,PlatformNo,PosSysNO,PosTermnial,BankNo)=""
+	.;b ;333442
+	.set PayMode=PayModeCode
+	.Set IBPRowid=$o(^DHCBILLETPi(0,"TTypePRT","PRE","PRT",AccountID_"||"_PreSub,""))
+	.If IBPRowid'=""  d
+	..;Set OutPayNo=$p(^DHCBILLETP(IBPRowid),"^",47)
+	..;Set PlatformNo=$p(^DHCBILLETP(IBPRowid),"^",7)	
+	..//add by xhm 保护第三方存的字段不对的情况
+	..if $p(^DHCBILLETP(IBPRowid),"^",47)'="" set OutPayNo=$p(^DHCBILLETP(IBPRowid),"^",47)
+	..else  set OutPayNo=$p(^DHCBILLETP(IBPRowid),"^",7)
+	..if $p(^DHCBILLETP(IBPRowid),"^",7)'="" set PlatformNo=$p(^DHCBILLETP(IBPRowid),"^",7)
+	..else  set PlatformNo=$p(^DHCBILLETP(IBPRowid),"^",47)
+	..Set PosSysNO=$p(^DHCBILLETP(IBPRowid),"^",5)
+	..Set PosTermnial=$p(^DHCBILLETP(IBPRowid),"^",9)
+	..set BankNo=$p(^DHCBILLETP(IBPRowid),"^",3)
+	..b ;1111123
+	.Set DepListObj=##class(DHCBILL.SelfPay.Entity.OPDepositList.Res.ResPayDetails).%New()
+	.Set DepListObj.AccSum=PreSum
+	.Set DepListObj.APPreRowid=AccountID_"||"_PreSub
+	.;b ;2
+	.Set DepListObj.ABillNo=BillNo
+	.Set DepListObj.AccUser=AddUser
+	.Set DepListObj.APDate=AddDate
+	.Set DepListObj.APMode=PayMode
+	.Set DepListObj.CanRefAmt=CanRefSum
+	.Set DepListObj.Ind=Ind
+	.Set DepListObj.OutPayNo=OutPayNo
+	.Set DepListObj.PlatformNo=PlatformNo
+	.;b ;4
+	.Set DepListObj.PosSysNO=PosSysNO
+	.Set DepListObj.PosTermnial=PosTermnial
+	.set DepListObj.BankNo=BankNo
+	.Set Ind=Ind+1
+	.Do OutputObj.PayDetails.Insert(DepListObj)
+	.Do DepListObj.%Close()
+	
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","获取可退信息成功")	
+	
+	Quit OutputXML
+GetCanRefundListET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.OPDepositList.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="CheckOPDeposit">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<Implementation><![CDATA[
+    New (Input)
+	Set $ZT="CheckOPDepositET"
+    Set InputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Req.Request).%New()
+    Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+    Set CardNo=InputObj.CardNo
+    Set CardType=InputObj.CardType
+    Set SecrityNo=InputObj.SecrityNo
+    Set PatNo=InputObj.PatientID
+    Set UserCode=InputObj.UserCode
+    Set TerminalID=InputObj.TerminalID
+    Set PassWord=InputObj.PassWord 
+    Set HospitalID=InputObj.HospitalID
+    Set AccountID=InputObj.AccountID
+    
+    Set PayDetailsObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Req.PayDetails).%New()
+    Set PayDetailsObj=InputObj.PayDetails
+    Set Amount=PayDetailsObj.PayAmt
+    Set PayModeCode=PayDetailsObj.PayModeCode
+    Set TradeChannel=PayDetailsObj.TradeChannel
+    Set PayAccountNo=PayDetailsObj.PayAccountNo
+    Set PayDate=PayDetailsObj.PayDate
+    Set OutPayNo=PayDetailsObj.OutPayNo
+    Set PlatformNo=PayDetailsObj.PlatformNo 
+    
+ 	Set OutputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Res.Response).%New()	
+	
+	b ;申请交易流水
+	Set TradeType="PRE"
+	If (PlatformNo="") {
+	    Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"1","传入流水号为空,默认不允许退款")
+	}
+	
+	i $d(^DHCBILLETPi(0,"RRN",PlatformNo)){	
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"1","充值已成功")
+	}
+	else{
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"0","未查询到充值记录")
+	}
+	Quit OutputXML
+
+CheckOPDepositET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.AddOPDeposit.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="PrintInvoiceZZJ">
+<Description><![CDATA[
+Creator:zfb
+CreatDate:2018-3-20
+Desc:门诊发票打印(第三方传入发票号)
+Input:<Request><TradeCode></TradeCode><InvPrtRowIDStr></InvPrtRowIDStr><UserCode></UserCode><AccMRowID></AccMRowID><PapmiRowid></PapmiRowid><ExpStr></ExpStr></Request>
+Return:
+Debug:w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).PrintInvoiceZZJ("<Request><TradeCode></TradeCode><InvPrtRowIDStr></InvPrtRowIDStr><UserCode></UserCode><AccMRowID></AccMRowID><PapmiRowid></PapmiRowid><ExpStr></ExpStr></Request>")]]></Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	New (Input)
+	Set $zt="PrintInvoiceZZJET"
+	;
+	set ^TMPFangT("PrintInvoice")=Input
+	Set ResultCode="100",ResultMsg="没有查询到人员信息"
+	Set InputObj=##Class(DHCBILL.SelfPay.Entity.PrintInvoice.Req.Request).%New()
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.PrintInvoice.Res.Response).%New()
+	Do InputObj.XMLNodeDeserialize(.InputObj,"Request",Input)
+	Set TradeCode=InputObj.TradeCode
+	Set HospitalID=InputObj.HospitalID
+	Set CardNo=InputObj.CardNo
+	Set SecrityNo=InputObj.SecrityNo
+	Set CardType=InputObj.CardType
+	Set PatientID=InputObj.PatientID
+	Set UserCode=InputObj.UserCode
+	Set TerminalID=InputObj.TerminalID
+	Set AccMRowID=InputObj.AccMRowID
+	Set INVPrtStr=InputObj.PRTRowIDStr
+	;Set PapmiRowid=InputObj.PapmiRowid
+	Set ExpStr=InputObj.ExpStr
+	
+	If (CardNo=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","卡号不能都为空")
+		Quit OutputXML
+	}
+	
+	Set Data=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).GetPatCommInfo(CardNo,CardType,SecrityNo,"")
+	Set PapmiRowid=$p(Data,"^",8)
+    if (PapmiRowid="") {
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","患者信息传入有误")
+		Quit OutputXML
+	}
+	;
+	Set:UserCode'="" UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	Set:UserCode'="" Userid=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	If ((Userid="")||('$d(^SSU("SSUSR",Userid)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","操作员信息传入有误")
+		Quit OutputXML
+	}
+	Set gloc=$p($g(^SSU("SSUSR",Userid)),"^",4)	;SSUSR_DefaultDept
+	Set Grup=$p($g(^SSU("SSUSR",Userid)),"^",5)	;SSUSR_Group
+	;
+	;把数据压缩到发票
+	Set PrtColStr="",TMPGID=""
+	Set HospID=""
+	Set ParPrtToINVExpStr=gloc_"^"_Grup_"^"_Userid_"^"_HospID
+	Set rtn=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).ParPrtToINV(INVPrtStr,ParPrtToINVExpStr,.PrtColStr,.TMPGID)
+	If +rtn'=0 {
+		
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-15","发票分解错误.")
+		Quit OutputXML
+	}
+	
+	TSTART
+	
+	b ;插入发票表
+	Set AccINVPayInsertExpStr=gloc_"^"_Grup_"^"_HospID
+	Set InertRtn=##class(web.UDHCAccPrtPayFoot).AccINVPayInsertZZJ(PrtColStr,Userid,AccMRowID,PapmiRowid,AccINVPayInsertExpStr)
+	;
+	Set rtn=$p(InertRtn,"^",1)
+	If +rtn'=0{
+		
+		TROLLBACK
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,+rtn,"发票生成错误.")
+		Quit OutputXML	
+	}
+	b ;发票插入成功后，清除临时数据
+	Do ##class(web.UDHCACINVColPrt).KTMP()
+	Set err02=##class(web.UDHCACINVColPrt).KillINVTMP(TMPGID)
+	;
+	b ;获取打印数据
+	Set PrtDataExpStr=""
+	Set APIRowIDStr=$e(InertRtn,3,$l(InertRtn))	;InertRtn的格式：标志位^发票表Rowid^发票表Rowid^发票表Rowid...，所以在此截取一下。
+	Set OutputObj=##class(DHCBILL.SelfPay.BLL.DHCOPBillPayLogic).GetInvoicePrintData(APIRowIDStr,PrtDataExpStr)
+	Set OutputObj.AccMRowID=AccMRowID
+	Set OutputObj.APIRowID=APIRowIDStr
+	b ;TCOMMIT
+	TCOMMIT
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,0,"成功")
+	Quit OutputXML
+	
+PrintInvoiceZZJET
+	TROLLBACK
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.PrintInvoice.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="UpDateInvoiceNoZZJ">
+<Description>
+w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).UpDateInvoiceNoZZJ()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	New (Input)
+	Set $zt="UpDateInvoiceNoZZJ"
+	Set InputObj=##Class(DHCBILL.SelfPay.Entity.UpDateInvoiceNoZZJ.Req.Request).%New()
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.UpDateInvoiceNoZZJ.Res.Response).%New()
+	set ReceiptNo=InputObj.ReceiptNo
+	set APIRowID=InputObj.APIRowID
+	Set UserCode=InputObj.UserCode
+	Set:UserCode'="" UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	Set:UserCode'="" Userid=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	If ((Userid="")||('$d(^SSU("SSUSR",Userid)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","操作员信息传入有误")
+		Quit OutputXML
+	}
+	if (ReceiptNo=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","发票号不能为空")
+		Quit OutputXML
+	}
+	if (APIRowID=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","APIRowID不能为空")
+		Quit OutputXML
+	}
+	kill PLIST
+	set PLIST(7)=ReceiptNo
+	set myrtn=##class(web.UDHCAccPayINV).UPDATE(APIRowID)
+	set rtn=$p(myrtn,"^")
+	
+	set OutputObj.APIRowID=APIRowID
+	if (rtn=0){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,0,"更新票据号成功")
+		Quit OutputXML
+	}
+UpDateInvoiceNoZZJ
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.UpDateInvoiceNoZZJ.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="CancelPrintInvoiceZZJ">
+<Description>
+w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).UpDateInvoiceNoZZJ()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	New (Input)
+	Set $zt="CancelPrintInvoiceZZJET"
+	set ^TMPFangT("CancelPrintInvoiceZZJ")=$lb(Input)
+	Set InputObj=##Class(DHCBILL.SelfPay.Entity.CancelPrintInvoiceZZJ.Req.Request).%New()
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.CancelPrintInvoiceZZJ.Res.Response).%New()
+	set APIRowID=InputObj.APIRowID
+	Set UserCode=InputObj.UserCode
+	Set:UserCode'="" UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	Set:UserCode'="" Userid=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	If ((Userid="")||('$d(^SSU("SSUSR",Userid)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","操作员信息传入有误")
+		Quit OutputXML
+	}
+	if (APIRowID=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","APIRowID不能为空")
+		Quit OutputXML
+	}
+	
+	set IsDZInvPrint=$p(^DHCINVPRTAP(APIRowID),"^",29)
+	if (IsDZInvPrint'="ZZJ"){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","非电子发票不能撤销")
+		Quit OutputXML
+	}
+	/// 得到发票退费时的状态
+	s HandIn=$p(^DHCINVPRTAP(APIRowID),"^",33)	
+	s User=$p(^DHCINVPRTAP(APIRowID),"^",5)
+	s Status=""
+	if (User'=Userid) {
+			s sFlag="S"
+		}else {
+			if (HandIn="Y"){
+				s sFlag="S"
+			}else {
+				s sFlag="A"
+			}
+		}
+	
+	set myrtn=##class(web.udhcOPRefund).WriteOffAPI(APIRowID,Userid,sFlag)
+	set rtn=$p(myrtn,"^")
+	if (rtn=0){
+		set OutputObj.APIRowID=APIRowID
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,0,"撤销打印成功")
+		Quit OutputXML
+	}
+CancelPrintInvoiceZZJET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.CancelPrintInvoiceZZJ.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+
+<Method name="ParkPrintInvoiceZZJ">
+<Description>
+w ##class(DHCBILL.SelfPay.BLL.DHCOPBillPayExp).UpDateInvoiceNoZZJ()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Input:%String</FormalSpec>
+<ReturnType>%GlobalCharacterStream</ReturnType>
+<WebMethod>1</WebMethod>
+<Implementation><![CDATA[
+	New (Input)
+	Set $zt="ParkPrintInvoiceZZJET"
+	set ^TMPFangT("ParkPrintInvoiceZZJ")=$lb(Input)
+	Set InputObj=##Class(DHCBILL.SelfPay.Entity.ParkPrintInvoiceZZJ.Req.Request).%New()
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.ParkPrintInvoiceZZJ.Res.Response).%New()
+	set ReceiptNo=InputObj.ReceiptNo
+	Set UserCode=InputObj.UserCode
+	Set:UserCode'="" UserCode=$$ALPHAUP^SSUTIL4(UserCode)
+	Set:UserCode'="" Userid=$o(^SSU("SSUSR",0,"SSUSR_Initials",UserCode,""))
+	If ((Userid="")||('$d(^SSU("SSUSR",Userid)))){
+	 	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-3","操作员信息传入有误")
+		Quit OutputXML
+	}
+	if (ReceiptNo=""){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-1","发票号不能为空")
+		Quit OutputXML
+	}
+	
+
+	set APIRowID=$o(^DHCINVPRTAPi(0,"INVNo",ReceiptNo,""),-1)
+	set IsDZInvPrint=$p(^DHCINVPRTAP(APIRowID),"^",29)
+	if (IsDZInvPrint'="ZZJ"){
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-2","非电子发票不能撤销")
+		Quit OutputXML
+	}
+	/// 得到发票退费时的状态
+	s HandIn=$p(^DHCINVPRTAP(APIRowID),"^",33)	
+	s User=$p(^DHCINVPRTAP(APIRowID),"^",5)
+	s Status=""
+	if (User'=Userid) {
+			s sFlag="S"
+		}else {
+			if (HandIn="Y"){
+				s sFlag="S"
+			}else {
+				s sFlag="A"
+			}
+		}
+	
+	set myrtn=##class(web.udhcOPRefund).WriteOffAPI(APIRowID,Userid,sFlag)
+	set rtn=$p(myrtn,"^")
+	if (rtn=0){
+		set OutputObj.APIRowID=APIRowID
+		Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,0,"撤销打印成功")
+		Quit OutputXML
+	}
+ParkPrintInvoiceZZJET
+	Set OutputObj=##class(DHCBILL.SelfPay.Entity.ParkPrintInvoiceZZJ.Res.Response).%New()
+	Set OutputXML=##class(DHCBILL.SelfPay.BLL.DHCBillCommon).ResponseMsg(.OutputObj,"-99","程序处理错误:"_$ZERROR)
+	Quit OutputXML
+]]></Implementation>
+</Method>
+</Class>
+</Export>

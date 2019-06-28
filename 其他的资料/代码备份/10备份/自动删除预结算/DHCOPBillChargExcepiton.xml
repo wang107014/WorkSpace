@@ -1,0 +1,780 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-06-17 11:06:22">
+<Class name="web.DHCOPBillChargExcepiton">
+<Description>
+Creator:Lid
+CreatDate:2012-03-28
+Desc:门诊收费异常处理业务逻辑
+	;异常位置判断:
+	;1.自费
+	;1.1 Admsource不大于0
+	;1.2 预结算记录没有银医卡支付方式
+	;2.自费+银医卡
+	;2.1 Admsource不大于0
+	;2.2 预结算记录有银医卡支付方式
+	;3.医保
+	;3.1 Admsource大于0
+	;3.2 DHC_InvPrt表的PRT_InsDiv_DR字段是否有值,如果没有值则认为医保结算失败。(注：异常处理时,需判断
+	;	 一下医保结算是否成功,如果医保组结算成功,只是在更新DHC_InvPrt表时出错,那我们可以继续往下结算,
+	;	 如果医保组结算也失败了,那就必须撤销重新结算.)
+	;		注意：2015年以后的版本医保判断是否结算成功，调用医保组的接口:
+	;			Set InsuInfo=##class(web.DHCINSUPort).CheckINSUDivFlag(PrtRowid,"","","","N")	;调用医保接口判断医保结算是否成功
+	;			Set InsuFlag=$p(InsuInfo,"!",1)	;Y:医保结算成功，N:医保结算不成功
+	;3.3 预结算记录没有银医卡支付方式
+	;4.医保+银医卡
+	;4.1 Admsource大于0
+	;4.2 DHC_InvPrt表的PRT_InsDiv_DR字段是否有值,如果没有值则认为医保结算失败。确定是医保结算失败后，就不用再判断银医卡了。
+	;4.3 预结算记录有银医卡支付方式
+	;
+	;异常代码:
+ 	;Excepiton=1011:"自费患者,确认完成失败."
+   ;Excepiton=1012:"自费患者,银医卡交易成功,HIS确认完成失败."
+   ;Excepiton=1013:"自费患者,银医卡交易失败."
+   ;Excepiton=1014:"医保患者,医保结算失败"
+   ;Excepiton=1015:"医保患者,医保结算成功,HIS确认完成失败."
+   ;Excepiton=1016:"医保患者,医保结算失败,银医卡不做结算."
+   ;Excepiton=1017:"医保患者,医保结算成功,银医卡结算成功,HIS确认完成失败."
+   ;Excepiton=1018:"医保患者,医保结算成功,银医卡结算失败,HIS不做确认完成."</Description>
+<ClassType/>
+<Import>SQLUser</Import>
+<ProcedureBlock>0</ProcedureBlock>
+<Super>%RegisteredObject</Super>
+<TimeChanged>65164,60439.877848</TimeChanged>
+<TimeCreated>62544,31721.787907</TimeCreated>
+
+<Method name="QueryTPInvClose">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary]]></FormalSpec>
+<PlaceAfter>QueryTPInvExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$LIST(qHandle,2)
+    Kill ^CacheTemp(repid)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="QueryTPInvExecute">
+<Description>
+Creator:Lid
+CreatDate:2012-03-29
+Desc:查询预结算状态的记录
+Input:sFlag:查询标志,ChargeUser:收费员DR,PatientNO:登记号,PatientName:病人姓名,StartDate:开始日期, EndDate:结束日期
+Debug:w ##class(%ResultSet).RunQuery("web.DHCOPBillChargExcepiton","QueryTPInv","PRT",62540,62546,"","","","")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,sFlag:%String,StartDate:%String,EndDate:%String,ChargeUser:%String,PatientNO:%String,PatientName:%String,CardNo:%String]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set repid=$I(^CacheTemp)
+	Set ind=1
+
+	;sFlag=INV		;票据查询
+	;sFlag=ALL		;所有纪录(DHC_INVPRT+DHC_AccPayINV)查询
+	;sFlag=PRT		;只查询DHC_INVPRT表所有纪录，而不查询DHC_AccPayINV表
+	;sFlag=APP		;只查询DHC_INVPRT表中账户支付的记录
+	;sFlag=API		;只查询DHC_AccPayINV表中的纪录
+	;
+	s ^tempwml("QueryTPInvExecute")=$lb(sFlag,StartDate,EndDate,ChargeUser,PatientNO,PatientName,CardNo)
+	s StartDate=##class(websys.Conversions).DateHtmlToLogical(StartDate)
+	s EndDate=##class(websys.Conversions).DateHtmlToLogical(EndDate)
+	Set Job=$j
+	If CardNo'=""{
+		Set myPAPMIStr=##class(web.DHCBL.CARD.UCardRefInfo).GetPAPMIBunchByCardNo(CardNo)
+	}
+	If sFlag="" Set qHandle=$lb(0,repid,0)	Quit $$$OK
+	If StartDate="" Set qHandle=$lb(0,repid,0)	Quit $$$OK
+	If EndDate="" Set qHandle=$lb(0,repid,0)	Quit $$$OK
+	If PatientNO'="" Do
+	.Set PatientNO=##Class(web.DHCOPCashier).FormatPatientNo(PatientNO)
+	;
+	For PRTDate=EndDate:-1:StartDate  Do
+	.Quit:(sFlag="API")
+	.Quit:'$D(^DHCINVPRT(0,"Date",PRTDate))
+	.Set PrtRowid=""
+	.For  Set PrtRowid=$o(^DHCINVPRT(0,"Date",PRTDate,PrtRowid),-1) Quit:PrtRowid=""  Do
+	..Set PrtFlag=$p($G(^DHCINVPRT(PrtRowid)),"^",8)
+	..Quit:PrtFlag'="TP"
+	..Set FairType=$p($G(^DHCINVPRT(PrtRowid)),"^",34)
+	..;Quit:FairType'="F"
+	..Set InsTypeDR=$p($G(^DHCINVPRT(PrtRowid)),"^",9)
+	..Set InsTypeDesc="",AdmSource=""
+	..If InsTypeDR'="" Do
+	...s InsTypeDesc=$p(^PAC("ADMREA",InsTypeDR),"^",2)
+	...s AdmSource=$p(^PAC("ADMREA",InsTypeDR),"^",9)
+	..Set Abortflag=0,refundflag=0,handflag=0
+	..Set PrtUsrDR=$p($G(^DHCINVPRT(PrtRowid)),"^",21)	;;User Invitial
+	..Set PrtUsr=""
+	..Set myPrtUserName=""
+	..If PrtUsrDR'="" Do
+	...Set PrtUsr=$p($g(^SSU("SSUSR",PrtUsrDR)),"^",1) 
+	...Set myPrtUserName=$p($g(^SSU("SSUSR",PrtUsrDR)),"^",2)
+	..;Quit:((ChargeUser'=myPrtUserName))&(ChargeUser'="")							 //一体机任何收费员都能看到 edit by huangchuanqi 20190304 start
+	..Quit:((ChargeUser'=myPrtUserName))&(ChargeUser'="")&(myPrtUserName'["一体机")&(myPrtUserName'["APP")   //一体机APP任何收费员都能看到 edit by huangchuanqi 20190304 end
+	..Set PrtNO=$p($G(^DHCINVPRT(PrtRowid)),"^",14)
+	..Set myapi=$p($G(^DHCINVPRT(PrtRowid)),"^",4)
+	..If myapi'="" Do
+	...Set PrtNO=$p($G(^DHCINVPRTAP(myapi)),"^",6)
+	..Set PapmiNo="",PapmiName="",AccMDR=""
+	..Set EncryptLevel="",PatLevel=""
+	..Set PrtPapmiDR=$p($G(^DHCINVPRT(PrtRowid)),"^",15)
+	..Quit:((CardNo'="")&&(("^"_myPAPMIStr_"^")'[("^"_PrtPapmiDR_"^")))
+	..If PrtPapmiDR'=""  d
+	...Set PapmiNo=$P($G(^PAPER(PrtPapmiDR,"PAT",1)),"^",2)
+	...Set PapmiName=$P($G(^PAPER(PrtPapmiDR,"ALL")),"^",1)
+	...;add by wangjian 2015-01-15 增加病人密级和级别
+    ...Set PatEncryptLevel=##class(web.UDHCJFBaseCommon).GetPatEncryptLevel(PrtPapmiDR,"")
+    ...Set EncryptLevel=$p(PatEncryptLevel,"^",1)
+    ...Set PatLevel=$p(PatEncryptLevel,"^",2)
+    ...;end
+	...Set AccMDR=..GetAccMDRByPAPMIDR(PrtPapmiDR)
+	..Quit:(PapmiNo'=PatientNO)&(PatientNO'="")
+	..Quit:(PapmiName'[PatientName)&(PatientName'="")
+	..Set TotalAmt=$fn(+$p($G(^DHCINVPRT(PrtRowid)),"^",1),"",2)		;总金额PRT_Acount
+	..Set PatientShare=$fn(+$p($G(^DHCINVPRT(PrtRowid)),"^",16),"",2)	;自付金额PRT_PatientShare
+	..Set DiscAmount=$fn(+$p($G(^DHCINVPRT(PrtRowid)),"^",7),"",2)	;折扣金额PRT_DiscAmount
+	..Set PayorShare=$fn(+$p($G(^DHCINVPRT(PrtRowid)),"^",18),"",2)	;记账金额PRT_PayorShare
+	..Set Handin=$p($G(^DHCINVPRT(PrtRowid)),"^",10)
+	..Set PrtDate=$p($G(^DHCINVPRT(PrtRowid)),"^",5)
+	..Set PRTInsDivDR=$p($G(^DHCINVPRT(PrtRowid)),"^",30)	;PRT_InsDiv_DR
+	..Set InsuInfo=##class(web.DHCINSUPort).CheckINSUDivFlag(PrtRowid,"","","","N")	;调用医保接口判断医保结算是否成功
+	..Set InsuFlag=$p(InsuInfo,"!",1)	;Y:医保结算成功，N:医保结算不成功
+	..Set DisplayPrtDate=##class(websys.Conversions).DateLogicalToHtml(PrtDate)
+	..Set PrtTime=$p($G(^DHCINVPRT(PrtRowid)),"^",20)
+	..Set DisplayPrtTime=##class(websys.Conversions).TimeLogicalToHtml(PrtTime,1)
+	..Set InitInvDR=$p($G(^DHCINVPRT(PrtRowid)),"^",13)	;PRT_initInv_DR
+	..Set Paysub=0,PayMStr="",HardComm=""
+    ..For  Set Paysub=$o(^DHCINVPRT(PrtRowid,"P",Paysub))  q:Paysub=""  d
+    ...Set PayMDr=$p(^DHCINVPRT(PrtRowid,"P",Paysub),"^",1)
+    ...Set PayMAmt=$p(^DHCINVPRT(PrtRowid,"P",Paysub),"^",3)
+    ...Quit:(PayMDr="")!(+PayMDr=0)
+    ...Set:PayMDr'="" PayMDesc=$p($g(^CT("CTPM",PayMDr)),"^",2)
+    ...If PayMStr="" Set PayMStr=PayMDesc_":"_PayMAmt
+    ...Else  Set PayMStr=PayMStr_" "_PayMDesc_":"_PayMAmt
+    ...Set:+HardComm=0 HardComm=##class(web.DHCBillBankLogic).GetPayModeHardComm("OP",PayMDr)
+    ..Set Exception="",ExceptionDesc=""	;异常位置判断
+    ..If +AdmSource>0 Do
+    ...If +HardComm>0 Do		;医保+银医卡
+    ....If $g(InsuFlag)'="Y" Do
+    .....Set Exception=1016			;医保+银医卡-->医保结算失败,银医卡不做,HIS确认完成不做
+    ....Else  Do
+    .....Set BankPayFlag=##class(web.DHCOPBillChargExcepiton).CheckBankPayFlag(PrtRowid)
+	.....If +BankPayFlag=0 Do
+	......Set Exception=1017		;医保+银医卡-->医保结算成功,银医卡结算成功,HIS确认完成失败
+	.....Else  Do
+	......Set Exception=1018		;医保+银医卡-->医保结算成功,银医卡结算失败,HIS不做确认完成
+    ...Else  Do					;医保
+    ....If $g(InsuFlag)'="Y" Do
+    .....Set Exception=1014			;医保-->医保结算失败,HIS没有做确认完成
+    ....Else  Do
+    .....Set Exception=1015			;医保-->医保结算成功,HIS确认完成失败
+    ..Else  Do
+    ...If +HardComm>0 Do		;自费+银医卡
+    ....Set BankPayFlag=##class(web.DHCOPBillChargExcepiton).CheckBankPayFlag(PrtRowid)
+    ....If +BankPayFlag=0 Do
+    .....Set Exception=1012			;自费+银医卡-->银医卡交易成功,HIS确认完成失败
+    ....Else  Do
+    .....Set Exception=1013			;自费+银医卡-->银医卡交易失败,HIS没有做确认完成
+    ...Else  Do					;自费
+    ....Set Exception=1011			;自费-->确认完成失败
+    ..Set:Exception=1011 ExceptionDesc="自费患者,确认完成失败."
+    ..Set:Exception=1012 ExceptionDesc="自费患者,银医卡交易成功,HIS确认完成失败."
+    ..Set:Exception=1013 ExceptionDesc="自费患者,银医卡交易失败."
+    ..Set:Exception=1014 ExceptionDesc="医保患者,医保结算失败"
+    ..Set:Exception=1015 ExceptionDesc="医保患者,医保结算成功,HIS确认完成失败."
+    ..Set:Exception=1016 ExceptionDesc="医保患者,医保结算失败,银医卡不做结算."
+    ..Set:Exception=1017 ExceptionDesc="医保患者,医保结算成功,银医卡结算成功,HIS确认完成失败."
+    ..Set:Exception=1018 ExceptionDesc="医保患者,医保结算成功,银医卡结算失败,HIS不做确认完成."
+    ..Set TabFlag="PRT"
+	..Do OutputData
+	;
+	Set qHandle=$lb(0,repid,0)
+	Quit $$$OK
+
+OutputData
+	Set Data=$lb(ind,Job,PrtRowid,PRTInsDivDR,InsTypeDR,AdmSource,PrtPapmiDR,AccMDR,PapmiNo,PapmiName,InsTypeDesc,DisplayPrtDate,DisplayPrtTime,myPrtUserName,TotalAmt,PatientShare,DiscAmount,PayorShare,PayMStr,Exception,ExceptionDesc,TabFlag,EncryptLevel,PatLevel)
+	Set ^CacheTemp(repid,ind)=Data
+	Set ind=ind+1
+	quit
+]]></Implementation>
+</Method>
+
+<Method name="QueryTPInvFetch">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&qHandle:%Binary,&Row:%List,&AtEnd:%Integer=0]]></FormalSpec>
+<PlaceAfter>QueryTPInvExecute</PlaceAfter>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	Set AtEnd=$LIST(qHandle,1)
+    Set repid=$LIST(qHandle,2)
+    Set ind=$LIST(qHandle,3)
+    Set ind=$o(^CacheTemp(repid,ind))
+	    If ind="" {				// if there are no more rows, finish fetching
+    Set AtEnd=1
+	    Set Row=""
+	    }
+    	Else      {		
+    	 ;s RecordSum=$o(^CacheTemp(repid,""),-1)     //新增ㄛ获取总记录数
+    	 ;s $List(^CacheTemp(repid,ind),1)=RecordSum  //新增ㄛ替换每条记录的第一列数据	
+    	Set Row=^CacheTemp(repid,ind)
+    }
+    s qHandle=$lb(AtEnd,repid,ind)
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="QueryTPInv">
+<Type>%Query</Type>
+<FormalSpec>sFlag:%String,StartDate:%String,EndDate:%String,ChargeUser:%String,PatientNO:%String,PatientName:%String,CardNo:%String</FormalSpec>
+<Parameter name="ROWSPEC" value="Tind:%Library.Integer,TJob,TPrtRowid,TPRTInsDivDR,TInsTypeDR,TAdmSource,TPAPMIDR,TAccMDR,TPatientNO,TPapmiName,TInsTypeDesc,TDisplayPrtDate,TDisplayPrtTime,TPrtUserName,TTotalAmt:%Library.Float,TPatientShare:%Library.Float,TDiscAmount:%Library.Float,TPayorShare:%Library.Float,TPayMStr,TException,TExceptionDesc,TabFlag,TEncryptLevel,TPatLevel"/>
+</Query>
+
+<Method name="CheckTPFlagByEpisodeID">
+<Description>
+Creator:Lid
+CreatDate:2012-03-28
+Desc:验证就诊记录是否存在预结算状态的发票记录,如果存在,则需先撤销后再结算
+Input:EpisodeIDStr:需结算的就诊记录RowID串,ExpStr:扩展信息
+Return:0:不存在,1:存在
+Debug:w ##class(web.DHCOPBillChargExcepiton).CheckTPFlagByEpisodeID("","")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>EpisodeIDStr:%String,ExpStr:%String=""</FormalSpec>
+<Implementation><![CDATA[
+		New (EpisodeIDStr,ExpStr)
+		Set rtn=0
+		For i=1:1:$L(EpisodeIDStr,"^") Do
+		.Set EpisodeID=$p(EpisodeIDStr,"^",i)
+		.Quit:(EpisodeID="")!(+EpisodeID=0)
+		.Set BCIRowID=""
+		.For  Set BCIRowID=$o(^DHCBCI(0,"ADM",EpisodeID,BCIRowID),-1) Quit:(BCIRowID="")!(+rtn=1)  Do
+		..Set PrtInvRowid=$p(^DHCBCI(BCIRowID),"^",1)
+		..Set PrtFlag=$p(^DHCINVPRT(PrtInvRowid),"^",8)
+		..Set:PrtFlag="TP" rtn=1
+		;
+		Quit rtn
+]]></Implementation>
+</Method>
+
+<Method name="CheckTPFlagByEpisodeIDNew">
+<Description>
+Creator：wangminglong
+CreatDate:2019-5-31
+Desc:验证就诊记录是否存在预结算状态的发票记录,如果存在,则自动撤销预结算记录
+Input:EpisodeIDStr:需结算的就诊记录RowID串,ExpStr:扩展信息
+Return:0:撤销成功,1:撤销不成功
+Debug:w ##class(web.DHCOPBillChargExcepiton).CheckTPFlagByEpisodeIDNew("","")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>EpisodeIDStr:%String,ExpStr:%String=""</FormalSpec>
+<Implementation><![CDATA[
+		s ^tempwml("CheckTPFlagByEpisodeIDNew")=$lb(EpisodeIDStr,ExpStr)
+		New (EpisodeIDStr,ExpStr)
+		Set rtn5=0
+		For i=1:1:$L(EpisodeIDStr,"^") Do
+		.Set EpisodeID=$p(EpisodeIDStr,"^",i)
+		.Quit:(EpisodeID="")!(+EpisodeID=0)
+		.Set BCIRowID=""
+		.For  Set BCIRowID=$o(^DHCBCI(0,"ADM",EpisodeID,BCIRowID),-1) Quit:(BCIRowID="")  Do
+		..Set PrtInvRowid=$p(^DHCBCI(BCIRowID),"^",1)
+		..Set PrtFlag=$p(^DHCINVPRT(PrtInvRowid),"^",8)
+		..q:PrtFlag'="TP"
+		..s rtn5=##class(web.DHCOPBillChargExcepiton).ZDCXException(PrtInvRowid,ExpStr)  //自动撤销预结算记录
+		Quit rtn5
+]]></Implementation>
+</Method>
+
+<Method name="CheckTPFlagByOEORIDR">
+<Description>
+Creator:Lid
+CreatDate:2012-03-28
+Desc:验证医嘱是否是预结算状态,如果是预结算状态则此医嘱不能做任何操作,比如"停医嘱"
+Input:OEORIDRStr:医嘱RowID,ExpStr:扩展信息
+Return:0:不存在,1:存在
+Debug:w ##class(web.DHCOPBillChargExcepiton).CheckTPFlagByOEORIDR("","")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>OEORIDRStr:%String,ExpStr:%String=""</FormalSpec>
+<Implementation><![CDATA[
+		New (OEORIDRStr,ExpStr)
+		Set rtn=0
+		For i=1:1:$L(OEORIDRStr,"^") Do  
+		.Set OEORIDR=$p(OEORIDRStr,"^",i)
+		.Quit:(OEORIDR="")!(+OEORIDR=0)
+		.Set PBODR=$p(^OEORD(+OEORIDR,"I",$p(OEORIDR,"||",2),1),"^",16)		;OEORI_ARPBLItem_DR
+		.Quit:(+PBODR=0)!(PBODR="")
+		.Set BCIRowID=""
+		.For  Set BCIRowID=$o(^DHCBCI(0,"Bill",+PBODR,BCIRowID),-1) Quit:(BCIRowID="")!(+rtn=1)  Do
+		..Set PrtInvRowid=$p(^DHCBCI(BCIRowID),"^",1)
+		..Set PrtFlag=$p(^DHCINVPRT(PrtInvRowid),"^",8)
+		..Set:PrtFlag="TP" rtn=1
+		;
+		Quit rtn
+]]></Implementation>
+</Method>
+
+<Method name="CheckBankPayFlag">
+<Description>
+Creator:Lid
+CreatDate:2012-03-29
+Desc:验证银医卡支付是否成功
+Input:PrtRowID:发票RowID
+Return:0:成功,1:不成功
+Debug:w ##class(web.DHCOPBillChargExcepiton).CheckBankPayFlag("2222")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowID:%String</FormalSpec>
+<Implementation><![CDATA[
+	New (PrtRowID)
+	Set rtn=1
+	Quit:((+PrtRowID=0)!(PrtRowID="")) rtn
+	Quit:'$d(^DHCINVBTPi(0,"S","IPDR",PrtRowID)) rtn
+	Set IBPRowID=$o(^DHCINVBTPi(0,"S","IPDR",PrtRowID,""),-1)	;(取最后一条记录)
+	Set Rc=$p(^DHCINVBTP(IBPRowID),"^",1)	;IBP_Rc
+	If ((Rc="0")!(Rc="00")!(Rc="000")!(Rc="0000")) {
+		Set rtn=0	
+	}
+	Quit rtn
+]]></Implementation>
+</Method>
+
+<Method name="InitOperationCell">
+<Description>
+Creator:Lid
+CreatDate:2012-03-30
+Desc:初始化组件Table上每行的"操作"单元格
+w ##class(web.DHCOPBillChargExcepiton).InitOperationCell()</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	;Tind:%Library.Integer,TJob,TPrtRowid,TInsTypeDR,TAdmSource,TPatientNO,TPapmiName,TInsTypeDesc,TDisplayPrtDate,TDisplayPrtTime,TPrtUserName,TTotalAmt:%Library.Float,TPatientShare:%Library.Float,TDiscAmount:%Library.Float,TPayorShare:%Library.Float,TPayMStr,TException,TExceptionDesc
+	Set BtnCancel="BtnCancel_"_rs.GetDataByName("Tind")
+	Set BtnComplete="CompleteCharge_"_rs.GetDataByName("Tind")
+	Set PrtRowID=rs.GetDataByName("TPrtRowid")
+	Set:+PrtRowID=0 PrtRowID=""""""
+	Set AccMDR=rs.GetDataByName("TAccMDR")
+	Set:+AccMDR=0 AccMDR=""""""	
+	Set InsTypeDR=rs.GetDataByName("TInsTypeDR")
+	Set:+InsTypeDR=0 InsTypeDR=""""""
+	Set PRTInsDivDR=rs.GetDataByName("TPRTInsDivDR")
+	Set:+PRTInsDivDR=0 PRTInsDivDR=""""""
+	Set AdmSource=rs.GetDataByName("TAdmSource")
+	Set:+AdmSource=0 AdmSource=""""""
+	Set Exception=rs.GetDataByName("TException") 
+	Set:+Exception=0 Exception=""""""
+	Set Active="1"
+	Set Active=$s(Active="1":"",1:"disabled")
+	Set DataType="Button"
+	If DataType="Button" {
+		Write "<input type='button' id='"_BtnCancel_"' name='"_BtnCancel_"' "_Active
+		Write " style='WIDTH: 40px; HEIGHT: 24px' value='撤销' onClick='BtnCancelOnClick(this,"_PrtRowID_","_AccMDR_","_PRTInsDivDR_","_InsTypeDR_","_AdmSource_","_Exception_")'>"
+		Write "		<input type='button' id='"_BtnComplete_"' name='"_BtnComplete_"' "_Active
+		Write " style='WIDTH: 40px; HEIGHT: 24px' value='完成' onClick='BtnCompleteClick(this,"_PrtRowID_","_AccMDR_","_PRTInsDivDR_","_InsTypeDR_","_AdmSource_","_Exception_")'>"
+	}
+	Quit ""
+]]></Implementation>
+</Method>
+
+<Method name="GetStartDate">
+<Description>
+Creator:Lid
+CreatDate:2012-03-30
+Desc:获取查询开始日期,根据系统配置
+w ##class(web.DHCOPBillChargExcepiton).GetStartDate()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+	Set myOPBeginDate=+$h
+	Set myConInfo=##class(web.DHCOPConfig).ReadOPSPConfig()
+	Set myOPFlag=+$p(myConInfo,"^",24)			;
+	Set myOPValue=+$p(myConInfo,"^",25)			;
+	;按照日期
+	If +myOPFlag=0 Do
+	.Set myOPBeginDate=+$h-myOPValue
+	Quit myOPBeginDate
+]]></Implementation>
+</Method>
+
+<Method name="GetAccMDRByPAPMIDR">
+<Description>
+Creator:Lid
+CreatDate:2012-03-31
+Desc:获取病人账户Rowid()
+Return:返回激活状态的账户,如果账户挂起或结算状态,则返回空
+Debug:w ##class(web.DHCOPBillChargExcepiton).GetAccMDRByPAPMIDR("3087")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PAPMIDR</FormalSpec>
+<Implementation><![CDATA[
+	New (PAPMIDR)
+	Set myAccMDR=""
+	Quit:((PAPMIDR="")!(+PAPMIDR=0)) myAccMDR
+	;
+	Set AccMRowID="",flag=0
+	For  Set AccMRowID=$o(^DHCACDi("AccM",0,"PAPMI",PAPMIDR,AccMRowID),-1)	Quit:((AccMRowID="")!(flag=1))  Do
+	.Set AccStatus=$p(^DHCACD("AccM",AccMRowID),"^",13)	;AccM_AccStatus
+	.If AccStatus="N" Do	
+	..Set myAccMDR=AccMRowID
+	..Set flag=1
+	;
+	Quit myAccMDR
+]]></Implementation>
+</Method>
+
+<Method name="GetPrtInvInfo">
+<Description>
+Creator:Lid
+CreatDate:2012-04-01
+Desc:根据发票Rowid获取发票信息
+Return:发票状态^^^^^^^^^
+Debug:w ##class(web.DHCOPBillChargExcepiton).GetPrtInvInfo("","")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtInvRowID,ExpStr:%String=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	New (PrtInvRowID,ExpStr)
+	Quit:((PrtInvRowID="")!(PrtInvRowID=0)) "^^^^^^^^^^^^^^^^^^^^^^^^^^"
+	Set PrtFlag=$p(^DHCINVPRT(PrtRowID),"^",8)
+	Set rtn=PrtFlag_"^^^^"
+	Quit rtn
+]]></Implementation>
+</Method>
+
+<Method name="JudgeINVTPFlag">
+<Description>
+creat: chenxi
+creatdate: 2013-02-04
+description: 判断发票的就诊是否有异常发票未处理</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowid,ExpStr</FormalSpec>
+<Implementation><![CDATA[
+	q:PrtRowid="" 0
+	s rtn=0
+	s DHCBCIRowid="0",AdmStr=""
+	k ^TMP("INVTPFlag",$j,PrtRowid)
+
+	f  s DHCBCIRowid=$o(^DHCBCI(0,"INV",PrtRowid,DHCBCIRowid)) q:(DHCBCIRowid="")  d
+	.s EpisodeID=$p(^DHCBCI(DHCBCIRowid),"^",3)
+	.q:(EpisodeID="")
+	.s ^TMP("INVTPFlag",$j,PrtRowid,EpisodeID)=""
+
+	s EpisodeID=""
+	f  s EpisodeID=$o(^TMP("INVTPFlag",$j,PrtRowid,EpisodeID)) q:(EpisodeID="")  d
+	.i AdmStr="" d
+	..s AdmStr=EpisodeID
+	.e  d
+	..s AdmStr=AdmStr_"^"_EpisodeID
+
+	s rtn=##class(web.DHCOPBillChargExcepiton).CheckTPFlagByEpisodeID(AdmStr,"")
+	k ^TMP("INVTPFlag",$j,PrtRowid)
+	q rtn
+]]></Implementation>
+</Method>
+
+<Method name="GetOPRcptinfo">
+<Description>
+Creator:Lid
+CreatDate:2015-08-21
+Desc:根据发票rowid获取门诊发票信息
+w ##class(web.DHCOPBillChargExcepiton).GetOPRcptinfo(195815)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>prtRowID</FormalSpec>
+<Implementation><![CDATA[
+	new (prtRowID)
+	set myPrtAmt=$p(^DHCINVPRT(prtRowID),"^",1)
+	set myPrtDate=$p(^DHCINVPRT(prtRowID),"^",5)
+	set myPrtTime=$p(^DHCINVPRT(prtRowID),"^",20)
+	set myPapmiDR=$p(^DHCINVPRT(prtRowID),"^",15)
+	set myPatName=$p(^PAPER(myPapmiDR,"ALL"),"^",1)
+	set myPatNO=$p(^PAPER(myPapmiDR,"PAT",1),"^",2)
+	set myPRTUsr=$p($g(^DHCINVPRT(prtRowID)),"^",21)
+	set myPrtUserName=$p($g(^SSU("SSUSR",myPRTUsr)),"^",2)
+	;发票rowid^发票日期^发票时间^PAPMI指针^病人姓名^病人登记号^收费员姓名^发票金额
+	set rtn=prtRowID_"^"_$zd(myPrtDate,3)_"^"_$zt(myPrtTime,1)_"^"_myPapmiDR_"^"_myPatName_"^"_myPatNO_"^"_myPrtUserName_"^"_myPrtAmt
+	quit rtn
+]]></Implementation>
+</Method>
+
+<Method name="SetExcepitonLog">
+<Description>
+Creator:Lid
+CreatDate:2015-08-21
+Desc:记录异常处理界面“撤销”，“完成”日志
+Input:prtRowID:发票rowid
+		flag:"完成"/"撤销"
+		msg:显示消息
+Return:0：保存成功，其他：保存失败
+Other:先存到一个Global里：^DHCBillExcepitonLog("ELog")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>prtRowID,flag,msg</FormalSpec>
+<Implementation><![CDATA[
+	new (prtRowID,flag,msg)
+	set rtn=0
+	set ^DHCBillExcepitonLog("ELog",$zd(+$h,3),$zt($p($h,",",2),1),flag,prtRowID)=msg
+	quit rtn
+]]></Implementation>
+</Method>
+
+<Method name="GetOrdStatus">
+<Description>
+判断发票中的药品已发药或医嘱已经执行，如果是则不允许撤销异常
+w ##class(web.DHCOPBillChargExcepiton).GetOrdStatus()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowID</FormalSpec>
+<Implementation><![CDATA[
+	s DspStatus="",OrdStatus="",DisQty=0
+	s ^tempwml("GetOrdStatus")=$lb(PrtRowID)
+	s conRowid=0 f  s conRowid=$o(^DHCBCI(0,"INV",PrtRowID,conRowid)) q:(conRowid="")  d
+    .s PBRowID=$p($g(^DHCBCI(conRowid)),"^",2)
+    .s PBOChildsub=0  f  s PBOChildsub=$o(^DHCPB(PBRowID,"O",PBOChildsub)) q:(PBOChildsub="")  d
+    ..s OEORI=$p(^DHCPB(PBRowID,"O",PBOChildsub),"^",4) ;DHC_PatBillOrder->PBO_OEORI_DR
+    ..s ItemStatDr=$p(^OEORD(+OEORI,"I",$p(OEORI,"||",2),1),"^",13)
+    ..s StatCode=$p($g(^OEC("OSTAT",+ItemStatDr)),"^",1)
+    ..i StatCode="E" d
+    ...s OrdStatus="E"
+	..Set dsp=0 For  Set dsp=$O(^DHCOEDISQTY(0,"OEORI",OEORI,dsp)) Q:dsp=""  Do
+	...Set disp=^DHCOEDISQTY(dsp)
+	...Set dspstatus=$P(disp,"^",7)
+	...Quit:((dspstatus'="R")&(dspstatus'="C"))
+	...Set dspqty=+$P(disp,"^",11)
+	...i dspstatus="R" s dspqty=0-dspqty
+	...Set DisQty=DisQty+dspqty
+	i DisQty'=0 d
+	.s DspStatus="C"
+	q DspStatus_"^"_OrdStatus
+]]></Implementation>
+</Method>
+
+<Method name="AutoCancelTask">
+<Description>
+Creator:Lid
+CreatDate:2015-12-28
+Desc:自动撤销/确认完成任务
+Debug:w ##class(web.DHCOPBillChargExcepiton).AutoCancelTask()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Date=""</FormalSpec>
+<Implementation><![CDATA[
+	New (Date)
+	Set $ZT="AutoCancelTaskERROR"                   //设置一个异常
+	;
+	Set:Date["-" Date=$zdh(Date,3)
+	If Date="" Set Date=+$h-1 ;默认处理前一天的预结算记录
+	;
+	Set PrtRowID=""
+	For  Set PrtRowID=$o(^DHCINVPRT(0,"Date",Date,PrtRowID)) Quit:PrtRowID=""  Do
+	.Quit:'$d(^DHCINVPRT(PrtRowID))
+	.Set ss=$g(^DHCINVPRT(PrtRowID))
+	.Quit:ss=""
+	.Set PrtFlag=$p(ss,"^",8)
+	.Quit:PrtFlag'="TP"		;过滤非预结算记录
+	.Set PrtUser=$p(ss,"^",21)
+	.Set gloc=$p($g(^SSU("SSUSR",PrtUser)),"^",4)
+	.Set Grup=$p(^DHCINVPRT(PrtRowID),"^",41)
+	.If Grup="" Set Grup=$p($g(^SSU("SSUSR",PrtUser)),"^",5)
+	.Set CashierFlag=##class(web.UDHCJFBaseCommon).CheckISCashier(PrtUser)
+	.;Quit:+CashierFlag=0	;过滤收费员
+	.Set InsTypeDR=$p(ss,"^",9)
+	.Set myPayinfo=##class(web.UDHCINVPRT).ReadINVPayMode(PrtRowID)
+	.Set PayInfo=$p(myPayinfo,$c(2),1)
+	.Set myAccRowID=$p($p(myPayinfo,$c(2),2),"||",1)
+	
+	.Set Exception=##class(web.DHCOPBillChargExcepiton).GetExceptionCode(PrtRowID)
+	
+	.If ((+Exception=1011)!(+Exception=1013)!(+Exception=1014)!(+Exception=1016)) Do
+	..;撤销
+	
+	..Set err=##class(web.DHCBillConsIF).DelINVPRTForYB(PrtRowID,Grup)
+	..Set ^DHCOPBILLExceptionTaskErrLog("ExceptionLog","Cancel",+$h,PrtUser,PrtRowID)=err
+	.If (+Exception=1012) Do
+	..;s myFairType=$p(ss,"^", 34)		;PRT_FairType
+	..;s myPINVFlag="N"	;不打印发票
+	..;s myExpStr=gloc_"^"_Grup_"^"_myAccRowID_"^"_myPINVFlag_"^"_myFairType
+	..;s myExpStr=myExpStr_"^"_0_"^0^"_0_"^"_""
+	..;Set err=##class(web.DHCBillCons13).CompleteCharge(8,PrtUser,InsTypeDR,PrtRowID,0,"",myExpStr)
+	..;Set ^DHCOPBILLExceptionTaskErrLog("ExceptionLog","CompleteCharge",+$h,PrtUser,PrtRowID)=err
+	;
+	Quit 0
+	;
+AutoCancelTaskERROR	                             //发生异常时执行
+	Set $ZT=""	
+	Set ErrorMsg=$ZE                  //$ZE 获取错误信息
+	Set ^DHCOPBILLExceptionTaskErrLog("ExceptionLog","OtherErr",$zd(+$h,3),$zt($p($h,",",2),1))=ErrorMsg
+ 	Quit 0           //返回错误信息
+]]></Implementation>
+</Method>
+
+<Method name="GetExceptionCode">
+<Description>
+Creator:Lid
+CreatDate:2012-05-11
+Desc:根据发票RowID获取异常代码
+Input:
+Debug:w ##class(web.DHCOPBillChargExcepiton).GetExceptionCode(21639183)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowid</FormalSpec>
+<Implementation><![CDATA[
+	New (PrtRowid)
+	Set PrtFlag=$p($G(^DHCINVPRT(PrtRowid)),"^",8)
+	Quit:PrtFlag'="TP" ""
+	Set InsTypeDR=$p($G(^DHCINVPRT(PrtRowid)),"^",9)
+	Set AdmSource=""
+	If InsTypeDR'="" Do
+	.Set AdmSource=$p(^PAC("ADMREA",InsTypeDR),"^",9)
+	
+	Set InsuInfo=##class(web.DHCINSUPort).CheckINSUDivFlag(PrtRowid,"","","","N")	;调用医保接口判断医保结算是否成功
+	Set InsuFlag=$p(InsuInfo,"!",1)	;Y:医保结算成功，N:医保结算不成功
+	
+	Set PrtDate=$p($G(^DHCINVPRT(PrtRowid)),"^",5)
+	Set PRTInsDivDR=$p($G(^DHCINVPRT(PrtRowid)),"^",30)	;PRT_InsDiv_DR
+	Set InitInvDR=$p($G(^DHCINVPRT(PrtRowid)),"^",13)	;PRT_initInv_DR
+	Set Paysub=0,PayMStr="",HardComm=""
+    For  Set Paysub=$o(^DHCINVPRT(PrtRowid,"P",Paysub))  q:Paysub=""  d
+    .Set PayMDr=$p(^DHCINVPRT(PrtRowid,"P",Paysub),"^",1)
+    .Set PayMAmt=$p(^DHCINVPRT(PrtRowid,"P",Paysub),"^",3)
+    .Quit:(PayMDr="")!(+PayMDr=0)
+    .Set:+HardComm=0 HardComm=##class(web.DHCBillBankLogic).GetPayModeHardComm("OP",PayMDr)
+    ;
+    Set Exception="",ExceptionDesc=""	;异常位置判断
+    ;
+    If +AdmSource>0 Do
+    .If +HardComm>0 Do ;医保+银医卡
+    ..If InsuFlag'="Y" Do
+    ...Set Exception=1016			;医保+银医卡-->医保结算失败,银医卡不做,HIS确认完成不做
+    ..Else  Do
+    ...Set BankPayFlag=##class(web.DHCOPBillChargExcepiton).CheckBankPayFlag(PrtRowid)
+	...If +BankPayFlag=0 Do
+	....Set Exception=1017		;医保+银医卡-->医保结算成功,银医卡结算成功,HIS确认完成失败
+	...Else  Do
+	....Set Exception=1018		;医保+银医卡-->医保结算成功,银医卡结算失败,HIS不做确认完成
+    .Else  Do ;医保
+    ..If InsuFlag'="Y" Do
+    ...Set Exception=1014			;医保-->医保结算失败,HIS没有做确认完成
+    ..Else  Do
+    ...Set Exception=1015			;医保-->医保结算成功,HIS确认完成失败
+    Else  Do
+    .If +HardComm>0 Do ;自费+银医卡
+    ..Set BankPayFlag=##class(web.DHCOPBillChargExcepiton).CheckBankPayFlag(PrtRowid)
+    ..If +BankPayFlag=0 Do
+    ...Set Exception=1012			;自费+银医卡-->银医卡交易成功,HIS确认完成失败
+    ..Else  Do
+    ...Set Exception=1013			;自费+银医卡-->银医卡交易失败,HIS没有做确认完成
+    .Else  Do ;自费
+    ..Set Exception=1011			;自费-->确认完成失败
+    ;
+    Quit Exception
+]]></Implementation>
+</Method>
+
+<Method name="ZDCXException">
+<Description>
+自动撤销异常 add by wangminglong 2019-5-31 
+w ##class(web.DHCOPBillChargExcepiton).ZDCXException(PrtRowID)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowID:%String="",myExpStr:%String=""</FormalSpec>
+<Implementation><![CDATA[
+	s ^tempwml("ZDCXException")=$lb(PrtRowID,myExpStr)
+	q:(PrtRowID="")&(PrtRowID="0") "120^发票RowID不能为空."
+	s PrtFlag=$p(^DHCINVPRT(PrtRowID),"^",8)
+	q:(PrtFlag="")&(PrtFlag="TP") "120^没有异常,所以无法撤销"
+	s PrtUsr=$p(^DHCINVPRT(PrtRowID),"^",21)
+	s Guser=$p(myExpStr,"^",1)
+	q:(PrtUsr'=Guser) "120^非原发票收费员不能撤销!"
+	s rtninfo=##class(web.DHCOPBillChargExcepiton).GetOrdStatus(PrtRowID)
+	s DspStatus=$p(rtninfo,"^",1)
+	q:(DspStatus="C") "120^此发票药品已发药,不允许撤销此发票."
+	q:(DspStatus="E") "120^此发票已有已执行医嘱,不允许撤销此发票."
+	
+
+	Set InsTypeDR=$p($G(^DHCINVPRT(PrtRowID)),"^",9)
+	Set AdmSource=""
+	If InsTypeDR'="" Do
+	.s AdmSource=$p(^PAC("ADMREA",InsTypeDR),"^",9)
+	
+	Set Paysub=0,HardComm=""
+    For  Set Paysub=$o(^DHCINVPRT(PrtRowID,"P",Paysub))  q:Paysub=""  d
+    .Set PayMDr=$p(^DHCINVPRT(PrtRowID,"P",Paysub),"^",1)
+    .Set PayMAmt=$p(^DHCINVPRT(PrtRowID,"P",Paysub),"^",3)
+    .Quit:(PayMDr="")!(+PayMDr=0)
+    .Set:+HardComm=0 HardComm=##class(web.DHCBillBankLogic).GetPayModeHardComm("OP",PayMDr)
+	
+	Set InsuInfo=##class(web.DHCINSUPort).CheckINSUDivFlag(PrtRowID,"","","","N")	;调用医保接口判断医保结算是否成功
+	Set InsuFlag=$p(InsuInfo,"!",1)	;Y:医保结算成功，N:医保结算不成功
+	
+	s Exception=""
+	If +AdmSource>0 Do
+	.If +HardComm>0 Do      ;医保+银医卡
+	..If $g(InsuFlag)'="Y" Do
+    ...Set Exception=1016			;医保+银医卡-->医保结算失败,银医卡不做,HIS确认完成不做
+    ..Else  Do
+    ...Set BankPayFlag=##class(web.DHCOPBillChargExcepiton).CheckBankPayFlag(PrtRowID)
+	...If +BankPayFlag=0 Do
+	....Set Exception=1017		;医保+银医卡-->医保结算成功,银医卡结算成功,HIS确认完成失败
+	...Else  Do
+	....Set Exception=1018		;医保+银医卡-->医保结算成功,银医卡结算失败,HIS不做确认完成
+	.Else  Do					;医保
+    ..If $g(InsuFlag)'="Y" Do
+    ...Set Exception=1014			;医保-->医保结算失败,HIS没有做确认完成
+    ..Else  Do
+    ...Set Exception=1015			;医保-->医保结算成功,HIS确认完成失败
+    Else  Do
+    .If +HardComm>0 Do		;自费+银医卡
+    ..Set BankPayFlag=##class(web.DHCOPBillChargExcepiton).CheckBankPayFlag(PrtRowID)
+    ..If +BankPayFlag=0 Do
+    ...Set Exception=1012			;自费+银医卡-->银医卡交易成功,HIS确认完成失败
+    ..Else  Do
+    ...Set Exception=1013			;自费+银医卡-->银医卡交易失败,HIS没有做确认完成
+    .Else  Do					;自费
+    ..Set Exception=1011			;自费-->确认完成失败
+	
+	s AccMDR=""
+	Set PrtPapmiDR=$p($G(^DHCINVPRT(PrtRowID)),"^",15)
+	If PrtPapmiDR'="" s AccMDR=##class(web.DHCOPBillChargExcepiton).GetAccMDRByPAPMIDR(PrtPapmiDR) //获取病人账户Rowid()
+	
+	Set PRTInsDivDR=$p($G(^DHCINVPRT(PrtRowID)),"^",30)	;PRT_InsDiv_DR
+	Set:+PRTInsDivDR=0 PRTInsDivDR=""
+	
+	Set InsTypeDR=$p($G(^DHCINVPRT(PrtRowID)),"^",9)
+	Set:+InsTypeDR=0 InsTypeDR=""
+	Set:+AdmSource=0 AdmSource=""
+	s Group =$p(myExpStr,"^",2)
+	s rtn2="120"
+	i ((Exception=1011)||(Exception=1013)||(Exception=1014)||(Exception=1016)||(Exception=1018)) d
+	.s ExpStr = Guser_"^"_Group
+	.s rtn2=..CXException(PrtRowID,AccMDR,PRTInsDivDR,InsTypeDR,AdmSource,ExpStr)
+	q rtn2
+]]></Implementation>
+</Method>
+
+<Method name="CXException">
+<Description>
+撤销异常HIS数据回滚和保存记录信息 add by wangminglong 2019-5-31</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>PrtRowid,AccMDR,PRTInsDivDR,InsTypeDR,AdmSource,ExpStr</FormalSpec>
+<Implementation><![CDATA[
+	
+    s ^tempwml("CXException")=$lb(PrtRowid,AccMDR,PRTInsDivDR,InsTypeDR,AdmSource,ExpStr)
+    //撤销医保结算
+    q:PRTInsDivDR'="" "120^有医保结算不能自动撤销"
+    s myGroupDR=$p(ExpStr,"^",2)
+    s invInfo=##class(web.DHCOPBillChargExcepiton).GetOPRcptinfo(PrtRowid)
+    s rtn3=##class(web.DHCBillCons11).DelINVPRTForYB(PrtRowid,myGroupDR)   //HIS数据回滚
+    s prtDate=$p(invInfo,"^",2)
+    s prtTime=$p(invInfo,"^",3)
+    s papmi=$p(invInfo,"^",4)
+    s patName=$p(invInfo,"^",5)
+    s patientID=$p(invInfo,"^",6)
+    s prtUserName=$p(invInfo,"^",7)
+    s prtAmt=$p(invInfo,"^",8)
+    s guserName =$p(ExpStr,"^",1)
+    s groupDesc =myGroupDR
+    s msg=""
+    s msg = "操作人："_guserName
+	s msg = msg_" ^ "_"发票指针："_PrtRowid
+	s msg = msg_" ^ "_"发票日期："_prtDate
+	s msg = msg_" ^ "_"发票时间："_prtTime
+	s msg = msg_" ^ "_"发票金额："_prtAmt
+	s msg = msg_" ^ "_"主索引："_papmi
+	s msg = msg_" ^ "_"病人ID："_patientID
+	s msg = msg_" ^ "_"病人姓名："_patName
+	s msg = msg_" ^ "_"收费员姓名："_prtUserName
+    i rtn3=0 d
+    .s log=##class(web.DHCOPBillChargExcepiton).SetExcepitonLog(PrtRowid,"撤销",msg)   //保存记录信息
+    
+    q rtn3
+]]></Implementation>
+</Method>
+</Class>
+</Export>
