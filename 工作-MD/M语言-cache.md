@@ -142,6 +142,9 @@
 	DHC-APP>w $zts
 	64746,5744.172
 
+	DHC-APP>w $zd(0,3)
+	"1840-12-31"
+
 ##二、基本运算符
 1、算术运算符+、-、*、/、\、#、**（加、减、乘、除、整除、求余、次方）
 
@@ -218,7 +221,7 @@
 	 1.23
 
 ##三、常见的命令
-1、set给一个或多个变量赋值
+1、set给一个或多个变量赋值,w:示当前指定的输出、zw 显示变量名称及其值和/或表达式值
 
 	DHC-APP>s x=5,n(1)=2,dd=5
 	 
@@ -325,7 +328,7 @@ open(o) 开启一个设备以备使用
 	2^3^4
 
 2、$get($g)
-返回一个变量的值，如果变量存在则返回变量本身，不存在则返回空。
+返回一个变量的值，如果变量存在则返回变量本身的值，不存在则返回空。
 
 
 	DHC-APP>w $g(a)
@@ -362,9 +365,14 @@ open(o) 开启一个设备以备使用
 
 	DHC-APP>w $j("abcde",5)
 	abcde
-	DHC-APP>w $j("abcde",6)
- 	 abcde
-   	$ JOB($j)包含当前进程的ID号。此ID号是主机操作系统的实际进程ID（pid）。此ID号对于每个进程都是唯一的。
+	DHC-APP>w $j("abcde",7)
+      abcde
+    DHC-APP>w $j("abcde",9)
+        abcde
+
+    $ JOB($j)包含当前进程的ID号。此ID号是主机操作系统的实际进程ID（pid）。此ID号对于每个进程都是唯一的。
+	DHC-APP>zw $j
+	207556
 
 6、$Length($L)返回字符串的长度，或者是被分隔符的子串个数。
 
@@ -406,27 +414,30 @@ open(o) 开启一个设备以备使用
 1、for循环
 
 	/// 三种for循环
+
 	ClassMethod ForTest()
 	{
 		Set Count = 10
-	For i=1:2:Count d   //必须有d, 不然不会执行
-	.w i  //w之前必须有. 不然只会输出最后一个数据
-	w ! //换行
-	
-	set i = 0
-	for {
-		set i = i+1
-		quit:(i>Count)  //当i>Count时结束执行函数
-		w i
-		}
-	w !
-	
-	set i = 1
-	while(i<(Count+1)){
-		w i
-		set i = i+1
+		For i=1:2:Count d   //i从1开始,i每次加2, 必须有d, 不然不会执行
+		.w i  //w之前必须有. 不然只会输出最后一个数据
+		w ! //换行
+		
+		set i = 0
+		for {
+			set i = i+1
+			quit:(i>Count)  //当i>Count时结束执行函数
+			w i
+			}
+		w !
+		
+		set i = 1
+		while(i<(Count+1)){
+			w i
+			set i = i+1
 		}
 	}
+
+
 
     ///验证类方法
 	DHC-APP>d ##class(wml.test).ForTest()

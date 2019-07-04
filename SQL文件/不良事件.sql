@@ -21,8 +21,10 @@ SELECT MEDADR_Receive, * from DHC_MedAdrRepAudit WHERE MEDADR_Type=2 AND MEDADR_
 
 
 //护理不良事件表
-SELECT ADV_RepStaus_Dr, * FROM DHC_AdvMaster WHERE ADV_RepDate="2019-3-11"
+SELECT TOP 100 ADV_RepStaus_Dr, * FROM DHC_AdvMaster WHERE ADV_RepDate="2019-3-11"
 
+///报告类型
+SELECT * FROM DHC_MedAdrRepEvent
 
 SELECT ADVDR_CurStatus_DR, * FROM DHC_AdvDrugReport
 
@@ -43,5 +45,10 @@ select * from DHC_AdrEvtWorkFlow WHERE ADREW_RowID=20
 //工作流项目
 select * from DHC_AdrEvtWorkFlowItm
 
+///不良事件反应分类可查看权限
+select * from DHC_AdvQuerySec WHERE ADVQS_RepTyep_Dr=94
 
+SELECT * FROM SS_User WHERE SSUSR_Name['徐'
 
+SELECT * FROM CT_Loc WHERE CTLOC_RowID IN (44,127)
+SELECT * FROM SS_Group WHERE SSGRP_RowId IN (117,311)
