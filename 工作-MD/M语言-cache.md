@@ -1252,6 +1252,20 @@ open(o) 开启一个设备以备使用
 提交：TCOMMIT
 回滚：Trollback	
 
+	ClassMethod tb()
+	{
+		n SQLCODE
+		TSTART  s SQLCODE=$zu(34)
+		q
+	}
+	
+	ClassMethod tc()
+	{
+	 n SQLCODE
+	 TCOMMIT  s SQLCODE=$zu(34)
+	 q
+	}
+
 #<font color=red>2018-04-12 星期四 晴</font>
 
 #组件的应用

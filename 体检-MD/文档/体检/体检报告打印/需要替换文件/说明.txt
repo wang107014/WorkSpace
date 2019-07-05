@@ -1,0 +1,2 @@
+1、constant.properties和DHCPEGroupReport放到本地计算机C:\Program Files (x86)\PEReport
+2、团检报告导出模板放到C盘根目录DHCPEGroupReport

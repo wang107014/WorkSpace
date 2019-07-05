@@ -1,0 +1,6 @@
+1、运行安装PEReport_setup_x64.exe，安装时注意选择安装路径
+2、更新安装路径下的constant.properties
+3、更新替换ftl--new文件夹下的PEReportTemplet_new20181224.ftl，注意用最新日期的文件，替换时去掉日期备注为PEReportTemplet_new.ftl
+4、运行安装路径下的PEReport.reg注册，注意修改其中的路径和安装路劲一致，其中“\”改成“\\”
+5、将检查条码字体文件夹下的字体到本地C:\Windows\Fonts目录下
+6、运行安装“打印控件（必须安装）”目录下的install_lodop32.exe

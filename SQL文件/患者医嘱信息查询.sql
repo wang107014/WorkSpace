@@ -27,7 +27,7 @@ LEFT JOIN DHC_OE_OrdItem ON DHC_OE_OrdItem.DHCORI_OEORI_Dr = OE_OrdItem.OEORI_Ro
 --PHC_Instruc用法字典表；PHC_Freq频次字典表；PHC_Duration 疗程字典表
 WHERE
 --OEORI_AdministerSkinTest="Y"		--根据是否皮试查询
-Pa_Adm.PAADM_RowID="33970"		--根据就诊号查询
+Pa_Adm.PAADM_RowID="41545"		--根据就诊号查询
 AND PAADM_Type="I"	--根据就诊类型查询；I：住院；O：门诊；E：急诊；H：体检
 --AND OSTAT_Desc = "停止"		--根据医嘱状态查询
 --AND OECPR_Desc = "长期医嘱"		--根据医嘱优先级查询

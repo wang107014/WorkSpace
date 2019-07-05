@@ -47,3 +47,6 @@ SELECT * FROM PAC_AdmReason WHERE REA_RowId=1
 
 ///检验项目对应的外部codeid
 SELECT * FROM ARC_ItemExternalCodes WHERE EXT_Desc['肺炎'
+
+///CRM与发票表的关联表
+SELECT * FROM DHC_CRMPayCONPRT
