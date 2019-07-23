@@ -295,6 +295,89 @@ write(w) 输出信息到当前设备
 read(r) 从当前的设备读信息  
 open(o) 开启一个设备以备使用   
 
+
+
+
+###1、IF，ELSEIF和ELSE命令：计算表达式，然后根据表达式的真值选择要执行的代码块。
+
+
+	if (i=1) {
+	  s a="1"
+	}
+	elseif (i=2) {
+	    s a="2"
+	}
+	else {
+	   s a="3"
+	}
+
+	//d 为执行命令,想使用这种格式写条件选择时后面必须要有的d
+	if i=1 d      
+	.s a=1
+	elseif i=2 d
+	.s a=2
+	else i=3 d
+	.s a=3
+
+###2、quit(q) 结束执行一个函数并返回一个值 (终止循环结构或例程的执行。)
+
+	//q 后面有值是表示结束时返回这个值
+	s a=1
+	s b=2
+	q a+b
+
+
+###3、do(d)调用指定的对象方法，子例程，函数或过程  
+
+	SET x=1
+	IF x=1 DO Sub1(x)     //Sub()是一个函数
+	IF x'=1 DO Sub2(x)
+ 
+###4、goto(g) 当前执行的代码中遇到错误或BREAK命令后，GOTO可以恢复正常的程序执行
+
+	//在Terminal调试代码时遇到break(b),用goto恢复执行
+	//在此示例中，由于<BREAK>错误，未执行第二个WRITE ; 发出GOTO恢复执行，执行第二个WRITE：
+	//请注意，BREAK命令后必须有两个空格。
+	USER>WRITE "before" BREAK  WRITE "after"
+	before
+	WRITE "before" BREAK  WRITE "after"
+	               ^
+	<BREAK>
+	USER 1S0>GOTO
+	after
+	USER>
+
+
+###5、kill(k) 删除变量。
+
+	SET a="food",a(1)="fruit",a(2)="vegetables"
+	k a(1)    //只删除a(1) 这个局部的变量
+	
+	w输出：
+	a="food" 
+	a(2)="vegetables"
+
+	k a      //删除a变量的全部,即上面全部删掉
+	w输出：为空
+
+
+###6、New 将指定的局部变量保存到栈，将同一名的局部变量置为初始(未定义)状态
+
+	Start    SET a=2,b=4,c=6
+	    DO Subr1
+	    WRITE !,"c in Start: ",c
+	    QUIT
+	Subr1    NEW (c,d)
+	    SET d=c+c
+	    SET c=d*2
+	    WRITE !,"c in Subr1: ",c
+	    QUIT
+
+	输出：
+	c in Subr1: 24
+
+	c in Start: 24
+
 例如：Test2018.mac
 	Test2018.mac
 	
