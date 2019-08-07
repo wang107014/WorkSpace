@@ -1,0 +1,889 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-08-06 08:45:59">
+<Class name="websys.DHCMessageDetailsMgr">
+<Super>%RegisteredObject</Super>
+<TimeChanged>65220,53301.724068</TimeChanged>
+<TimeCreated>63515,55855.619344</TimeCreated>
+
+<Method name="IsLogonOutLoc">
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+	s outflag = 0
+	if $d(%session){
+		set SessLoc = %session.Data("LOGON.CTLOCID")
+		set depgroup = $p(^CTLOC(SessLoc),"^",19) ;outpat
+		Set depgroupCode = $p(^RBC("DEP",depgroup),"^",1)
+		if depgroupCode="门诊科室" set outflag = 1
+	}
+	;Set PAADMType = $p(^PAADM(EpisodeId),"^",2)
+	;continue:(PAADMType="I")&&(notShowInpatFlag)
+	
+	q outflag
+]]></Implementation>
+</Method>
+
+<Method name="GetDetailsInfo">
+<Description>
+param: websys.DHCMessageDetails表Id
+return:json
+w ##class(websys.DHCMessageDetailsMgr).GetDetailsInfo(231)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>DetailsId</FormalSpec>
+<Implementation><![CDATA[
+	;set ^Temp("detailsmgr","getdetailsinfo")=DetailsId
+	quit:DetailsId="" ""
+	set (PatientId,EpisodeId,OEOrdItemId,Diagnosis,SendUserDesc ,Content ,ReadDate ,ReadTime,ActionCode ,ActionDesc,ExecDate,ExecTime,ExecUser,CreateLocDesc,CreateLocName)=""
+	&sql(SELECT DHCDetails_Content_Dr,TO_CHAR(DHCDetails_ReadDate,'YYYY年MM月DD日'),DHCDetails_ReadFlag,DHCDetails_ReadTime,
+	DHCDetails_User_Dr->SSUSR_Name, TO_CHAR(DHCDetails_ExecDate,'YYYY年MM月DD日'),DHCDetails_ExecTime,DHCDetails_ExecUser_Dr
+	INTO :ContentDr,:ReadDate,:ReadFlag,:ReadTime,:ToUserName,:ExecDate,:ExecTime,:ExecUser 
+	FROM websys.DHCMessageDetails WHERE DHCDetails_RowId=:DetailsId)
+	
+	&sql(SELECT DHCContent_Action_Dr,DHCContent_Action_Dr->DHCAction_Desc,DHCContent_Action_Dr->DHCAction_ToolbarItems,TO_CHAR(DHCContent_CreateDate,'YYYY年MM月DD日'),DHCContent_CreateTime,DHCContent_CreateUser_Dr->SSUSR_Name,DHCContent_EpisodeId,DHCContent_OrdItemId,DHCContent_OtherInfoJson,DHCContent_Text,DHCContent_CreateUserName,DHCContent_CreateLoc_Dr->CTLOC_Desc,DHCContent_CreateLocName
+	INTO :ActionDr,:ActionDesc,:ToolbarItems,:SendDate,:SendTime,:SendUserDesc,:EpisodeId,:OEOrdItemId,:OtherInfoJson,:Content,:CreateUserName,:CreateLocDesc,:CreateLocName
+	FROM websys.DHCMessageContent WHERE DHCContent_RowId=:ContentDr)
+	If SendUserDesc="" Set SendUserDesc = CreateUserName
+	If CreateLocDesc="" Set CreateLocDesc = CreateLocName
+	if SendTime'="" Set SendTime = $zt(SendTime,2)
+	if ReadTime'="" Set ReadTime = $zt(ReadTime,2)
+	if ExecTime'="" Set ExecTime = $zt(ExecTime,2)
+	if OEOrdItemId'="" Set EpisodeId = $P(^OEORD(+OEOrdItemId),"^",1)
+    If EpisodeId'=""{
+	    set PatientId= $P(^PAADM(EpisodeId),"^",1)
+	    Set MRADM=$P(^PAADM(EpisodeId),"^",61)
+	    Set Diagnosis=##class(web.DHCDocInPatientList).GetMRAdmDiagnosis(MRADM) 
+	    ;取最后一就诊
+        If Diagnosis = ""{
+	      Set MRDIASubId = $o(^MR(MRADM,"DIA",""),-1)
+	      if (MRDIASubId>0) {
+	      	Set NoteCount = $g(^MR(MRADM,"DIA",MRDIASubId,"DES",0))
+	      	if NoteCount>0 Set Diagnosis = $g(^MR(MRADM,"DIA",MRDIASubId,"DES",NoteCount))
+	      }
+       }
+	   &sql( SELECT PAADM_DepCode_DR->CTLOC_Desc ,PAADM_AdmDocCodeDR->CTPCP_Desc ,PAADM_PAPMI_DR->PAPMI_NO
+		  INTO :AdmLoc,:AdmDoctor,:AdmPapmiNo FROM SQLUser.PA_Adm WHERE paadm_rowid=:EpisodeId )	
+    }else{
+    	Set AdmLoc="",AdmDoctor="",PatientId="",Diagnosis="",AdmPapmiNo=""
+    }
+    If PatientId'=""{
+		&sql( SELECT PAPMI_Name,PAPMI_Sex_DR->CTSEX_Desc into :Name,:Sex FROM SQLUser.PA_PatMas WHERE PAPMI_Rowid=:PatientId)
+		set Age = ##class(web.DHCDocMainOrderInterface).GetPatientAge(PatientId,EpisodeId)
+    }else{
+    	Set Name="",Sex="",Age=""
+    }
+    set PatContent = ##class(websys.DHCMessageActionTypeMgr).GetContent(ActionDr,EpisodeId,OEOrdItemId,OtherInfoJson)
+	if (ExecUser>0){
+		set ExecUser=$p(^SSU("SSUSR",+ExecUser),"^",2)
+	}
+	set AdmDao = ##class(web.dao.DHCMessageAdm).%New()
+	set AdmDao.DetailsId=DetailsId
+	set AdmDao.PageNo=1
+	set AdmDao.AdmPapmiNo=AdmPapmiNo
+	set AdmDao.Name = Name, AdmDao.Sex = Sex, AdmDao.Age = Age
+	set AdmDao.AdmLoc = AdmLoc, AdmDao.AdmDoctor = AdmDoctor, AdmDao.Diagnosis = Diagnosis, AdmDao.ActionType = ActionDesc
+	set AdmDao.SendDate = SendDate,AdmDao.SendTime = SendTime, AdmDao.SendUser = SendUserDesc,AdmDao.CreateLoc = CreateLocDesc, AdmDao.Context=PatContent_" "_Content
+	Set AdmDao.ReadDate = ReadDate,AdmDao.ReadTime=ReadTime,AdmDao.ReadUser=ToUserName
+	set AdmDao.ExecDate = ExecDate,AdmDao.ExecTime = ExecTime,AdmDao.ExecUser=ExecUser
+	Set mustExecFlag=0
+	Set content = ^websys.DHCMessageContentD(ContentDr)
+	Set OtherInfoJson = $lg(content,11)
+	If (OtherInfoJson["link")||(OtherInfoJson["linkParam"){
+		;Set mustExecFlag=1 ;只读消息也可以有link
+	}
+	Set details = ^websys.DHCMessageDetailsD(DetailsId)
+	Set ObjReadFlag = $lg(details,6)
+	Set ObjExecFlag = $lg(details,10)
+	Set TExecFlag=""
+	if (ActionDr>0){
+		Set action = ^websys.DHCMessageActionTypeD(ActionDr)
+		Set TExecMethod = $lg(action,9)
+		Set TExecLink = $lg(action,10)
+		if (TExecMethod'="")||(TExecLink'="") Set mustExecFlag = 1
+		Set TToolbarItems = $lg(action,11)
+		If (TToolbarItems["E") Set mustExecFlag = 1
+		if ($lg(action,8)'="N") Set mustExecFlag = 1     //理论上只要不是读即处理消息 mustExecFlag为1
+		
+		if mustExecFlag {
+			if ObjExecFlag="Y",ObjReadFlag="Y"  Set TExecFlag = "read-exec"
+			if ObjExecFlag="Y",ObjReadFlag="N"  Set TExecFlag = "unread-exec"
+			if ObjExecFlag="N",ObjReadFlag="Y"  Set TExecFlag = "read-unexec"
+			if ObjExecFlag="N",ObjReadFlag="N"  Set TExecFlag = "unread-unexec"
+		}else{
+			if ObjReadFlag="Y" Set TExecFlag = "read"
+			else  Set TExecFlag = "unread" 
+		}
+	}
+	d ##class(websys.DHCMessageReplyContentMgr).GetReplyInfo(.AdmDao,DetailsId)
+	Set jsonObj = ##class(ext.util.JsonObject).%New()
+	Set jsonObj.ContainNullValue = 1
+	set AdmDao.ToolbarItems = ToolbarItems, AdmDao.ContentId = ContentDr, AdmDao.TExecFlag = TExecFlag
+	Set rtn = jsonObj.FromObject(AdmDao).Json()
+	;set rtn = ##class(ext.util.JsonObject).ObjToJson(AdmDao)
+	Set AdmDao = ""
+	quit rtn
+]]></Implementation>
+</Method>
+
+<Method name="FindInfoExecute">
+<Description>
+d ##class(%ResultSet).RunQuery("websys.DHCMessageDetailsMgr","FindInfo",159)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&QHandle:%Binary,UserId:%String="",ReadFlag="N",SendDateStart="",SendDateEnd="",ActionTypeArg="",LevelType=""]]></FormalSpec>
+<ReturnType>%Status</ReturnType>
+<Implementation><![CDATA[
+	s ^tempwml("FindInfoExecute")=$lb(UserId,ReadFlag,SendDateStart,SendDateEnd,ActionTypeArg,LevelType)
+	s SessLoc="",SessUser=""
+	if $d(%session){
+		set SessLoc = $g(%session.Data("LOGON.CTLOCID"))
+		set SessUser= $g(%session.Data("LOGON.USERID"))
+	}
+	
+	;set ^Temp("websys.DHCMessageDetMgr","FindInfo")="d ##class(%ResultSet).RunQuery(""websys.DHCMessageDetailsMgr"",""FindInfo"","_UserId_","""_ReadFlag_""","""_SendDateStart_""","""_SendDateEnd_""","""_ActionTypeArg_""","""_LevelType_""")"
+	set repid=$I(^CacheTemp)
+	set ind=1
+	if UserId="" set QHandle=$lb(0,repid,0) quit $$$OK
+	if SendDateStart'="" Set SendDateStart=##class(websys.Conversions).DateHtmlToLogical(SendDateStart)
+	if SendDateEnd'="" Set SendDateEnd=##class(websys.Conversions).DateHtmlToLogical(SendDateEnd)
+	
+	// 查询已处理或未处理列表
+	set rowid="" for { 
+		set rowid = $o(^websys.DHCMessageDetailsI("ExecFlag",UserId," "_ReadFlag,rowid),-1)
+		quit:rowid=""
+		d FindInfoByRowid
+	}
+	// 只有未处理,才查询新回复列表, 即默认进入系统时显示新回复
+	if (ReadFlag="N"){ 
+		set rowid="" for { 
+			set rowid = $o(^websys.DHCMessageDetailsI("NewReplyFlag",UserId," Y",rowid),-1)
+			quit:rowid=""		
+			do FindInfoByRowid
+		}
+	}
+	if (ReadFlag="N"){
+		;----查询未执行消息时 , 按消息紧急程序排序
+		Set ind1=1
+		for tmpType="D","I","V","G"{
+			Set detId=""
+			For{
+				Set detId = $O(^||LevelType(tmpType,detId),-1)
+				Quit:detId=""
+				set ^CacheTemp(repid,ind1) = ^||LevelType(tmpType,detId)
+				Set ind1=ind1+1
+			}
+		}
+	}
+	;----
+	set QHandle=$lb(0,repid,0)
+	quit $$$OK
+FindInfoByRowid	
+	set (PatientId,EpisodeId,OEOrdItemId,SendUserDesc ,Content ,ReadDate ,ReadTime,ActionCode ,ActionDesc)=""
+	set (ActionLevelType,ActionLevelTypeDesc)=""
+	Set details = ^websys.DHCMessageDetailsD(rowid)
+	set ContentDr = $listget(details,2)
+	Quit:+ContentDr=0
+	Set content = ^websys.DHCMessageContentD(ContentDr)
+	set status=$lg(content,19)
+	Quit:status="C"		//取消 Cancel
+	set SendDate =  $lg(content,5)
+	Quit:(SendDateStart'="")&&(SendDateStart>SendDate)
+	Quit:(SendDateEnd'="")&&(SendDateEnd<SendDate)
+	Set ReplyId="",NewReplyCount=0
+	Set ReadMaxReplyRowid=+$lg(details,12)
+	set SendUserDr = $lg(content ,4)
+	// 查询未读回复条数
+	if (ReadFlag="N"){ 
+		For {
+			Set ReplyId=$O(^websys.DHCMessageReplyContentI("ContentDrIndex",ContentDr,ReplyId),-1)
+			Quit:ReplyId=""
+			Quit:ReadMaxReplyRowid>=ReplyId
+			Set gReply = ^websys.DHCMessageReplyContentD(ReplyId)
+			Set replyUserId = $lg(gReply,4)
+			Set replyType = $lg(gReply,7)
+			Continue:(replyType="S")&&(replyUserId'=UserId)&&(SendUserDr'=UserId)  // 只回复给发出人时 , 只有[回复人]与[发出人]可见
+			Set NewReplyCount=1+NewReplyCount
+		}
+	}
+	set:SendDate'="" SendDate=##class(websys.Conversions).DateLogicalToHtml(SendDate)
+	set Content = $lg(content ,3)
+	set SendUserDr = $lg(content ,4)
+	Set SendUserDesc = $lg(content ,12)
+	if SendUserDr'="",$D(^SSU("SSUSR",SendUserDr)) set SendUserDesc=$p(^SSU("SSUSR",SendUserDr),"^",2)
+	set SendTime = $lg(content ,6)
+	Set:SendTime'="" SendTime = $zt(SendTime,2)
+	Set ActionDr = $lg(content ,2)
+	Set ObjReadFlag = $lg(details,6)
+	Set ObjExecFlag = $lg(details,10)
+	Set TReadFlag = $S(ReadFlag="Y":"readFlag-Y",1:"readFlag-N")  ;css---
+	Set TExecFlag=""
+	If ObjReadFlag="Y" Set TExecFlag = "已读"
+	else  Set TExecFlag = "未读"
+	Set TExecFlag=""
+	Set OEOrdItemId = $lg(content ,10)
+	if OEOrdItemId'="" Set EpisodeId = $P($g(^OEORD(+OEOrdItemId)),"^",1)
+	if EpisodeId="" Set EpisodeId = $lg(content ,9)
+	if EpisodeId'="" set PatientId= $P($g(^PAADM(EpisodeId)),"^",1)
+	Set mustExecFlag=0
+	Set OtherInfoJson = $lg(content,11)
+	If (OtherInfoJson["link")||(OtherInfoJson["linkParam"){
+		;Set mustExecFlag=1  ;只读消息也可以有link
+	}
+	If (ActionDr'="") {
+		set rtn = ##class(websys.DHCMessageActionTypeMgr).GetContent(ActionDr,EpisodeId,OEOrdItemId,OtherInfoJson)_" "_Content
+		Set Content =rtn
+		if $d(^websys.DHCMessageActionTypeD(ActionDr)) {
+			Set action = ^websys.DHCMessageActionTypeD(ActionDr)
+			set ActionCode = $lg(action,2)
+			set ActionDesc = $lg(action,3)
+			Set ActionLevelType = $lg(action,5)
+			Set ActionLevelTypeDesc = $case(ActionLevelType,"D":"紧急","I":"重要","V":"非常重要",:"一般")
+			Quit:(LevelType'[ActionLevelType)&&(LevelType'="")
+			Quit:(ActionTypeArg'="")&&(ActionTypeArg'=ActionCode)
+			Set TExecMethod = $lg(action,9)
+			Set TExecLink = $lg(action,10)
+			
+			if (TExecMethod'="")||(TExecLink'="") Set mustExecFlag = 1
+			Set TToolbarItems = $lg(action,11)
+			If (TToolbarItems["E") Set mustExecFlag = 1
+				if ($lg(action,8)'="N") Set mustExecFlag = 1     //理论上只要不是读即处理消息 mustExecFlag为1
+			
+			set TOnlySameLocFlag= $lg(action,12)
+			if (TOnlySameLocFlag="Y")&&(SendUserDr'=SessUser){
+				if $d(%session){
+					set ConLoc = $lg(content ,17)
+					set ConMedUnit = $lg(content ,18) 
+					if ConLoc'="" {
+						Quit:("^"_ConLoc_"^")'[("^"_SessLoc_"^")
+					}elseif +ConMedUnit>0{
+						Quit:+SessLoc'=+ConMedUnit
+					}
+				}
+			}
+		}
+		if mustExecFlag {
+			if ObjExecFlag="Y",ObjReadFlag="Y"  Set TExecFlag = "read-exec"
+			if ObjExecFlag="Y",ObjReadFlag="N"  Set TExecFlag = "unread-exec"
+			if ObjExecFlag="N",ObjReadFlag="Y"  Set TExecFlag = "read-unexec"
+			if ObjExecFlag="N",ObjReadFlag="N"  Set TExecFlag = "unread-unexec"
+		}else{
+			if ObjReadFlag="Y" Set TExecFlag = "read"
+			else  Set TExecFlag = "unread" 
+		}
+	}
+	do outputrow
+	Quit 
+outputrow
+	if (ReadFlag="N") {
+		// 增加rowid节点,回复查询出的与未执行查询出的detrowid可能重复，得去重
+		Set ^||LevelType(ActionLevelType,rowid)=$lb(rowid,PatientId,EpisodeId,OEOrdItemId,SendUserDesc,Content,SendDate,SendTime,ActionCode,ActionDesc,TReadFlag,$zcvt(OtherInfoJson,"O","JS"),ActionLevelType,ActionLevelTypeDesc,TExecFlag,TExecLink,NewReplyCount)
+	}
+	if (ReadFlag="Y") {
+		set ^CacheTemp(repid,ind)=$lb(rowid,PatientId,EpisodeId,OEOrdItemId,SendUserDesc,Content,SendDate,SendTime,ActionCode,ActionDesc,TReadFlag,$zcvt(OtherInfoJson,"O","JS"),ActionLevelType,ActionLevelTypeDesc,TExecFlag,TExecLink,NewReplyCount)
+	}
+	set ind=ind+1
+	Quit
+]]></Implementation>
+</Method>
+
+<Query name="FindInfo">
+<Description>
+param: UserId 接收用户Id
+param: ReadFlag 已读标志 默认为未读 N
+param: SendDateStart 信息发送日期 YYYY-MM-DD
+param: SendDateEnd 信息发送日期 YYYY-MM-DD
+param: ActionTypeArg 动作类型代码
+param: LevelType 消息紧急类型: G,I,VI,D</Description>
+<Type>websys.Query</Type>
+<FormalSpec>UserId:%String="",ReadFlag="N",SendDateStart="",SendDateEnd="",ActionTypeArg="",LevelType=""</FormalSpec>
+<Parameter name="CONTAINID" value="2"/>
+<Parameter name="ROWSPEC" value="DetailsId:%String,PatientId:%String,EpisodeId:%String,OEOrdItemId:%String,SendUserDesc:%String,Content:%String,SendDate:%String,SendTime:%String,ActionCode:%String,ActionDesc:%String,TReadFlag:%String,OtherJson:%String,ActionLevelType:%String,ActionLevelTypeDesc:%String,TExecFlag:%String,TExecLink:%String,NewReplyCount:%String"/>
+</Query>
+
+<Method name="GetNotReadMsgCount">
+<Description>
+获取用户未读信息的数目</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>UserId:%String</FormalSpec>
+<Implementation><![CDATA[
+	set SessLoc="",SessUser=""
+	if $d(%session){
+		set SessLoc = $g(%session.Data("LOGON.CTLOCID"))
+		set SessUser= $g(%session.Data("LOGON.USERID"))
+	}
+	Set JsonObj = ##class(ext.util.JsonObject).%New()
+	if UserId'>0{
+		Set rtn = JsonObj.Put("Count",0).Put("DCount",0).Json()
+		Set JsonObj=""
+		Quit rtn
+	}
+	
+	;只有需要执行的类型才走Exec
+	;执行消息方式改成产品组调用##class(websys.DHCMessageInterface).Exec("159","1000",13,"9||45","ObjectId=xxxx","111","56662","22111")
+	;D ##class(websys.DHCMessageContentMgr).CheckAndExec()
+	
+	;DCount ->Imm消息总数       ---执行过就不弹窗,也不显示数目
+	;VCount ->Very Imp 消息总数 ---读过就不弹窗,但显示数目
+	;G -> 一般 ,I ->重要        ---未读不弹窗,显示数目
+	Set Count=0,DCount=0,VCount=0,rtn=""
+	;找出所有紧急类型的事件
+	k ImmPList,VeryImpList
+	Set Sub=0
+	For  Set Sub=$o(^websys.DHCMessageActionTypeD(Sub)) Q:Sub=""  d
+	.Set ImmType=$lg(^websys.DHCMessageActionTypeD(Sub),5)
+	.If (ImmType="D") Set ImmPList(Sub)=1		;紧急
+	.If (ImmType="V") Set VeryImpList(Sub)=1	;非常重要
+	
+
+	set Sub=0
+	for {
+		Set Sub = $o(^websys.DHCMessageDetailsI("ExecFlag",UserId," N",Sub)) 
+		Q:Sub=""
+		Set ContentDr = $lg(^websys.DHCMessageDetailsD(Sub),2)
+		Set ReadFlag = $lg(^websys.DHCMessageDetailsD(Sub),6)
+		Set ActionDr = $lg(^websys.DHCMessageContentD(ContentDr),2)
+		continue:(ActionDr="")||($d(^websys.DHCMessageActionTypeD(ActionDr))=0)
+		Set action = ^websys.DHCMessageActionTypeD(ActionDr)
+		Set content = ^websys.DHCMessageContentD(ContentDr)
+		set status=$lg(content,19)
+		continue:status="C"
+		;是否过了有效日期，将该消息处理 处理人为id为1的用户
+		set EffectiveDate=$lg(content,7)
+		if (+$h>EffectiveDate)&&(EffectiveDate>0) {   ;只判断日期不判断时间 比如今天上午发的，有效天数1，那么今天和明天都可看到
+			d ##class(websys.DHCMessageContentMgr).SaveExecAll(ContentDr, 1, +$h, $p($h,",",2),"EP")  ;此处调用SaveExecAll，不判断Content是否执行,超期处理，改变消息状态EP
+			continue 
+		}
+		Set EpisodeId = $lg(content,9)
+		Set OEOrdItem = $lg(content,10)
+		Set CreateDate = $lg(content,5)
+		if OEOrdItem'="" Set EpisodeId = $P($g(^OEORD(+OEOrdItem)),"^",1)
+		Set CurrentStatu="A"
+		if EpisodeId'="" Set CurrentStatu = $p($g(^PAADM(EpisodeId)),"^",20)
+		Set TDischAutoExec=$lg(action,16)
+		;出院后病人消息变成执行 1--demo   //读取消息类型配置DischAutoExec 不是N则自动处理
+		If (CurrentStatu="D")&&(TDischAutoExec'="N"){
+			do ##class(websys.DHCMessageContentMgr).SaveExecAll(ContentDr, 1, +$h, $p($h,",",2),"D")     ;出院病人消息处理 状态改为D
+			continue 
+		}
+		
+		If (ActionDr'="")&&$d(^websys.DHCMessageActionTypeD(ActionDr)) {
+			Set action = ^websys.DHCMessageActionTypeD(ActionDr)
+			set TOnlySameLocFlag= $lg(action,12)
+			if TOnlySameLocFlag="Y" {
+				if $d(%session){
+					set ConLoc = $lg(content ,17)
+					set ConMedUnit = $lg(content ,18) 
+					if ConLoc'="" {   
+						set ConLoc="^"_ConLoc_"^"
+						set seloc="^"_SessLoc_"^"
+						continue:ConLoc'[seloc
+					}elseif +ConMedUnit>0{
+						continue:+SessLoc'=+ConMedUnit
+					}
+				}
+			}
+			
+		}
+		Set Count = Count + 1
+		If ($g(ImmPList(ActionDr))=1) Set DCount=DCount+1
+		If ($g(VeryImpList(ActionDr))=1)&&(ReadFlag="N") Set DCount=DCount+1
+	}
+	//再查询有新回复的 
+	set Sub=0
+	for {
+		Set Sub = $o(^websys.DHCMessageDetailsI("NewReplyFlag",UserId," Y",Sub)) 
+		Q:Sub=""
+		Set ContentDr = $lg(^websys.DHCMessageDetailsD(Sub),2)
+		Set ReadFlag = $lg(^websys.DHCMessageDetailsD(Sub),6)
+		Set ExecFlag=$lg(^websys.DHCMessageDetailsD(Sub),10)
+		continue:ExecFlag="N" //未处理的不需要计算
+		Set ActionDr = $lg(^websys.DHCMessageContentD(ContentDr),2)
+		continue:(ActionDr="")||($d(^websys.DHCMessageActionTypeD(ActionDr))=0)
+		Set action = ^websys.DHCMessageActionTypeD(ActionDr)
+		Set content = ^websys.DHCMessageContentD(ContentDr)
+		set SendUserDr = $lg(content ,4)
+		set status=$lg(content,19)
+		continue:status="C"
+		If (ActionDr'="")&&$d(^websys.DHCMessageActionTypeD(ActionDr)) {
+			Set action = ^websys.DHCMessageActionTypeD(ActionDr)
+			set TOnlySameLocFlag= $lg(action,12)
+			if (TOnlySameLocFlag="Y")&&(SendUserDr'=SessUser) {
+				if $d(%session){
+					set ConLoc = $lg(content ,17)
+					set ConMedUnit = $lg(content ,18) 
+					if ConLoc'="" {   
+						set ConLoc="^"_ConLoc_"^"
+						set seloc="^"_SessLoc_"^"
+						continue:ConLoc'[seloc
+					}elseif +ConMedUnit>0{
+						continue:+SessLoc'=+ConMedUnit
+					}
+				}
+			}
+			
+		}
+		Set Count = Count + 1
+		If ($g(ImmPList(ActionDr))=1) Set DCount=DCount+1
+		If ($g(VeryImpList(ActionDr))=1)&&(ReadFlag="N") Set DCount=DCount+1
+	}
+	
+	
+	set AutoAlert="true"
+	If (##class(websys.Conversions).IsValidMethodName("websys.DHCMessageConfig","MsgAlertIsDisabled")){
+		if ##class(websys.DHCMessageConfig).MsgAlertIsDisabled(SessLoc)=1 {
+			set AutoAlert="false"
+		}
+	}
+	
+	;DCount来控制是否弹窗
+	;Count 来控制显示数目
+	Set createDate = +$h,createTime=$p($h,",",2)
+	do ..GenUserQueryTimeJson(UserId,createDate,createTime,0,Count,DCount)
+	Set rtn = JsonObj.Put("Count",Count).Put("DCount",DCount).Put("createDate",createDate).Put("createTime",createTime).Put("AutoAlert",AutoAlert).Json()
+	Set JsonObj=""
+	Quit rtn
+]]></Implementation>
+</Method>
+
+<Method name="Save">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContentDr,ToUserDr</FormalSpec>
+<Implementation><![CDATA[
+	if +ContentDr<=0 quit -100_"^入参ContentId为空"
+	Quit:+ToUserDr<=0 -101_"^入参ToUserDr为空"
+	
+	If $d(^websys.DHCMessageDetailsI("ContentUser",ContentDr,ToUserDr)){
+		Set Id = $O(^websys.DHCMessageDetailsI("ContentUser",ContentDr,ToUserDr,""))
+		Quit Id
+	}
+	ts
+	set DetObj = ##class(websys.DHCMessageDetails).%New()
+	do DetObj.DHCDetailsContentDrSetObjectId(ContentDr)
+	do DetObj.DHCDetailsUserDrSetObjectId(ToUserDr)
+	s sc = DetObj.%Save()
+	if $$$ISERR(sc){
+		set rtn = "-100^Message Details Save Fail. Error Text:"_$System.Status.GetErrorText(sc)
+		tro
+		quit rtn
+	}
+	tc
+	Set Id = DetObj.%Id()
+	set DetObj = ""
+	Quit Id
+]]></Implementation>
+</Method>
+
+<Method name="SaveReadInfo">
+<Description>
+@param: Id Int  消息明细表websys.DHCMessageDetails的rowid
+@param: ReadDate  %Date 读消息的日期
+@param: ReadTime %Time 读消息的时间
+D ##class(websys.DHCMessageDetailsMgr).SaveReadInfo(155)
+读消息 有回调方法进行回调，只有第一次读才进行回调</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Id,ReadDate=+$h,ReadTime={$p($h,",",2)}</FormalSpec>
+<Implementation><![CDATA[
+	set firstReadFlag=0
+	if +Id<=0 quit -100_"^入参Id为空"
+	set DetObj = ##class(websys.DHCMessageDetails).%OpenId(Id)
+	if ReadDate="" Set ReadDate = +$h
+	if ReadTime="" Set ReadTime = $p($h,",",2)
+	if (DetObj.DHCDetailsReadFlag'="Y"){
+		set DetObj.DHCDetailsReadDate = ReadDate
+		set DetObj.DHCDetailsReadTime = ReadTime
+		Set DetObj.DHCDetailsReadFlag = "Y"
+		set firstReadFlag=1
+	}
+	Set ContentDr = $lg(^websys.DHCMessageDetailsD(Id),2)
+	Set ActionDr = $lg(^websys.DHCMessageContentD(ContentDr),2)
+	Set TeamExec = $lg(^websys.DHCMessageActionTypeD(ActionDr),8)
+	Set ToolbarItems = $lg(^websys.DHCMessageActionTypeD(ActionDr),11)
+	// No Yes ALL
+	If (TeamExec="N")&&(DetObj.DHCDetailsExecFlag'="Y")&&(ToolbarItems'["E") {
+		;读即执行
+		Set DetObj.DHCDetailsExecFlag = "Y"
+		Set DetObj.DHCDetailsExecDate = ReadDate
+		Set DetObj.DHCDetailsExecTime = ReadTime
+		Set DetObj.DHCDetailsExecUserDr = DetObj.DHCDetailsUserDrGetObjectId()
+	}
+	s sc = DetObj.%Save()
+	if $$$ISERR(sc){
+		set rtn = "-100^Message Details SaveReadInfo Fail. Error Text:"_$System.Status.GetErrorText(sc)
+		quit rtn
+	}
+	Set Id = DetObj.%Id()
+	set DetObj = ""
+	if firstReadFlag d ..ReadCallback(Id)
+	Quit Id
+]]></Implementation>
+</Method>
+
+<Method name="ReadCallback">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>DetailsId</FormalSpec>
+<Implementation><![CDATA[
+	//set ^callback=DetailsId
+	q:DetailsId'>0 0
+	Set ContentDr = $lg(^websys.DHCMessageDetailsD(DetailsId),2)
+	set content=^websys.DHCMessageContentD(ContentDr)
+	Set ActionDr = $lg(content,2)
+	Set ReadCallbackMethod = $lg(^websys.DHCMessageActionTypeD(ActionDr),15)
+	q:ReadCallbackMethod="" 0
+	Set UserDr=$lg(^websys.DHCMessageDetailsD(DetailsId),7)    //谁的消息
+	Set EpisodeId = $lg(content,9)
+	Set OEOrdItem = $lg(content,10)
+	Set BizObjId = $lg(content,22)
+	
+	Set CallbackCN = $p(ReadCallbackMethod,".",1,$l(ReadCallbackMethod,".")-1)
+	Set CallbackMN = $p(ReadCallbackMethod,".",$l(ReadCallbackMethod,"."))
+	try {
+		Set rtn = $classMethod(CallbackCN,CallbackMN,EpisodeId,OEOrdItem,BizObjId,UserDr,+$h,$p($h,",",2))
+	}catch e{
+		Set ^TempMessageError("Callback",DetailsId)=CallbackCN_","_CallbackMN_","_EpisodeId_","_OEOrdItem_","_BizObjId_","_UserDr_","_(+$h)_","_$p($h,",",2)_","_$ze
+	}
+	q 1
+]]></Implementation>
+</Method>
+
+<Method name="SaveExecInfo">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContentId,ExecUserDr="",ExecDate="",ExecTime=""</FormalSpec>
+<Implementation><![CDATA[
+	Quit:ContentId="" ContentId
+	if $g(ExecUserDr)="",$d(%session) Set ExecUserDr = %session.Data("LOGON.USERID") 
+	if $g(ExecDate)="" Set ExecDate = +$h
+	if $g(ExecTime)="" Set ExecTime = $p($h,",",2)
+	Set UserDr = ""
+	Set sc = $$$OK
+	TS 
+	For {
+		Set UserDr = $O(^websys.DHCMessageDetailsI("ContentUser",ContentId,UserDr))
+		Quit:UserDr=""
+		Set DetailsId = $O(^websys.DHCMessageDetailsI("ContentUser",ContentId,UserDr,""))
+		set sc = ..SaveExecInfoById(DetailsId,ExecUserDr,ExecDate,ExecTime)
+		Quit:$$$ISERR(sc)
+	}
+	If $$$ISERR(sc){Tro:$tlevel  Quit sc}
+	TC:$tlevel
+	Quit ContentId
+]]></Implementation>
+</Method>
+
+<Method name="SaveReplyInfo">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>Id,ReadDate=+$h,ReadTime={$p($h,",",2)}</FormalSpec>
+<Implementation><![CDATA[
+	if +Id<=0 quit -100_"^入参Id为空"
+	Set ContentDr = $lg(^websys.DHCMessageDetailsD(Id),2)
+	set DetObj = ##class(websys.DHCMessageDetails).%OpenId(Id)
+	// 回复已读
+	Set DetObj.DHCDetailsNewReplyFlag="N"
+	Set ReplyMaxId = $O(^websys.DHCMessageReplyContentI("ContentDrIndex",ContentDr,""),-1)
+	Set DetObj.DHCDetailsReadedReplyMaxId=ReplyMaxId
+	s sc = DetObj.%Save()
+	if $$$ISERR(sc){
+		set rtn = "-100^Message Details SaveReplyInfo Fail. Error Text:"_$System.Status.GetErrorText(sc)
+		quit rtn
+	}
+	Set Id = DetObj.%Id()
+	set DetObj = ""
+	Quit Id
+]]></Implementation>
+</Method>
+
+<Method name="SaveExecInfoById">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>DetailsId,ExecUserDr,ExecDate,ExecTime</FormalSpec>
+<Implementation><![CDATA[
+	quit:DetailsId="" -102
+	s ^tempwml("SaveExecInfoById",DetailsId)=$lb(DetailsId, ExecUserDr, ExecDate, ExecTime)
+	Set obj = ##class(websys.DHCMessageDetails).%OpenId(DetailsId)
+	Set obj.DHCDetailsExecFlag = "Y"
+	Set:(obj.DHCDetailsExecDate="") obj.DHCDetailsExecDate = ExecDate
+	Set:(obj.DHCDetailsExecTime="") obj.DHCDetailsExecTime = ExecTime
+	Set:(obj.DHCDetailsExecUserDr="") obj.DHCDetailsExecUserDr = ExecUserDr
+	if (obj.DHCDetailsReadFlag'="Y"){
+		;执行则一定阅读过
+		Set obj.DHCDetailsReadFlag = "Y"
+		Set obj.DHCDetailsReadDate = +$H
+		Set obj.DHCDetailsReadTime = $p($H,",",2)
+	}
+	Set sc = obj.%Save()
+	Quit:$$$ISERR(sc) sc
+	quit 1
+]]></Implementation>
+</Method>
+
+<Method name="ReplySendUser">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContentDr,ReplyUserDr,ReplyRowId</FormalSpec>
+<Implementation><![CDATA[
+	Quit:ReplyRowId'>0 $$$OK
+	Quit:ReplyUserDr'>0 $$$OK
+	Quit:ContentDr'>0 $$$OK
+	Set ToUserDr=0
+	Set sc=$$$OK
+	Set ContentCreateUser = +$lg(^websys.DHCMessageContentD(ContentDr),4)
+	Quit:(+ContentCreateUser<=0) "-101^CreateUserIsInvalid"
+	Set ReplyUserDetId = $O(^websys.DHCMessageDetailsI("ContentUser",ContentDr,ReplyUserDr,"")) 
+	Quit:ReplyUserDetId=0 "-103^ReplyUserNotExistInDetials"
+	ts
+	//发送人自己的det应该是无新回复，变最大
+	set ReplyUserDetObj = ##class(websys.DHCMessageDetails).%OpenId(ReplyUserDetId)
+	Set ReplyUserDetObj.DHCDetailsNewReplyFlag="N"
+	Set ReplyUserDetObj.DHCDetailsReadedReplyMaxId=ReplyRowId
+	Set sc = ReplyUserDetObj.%Save()
+	if $$$ISERR(sc) tro:$tlevel  quit "-102^UpdDetailsFail."_$system.Status.GetErrorText(sc)
+	//给 发content消息的用户 更新成有新回复
+	// 判断发送人在details表中
+	Set DetId = 0
+	If $d(^websys.DHCMessageDetailsI("ContentUser",ContentDr,ContentCreateUser)) { //已回复过 或 也在表中
+		Set DetId = $O(^websys.DHCMessageDetailsI("ContentUser",ContentDr,ContentCreateUser,""))
+	}
+	if (DetId=0){ // 发送人不是相关人,且没有被回复过
+		set DetObj = ##class(websys.DHCMessageDetails).%New()
+		do DetObj.DHCDetailsContentDrSetObjectId(ContentDr)
+		do DetObj.DHCDetailsUserDrSetObjectId(ContentCreateUser)
+		Set DetObj.DHCDetailsReadFlag = "Y"
+		Set DetObj.DHCDetailsReadDate =  $lg(^websys.DHCMessageContentD(ContentDr),5)  // createDate
+		Set DetObj.DHCDetailsReadTime =  $lg(^websys.DHCMessageContentD(ContentDr),6)  // createTime
+		Set DetObj.DHCDetailsExecFlag = "Y"
+		Set DetObj.DHCDetailsExecDate =  $lg(^websys.DHCMessageContentD(ContentDr),14)  //exec date
+		Set DetObj.DHCDetailsExecTime =  $lg(^websys.DHCMessageContentD(ContentDr),15)  //exec time
+		Set DetObj.DHCDetailsNewReplyFlag="Y"
+		Set sc = DetObj.%Save()
+		if $$$ISERR(sc) tro:$tlevel  quit "-102^SaveDetailsFail."_$system.Status.GetErrorText(sc)
+	}else{ 	// 已回复过或在表中
+		set DetObj = ##class(websys.DHCMessageDetails).%OpenId(DetId)
+		Set DetObj.DHCDetailsNewReplyFlag="Y"
+		Set sc = DetObj.%Save()
+		if $$$ISERR(sc) tro:$tlevel  quit "-102^SaveDetailsFail."_$system.Status.GetErrorText(sc)
+	}
+ 	tc:$tlevel
+ 	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="ReplyAll">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>ContentDr,ReplyUserDr,ReplyRowId</FormalSpec>
+<Implementation><![CDATA[
+	Quit:ReplyRowId'>0 $$$OK
+	Quit:ReplyUserDr'>0 $$$OK
+	Quit:ContentDr'>0 $$$OK
+	Set ToUserDr=0
+	Set sc=$$$OK
+	ts
+ 	For {
+	 	Set ToUserDr = $O(^websys.DHCMessageDetailsI("ContentUser",ContentDr,ToUserDr))
+	 	Quit:ToUserDr=""
+	 	Set DetId=0
+	 	For{
+	 		Set DetId = $O(^websys.DHCMessageDetailsI("ContentUser",ContentDr,ToUserDr,DetId))
+	 		Quit:DetId=""
+	 		Set NewReplyFlag = $lg(^websys.DHCMessageDetailsD(DetId),13)
+			Continue:$d(^websys.DHCMessageDetailsD(DetId))=0
+			ts
+			Set DetObj = ##class(websys.DHCMessageDetails).%OpenId(DetId)
+	 		if (ToUserDr'=ReplyUserDr){ 					//非本人回复的才是新消息
+	 			if (NewReplyFlag="N") Set DetObj.DHCDetailsNewReplyFlag="Y" 
+	 		}else{
+	 			Set DetObj.DHCDetailsReadedReplyMaxId=ReplyRowId  //自己回复的一定看了  
+	 		}
+	 		Set sc = DetObj.%Save()
+			if $$$ISERR(sc){
+				tro
+				Quit
+			}
+			tc
+	 	}
+ 	}
+ 	if $$$ISERR(sc) tro:$tlevel  Quit "-101^"_$system.Status.GetErrorText(sc)
+ 	//如果发送人不再明细表中
+ 	Set ContentCreateUser = +$lg(^websys.DHCMessageContentD(ContentDr),4)
+ 	if (ContentCreateUser>0)&&'$d(^websys.DHCMessageDetailsI("ContentUser",ContentDr,ContentCreateUser)) {
+	 	set DetObj = ##class(websys.DHCMessageDetails).%New()
+		do DetObj.DHCDetailsContentDrSetObjectId(ContentDr)
+		do DetObj.DHCDetailsUserDrSetObjectId(ContentCreateUser)
+		Set DetObj.DHCDetailsReadFlag = "Y"
+		Set DetObj.DHCDetailsReadDate =  $lg(^websys.DHCMessageContentD(ContentDr),5)  // createDate
+		Set DetObj.DHCDetailsReadTime =  $lg(^websys.DHCMessageContentD(ContentDr),6)  // createTime
+		Set DetObj.DHCDetailsExecFlag = "Y"
+		Set DetObj.DHCDetailsExecDate =  $lg(^websys.DHCMessageContentD(ContentDr),14)  //exec date
+		Set DetObj.DHCDetailsExecTime =  $lg(^websys.DHCMessageContentD(ContentDr),15)  //exec time
+		Set DetObj.DHCDetailsExecUserDr =  $lg(^websys.DHCMessageContentD(ContentDr),16)  //exec user
+		Set DetObj.DHCDetailsNewReplyFlag="Y"
+		Set sc = DetObj.%Save()
+		if $$$ISERR(sc) tro:$tlevel  quit "-102^SaveDetailsFail."_$system.Status.GetErrorText(sc)
+	}
+ 	tc:$tlevel
+ 	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Method name="GenUserQueryTimeJson">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>userId,createDate,createTime,isNewMsg=1,Count=0,DCount=0</FormalSpec>
+<Implementation><![CDATA[
+	;2017-03-27 取消此种缓存方式,多台ecp难同一处理
+	;考虑今后把json写到同一台电脑的硬盘上
+	
+	Quit ""
+	 Set phyPath = ##class(ext.util.String).GetPhysicalPath("")
+	 Set DirName = ##class(%File).NormalizeDirectory(phyPath_"/scripts/cachejson/")
+	 if '##class(%File).DirectoryExists(DirName){ d ##class(%File).CreateDirectoryChain(DirName)}
+		 
+	 Set FileName = ##class(%File).NormalizeFilename(DirName_"/U"_userId_".json")
+	 
+	 Set File = ##class(%File).%New(FileName)
+	 If +$g(Count)=0 Set Count = +Count
+	 If +$g(DCount)=0 Set DCount = +DCount
+	 do File.Open("NW")
+	 if File {
+	 	do File.WriteLine("{""createDate"":"_createDate_",""createTime"":"_createTime_",""isNewMsg"":"_isNewMsg_",""Count"":"_Count_",""DCount"":"_DCount_"}")
+	 }
+	 do File.Close()
+	 Set File = ""
+]]></Implementation>
+</Method>
+
+<Query name="FindByContent">
+<Description>
+d ##class(%ResultSet).RunQuery("websys.DHCMessageDetailsMgr","FindByContent","596","","Y")</Description>
+<Type>websys.Query</Type>
+<FormalSpec>ContentId:%String="",ToUser:%String="",ExecFlag:%String=""</FormalSpec>
+<Parameter name="CONTAINID" value="1"/>
+<Parameter name="ROWSPEC" value="DetailsId:%String,UserName:%String,DReadFlag:%String,DReadDateTime:%String,DExecFlag:%String,DExecUser:%String,DExecDateTime:%String"/>
+</Query>
+
+<Method name="FindByContentExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&QHandle:%Library.Binary,ContentId="",ToUser="",ExecFlag=""]]></FormalSpec>
+<ReturnType>%Library.Status</ReturnType>
+<Implementation><![CDATA[
+	set:ExecFlag'="Y" ExecFlag="N"
+ 	s repid=$I(^CacheTemp) 
+ 	s ind=1 
+ 	s QHandle=$lb(0,repid,0)
+
+	if +ToUser>0 {    ;如果传了用户，就不走循环了
+		if $d(^websys.DHCMessageDetailsI("ContentUser",ContentId,+ToUser)) {
+			set DetailsId=$O(^websys.DHCMessageDetailsI("ContentUser",ContentId,+ToUser,""))  
+			set UserName=$p(^SSU("SSUSR",ToUser),"^",2)
+			set g=^websys.DHCMessageDetailsD(DetailsId)
+			set DExecFlag=$lg(g,10)
+			if DExecFlag=ExecFlag {
+				Set DReadFlag=$lg(g,6)
+				set DReadDate=$lg(g,4)
+				Set:+DReadDate>0 DReadDate=##class(websys.Conversions).DateLogicalToHtml(DReadDate)
+				set DReadTime=$lg(g,5)
+				Set:+DReadTime DReadTime=##class(websys.Conversions).TimeLogicalToHtml(DReadTime)
+		
+				set DExecDate=$lg(g,8)
+				Set:DExecDate>0 DExecDate=##class(websys.Conversions).DateLogicalToHtml(DExecDate)
+				set DExecTime=$lg(g,9)
+				Set:+DExecTime DExecTime=##class(websys.Conversions).TimeLogicalToHtml(DExecTime)
+				set DExecUser=$lg(g,11)
+				Set:+DExecUser>0 DExecUser=$p(^SSU("SSUSR",DExecUser),"^",2)
+				
+				Set ^CacheTemp(repid,ind)=$lb(DetailsId,UserName,DReadFlag,DReadDate_" "_DReadTime,DExecFlag,DExecUser,DExecDate_" "_DExecTime)
+				Set ind=ind+1
+			}
+		}
+		Set QHandle=$lb(0,repid,0) 
+		Quit $$$OK
+		
+	}
+	set userDr=""
+	for {
+		q:+ContentId'>0  ;ContentId不大于0，直接出循环
+		Set userDr = $O(^websys.DHCMessageDetailsI("ContentUser",ContentId,userDr))
+		q:userDr=""
+		set DetailsId=$O(^websys.DHCMessageDetailsI("ContentUser",ContentId,userDr,""))  
+		set UserName=$p(^SSU("SSUSR",userDr),"^",2)
+		set g=^websys.DHCMessageDetailsD(DetailsId)
+		set DExecFlag=$lg(g,10)	
+		Continue:DExecFlag'=ExecFlag
+		
+		Set DReadFlag=$lg(g,6)
+		set DReadDate=$lg(g,4)
+		Set:+DReadDate>0 DReadDate=##class(websys.Conversions).DateLogicalToHtml(DReadDate)
+		set DReadTime=$lg(g,5)
+		Set:+DReadTime DReadTime=##class(websys.Conversions).TimeLogicalToHtml(DReadTime)
+		
+		set DExecDate=$lg(g,8)
+		Set:DExecDate>0 DExecDate=##class(websys.Conversions).DateLogicalToHtml(DExecDate)
+		set DExecTime=$lg(g,9)
+		Set:+DExecTime DExecTime=##class(websys.Conversions).TimeLogicalToHtml(DExecTime)
+		set DExecUser=$lg(g,11)
+		if DExecUser'="" {
+			if $d(^SSU("SSUSR",DExecUser)) set DExecUser=$p(^SSU("SSUSR",DExecUser),"^",2)
+			else  set DExecUser="Error "_DExecUser
+		}
+		
+		Set ^CacheTemp(repid,ind)=$lb(DetailsId,UserName,DReadFlag,DReadDate_" "_DReadTime,DExecFlag,DExecUser,DExecDate_" "_DExecTime)
+		Set ind=ind+1
+	}
+	Set QHandle=$lb(0,repid,0) 
+	Quit $$$OK
+]]></Implementation>
+</Method>
+
+<Query name="FindCountAndBizIds">
+<Description>
+d ##class(%ResultSet).RunQuery("websys.DHCMessageDetailsMgr","FindCountAndBizIds",1,"2000","N")</Description>
+<Type>websys.Query</Type>
+<FormalSpec>UserId:%String="",ActionCodes:%String="",ExecFlag:%String=""</FormalSpec>
+<Parameter name="CONTAINID" value="1"/>
+<Parameter name="ROWSPEC" value="code:%String,desc:%String,count:%String,bizObjId:%String,msgContentId:%String,bizAdmId:%String,execType:%String"/>
+</Query>
+
+<Method name="FindCountAndBizIdsExecute">
+<ClassMethod>1</ClassMethod>
+<FormalSpec><![CDATA[&QHandle:%Library.Binary,UserId="",ActionCodes="",ExecFlag=""]]></FormalSpec>
+<ReturnType>%Library.Status</ReturnType>
+<Implementation><![CDATA[
+	set:ExecFlag'="Y" ExecFlag="N"
+ 	s repid=$I(^CacheTemp) 
+ 	s ind=1 
+ 	s QHandle=$lb(0,repid,0)
+ 	
+ 	Quit:UserId="" $$$OK
+ 	
+ 	for i=1:1:$l(ActionCodes,"^") {
+	 	set code=$p(ActionCodes,"^",i)
+	 	continue:code=""
+	 	set actionid = $o(^websys.DHCMessageActionTypeI("ActionCode"," "_code,""))
+	 	continue:actionid=""
+	 	set desc = $lg(^websys.DHCMessageActionTypeD(actionid),3)
+	 	set descArr(actionid)=desc , codeArr(actionid)=code , countArr(actionid)=0 , bizArr(actionid)="" , msgArr(actionid)="" ,admArr(actionid)=""
+	 	set TeamExec= $lg(^websys.DHCMessageActionTypeD(actionid),8)
+	 	set execTypeArr(actionid)=$s(TeamExec="N":"Read",1:"Exec")
+	} 
+	set rowid=""
+	for {
+		set rowid = $o(^websys.DHCMessageDetailsI("ExecFlag",UserId," "_ExecFlag,rowid),-1)
+		q:rowid=""
+		Set contentid = $lg(^websys.DHCMessageDetailsD(rowid),2)
+		Set actionid = $lg(^websys.DHCMessageContentD(contentid),2)
+		if $d(countArr(actionid)){
+			set bizObjId=$lg(^websys.DHCMessageContentD(contentid),22)
+			set bizAdmId=$lg(^websys.DHCMessageContentD(contentid),9)
+			set countArr(actionid)=countArr(actionid)+1
+			set bizArr(actionid)=bizArr(actionid)_$s(bizArr(actionid)="":"",1:"^")_bizObjId
+			set msgArr(actionid)=msgArr(actionid)_$s(msgArr(actionid)="":"",1:"^")_contentid
+			set admArr(actionid)=admArr(actionid)_$s(admArr(actionid)="":"",1:"^")_bizAdmId
+		}
+		
+	}
+
+	set actionid=""
+	for {
+		set actionid=$o(countArr(actionid))
+		q:actionid=""
+		Set ^CacheTemp(repid,ind)=$lb(codeArr(actionid),descArr(actionid),countArr(actionid),bizArr(actionid),msgArr(actionid),admArr(actionid),execTypeArr(actionid))
+		Set ind=ind+1
+	}
+	Set QHandle=$lb(0,repid,0) 
+	Quit $$$OK
+]]></Implementation>
+</Method>
+</Class>
+</Export>

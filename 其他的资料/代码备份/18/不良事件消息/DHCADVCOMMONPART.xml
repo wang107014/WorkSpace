@@ -1,0 +1,3453 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-08-06 08:35:27">
+<Class name="web.DHCADVCOMMONPART">
+<Description>
+不良事件升级 公共类</Description>
+<ClassType/>
+<Import>sqluser</Import>
+<ProcedureBlock>0</ProcedureBlock>
+<Super>%Library.RegisteredObject</Super>
+<TimeChanged>65227,62317.055661</TimeChanged>
+<TimeCreated>64488,59921.696374</TimeCreated>
+
+<Method name="QueryVictimtypeCombo">
+<Description>
+Description: 受害者类型(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 受害者类型(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryVictimtypeCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","患者").Put("text","患者"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","员工").Put("text","员工"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","患者家属").Put("text","患者家属"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","实习生").Put("text","实习生"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","进修生").Put("text","进修生"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","访客").Put("text","访客"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","护工").Put("text","护工"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","保洁员").Put("text","保洁员"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","其他").Put("text","其他"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","无").Put("text","无"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryPatSexCombo">
+<Description>
+Description: 患者性别(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-11-28
+Input:  	 
+Return: 	 患者性别(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryPatSexCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  s SexDr=""
+  F  S SexDr=$o(^CT("SEX",SexDr)) Q:SexDr=""  D
+  .S SexDesc=$p(^CT("SEX",SexDr),"^",2) //描述
+  .d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value",SexDesc).Put("text",SexDesc))
+  w jsonObj.ListToJson(listObj)
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryWhetherCombo">
+<Description>
+Description: 是否(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 是否(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryWhetherCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","Y").Put("text","是"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","N").Put("text","否"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryAdmTypeCombo">
+<Description>
+Description: 就诊形式(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 就诊形式(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryAdmTypeCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","I").Put("text","住院"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","O").Put("text","门诊"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","E").Put("text","急诊"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryDateTypeCombo">
+<Description>
+Description: 发生日期类型(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 发生日期类型(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryDateTypeCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","工作日").Put("text","工作日"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","周末").Put("text","周末"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","节日之一").Put("text","节日之一"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryLocDescCombo">
+<Description>
+Description: 科室(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 科室(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryLocDescCombo("12")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>hospId,q</FormalSpec>
+<Implementation><![CDATA[
+  n (hospId,q)
+  S q=$$ALPHAUP^SSUTIL4(q)
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  s LocDr="",LocDesc=""
+  F  S LocDr=$o(^CTLOC(LocDr)) Q:LocDr=""  D
+  .S LocDesc=$p(^CTLOC(LocDr),"^",2) //描述
+  .;b:LocDr=110 ;1
+  .Q:LocDesc=""
+  .Q:(hospId'="")&(hospId'=$p(^CTLOC(LocDr),"^",22))
+  .;^PAC("ADMLOC",0,"AdmType",{ADMLOC_AdmType},{ADMLOC_CTLOC_DR},{ADMLOC_RowId})
+  .;b:LocDr=110 ;1.1
+  .Q:$d(^PAC("ADMLOC",0,"AdmType","I",LocDr))
+  .Q:$d(^PAC("ADMLOC",0,"AdmType","O",LocDr))
+  .;b:LocDr=110 ;1.2
+  .Q:$d(^PAC("ADMLOC",0,"AdmType","E",LocDr))&&(LocDesc'["输液")
+  .Q:$d(^PAC("ADMLOC",0,"AdmType","H",LocDr))
+  .;b:LocDr=110 ;2
+  .S DateActiveFrom=$p(^CTLOC(LocDr),"^",24) // 科室 开始日期 
+  .S DateActiveTo=$p(^CTLOC(LocDr),"^",25) // 科室  结束日期
+  .Q:((DateActiveFrom'="")&&(DateActiveFrom>+$h))||((DateActiveTo'="")&&(DateActiveTo<+$h))
+  .S ContactName=$p(^CTLOC(LocDr),"^",43) // 科室编码  
+  .;b:LocDr=110 ;3
+  .Q:(q'="")&&(ContactName'[q)&&(LocDesc'[q)
+  .d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value",LocDesc).Put("text",LocDesc))
+  w jsonObj.ListToJson(listObj)
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="SelLocDesc">
+<Description>
+Description: 科室
+Creator:     congyue
+CreateDate:  2017-07-24
+Table: 		 CT_LOC
+Output:  	 所有科室描述（下拉框显示）  
+Others:		 w ##class(web.DHCADVCOMMONPART).SelLocDesc()</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	S result = ##class(%Library.ResultSet).%New()
+	S sqlStr = "SELECT CTLOC_ROWID as LocDr, CTLOC_Desc as LocDesc FROM CT_LOC"
+    D result.Prepare(sqlStr)
+	D result.Execute()
+	S count = 0
+	W "["
+	While(result.Next())
+	{	
+		S LocDr = result.Data("LocDr")
+		S LocDesc = result.Data("LocDesc")
+		S tmp=LocDr_"^"_LocDesc
+		S count = count+1
+		I count=1 D
+		.W ##class(web.DHCADVJSONCOMMON).getJsonData("val^text",tmp)
+		E  D
+		.W ","_##class(web.DHCADVJSONCOMMON).getJsonData("val^text",tmp)
+	}
+	W "]"
+]]></Implementation>
+</Method>
+
+<Method name="QueryAdvLevelCombo">
+<Description>
+Description: 不良事件级别(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 不良事件级别(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryAdvLevelCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","Ⅰ级").Put("text","Ⅰ级-警讯事件"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","Ⅱ级").Put("text","Ⅱ级-不良后果事件"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","Ⅲ级").Put("text","Ⅲ级-未造成后果事件"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","Ⅳ级").Put("text","Ⅳ级-隐患事件"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryInjSevOneCombo">
+<Description>
+Description: 一级伤害严重度(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 一级伤害严重度(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryInjSevOneCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","死亡").Put("text","死亡"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","永久性功能丧失").Put("text","永久性功能丧失"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryInjSevTwoCombo">
+<Description>
+Description: 二级伤害严重度(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 二级伤害严重度(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryInjSevTwoCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","重度伤害").Put("text","重度伤害"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","中度伤害").Put("text","中度伤害"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","轻度伤害").Put("text","轻度伤害"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryInjSevThreeCombo">
+<Description>
+Description: 三级伤害严重度(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 三级伤害严重度(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryInjSevThreeCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","未造成伤害").Put("text","未造成伤害"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","没有伤害").Put("text","没有伤害"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryInjSevFourCombo">
+<Description>
+Description: 四级伤害严重度(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 四级伤害严重度(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryInjSevFourCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","没有伤害").Put("text","没有伤害"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryHaveOrNoCombo">
+<Description>
+Description: 有无不需要(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 有无不需要(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryHaveOrNoCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","有").Put("text","有"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","无").Put("text","无"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","不需要").Put("text","不需要"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryWheOrNoCombo">
+<Description>
+Description: 是否 不知道(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 是否 不知道(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryWheOrNoCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","Y").Put("text","是"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","N").Put("text","否"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","Oth").Put("text","不知道"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryWhetherNoCombo">
+<Description>
+Description: 是否 无法判断(下拉框) 
+Creator:     dws
+CreateDate:  2017-08-08
+Input:  	 
+Return: 	 是否 无法判断(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryWhetherNoCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","Y").Put("text","是"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","N").Put("text","否"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","No").Put("text","无法判断"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryWhetherOthCombo">
+<Description>
+Description: 是否 其他(下拉框) 
+Creator:     dws
+CreateDate:  2017-08-08
+Input:  	 
+Return: 	 是否 其他(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryWhetherOthCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","Y").Put("text","是"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","N").Put("text","否"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","O").Put("text","其他"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryIfUnderstandCombo">
+<Description>
+Description: 理解 不理解(下拉框) 
+Creator:     CongYue
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 理解 不理解(下拉框) 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryIfUnderstandCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","理解").Put("text","理解"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","不理解").Put("text","不理解"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryTypeOfPartiesCombo">
+<Description>
+Description: 当事人职业种类(下拉框) 
+Creator:     dws
+CreateDate:  2017-07-24
+Input:  	 
+Return: 	 当事人职业种类(下拉框)
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryTypeOfPartiesCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","医生").Put("text","医生"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","护士").Put("text","护士"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","技师").Put("text","技师"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","药剂师").Put("text","药剂师"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","行政人员").Put("text","行政人员"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","技工").Put("text","技工"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","后勤人员").Put("text","后勤人员"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","院感检测护士").Put("text","院感检测护士"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","医务处长").Put("text","医务处长"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","轮转护士").Put("text","轮转护士"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","进修护士").Put("text","进修护士"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","实习护士").Put("text","实习护士"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","其他").Put("text","其他"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryWorkYearsCombo">
+<Description>
+Description: 工作年限/在科室工作年限(下拉框) 
+Creator:     dws
+CreateDate:  2017-07-25
+Input:  	 
+Return: 	 工作年限/在科室工作年限(下拉框)
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryWorkYearsCombo()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+  
+  s jsonObj=##class(web.DHCAPPJsonObject).%New()
+  s listObj=##class(%ListOfObjects).%New()
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","未满一年").Put("text","未满一年"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","1~3年").Put("text","1~3年"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","4~5年").Put("text","4~5年"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","6~10年").Put("text","6~10年"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","10年以上").Put("text","10年以上"))
+  d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value","不知道").Put("text","不知道"))
+  w jsonObj.ListToJson(listObj)	
+  q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryRepInfo">
+<Description>
+Description: 查询 报告信息 
+Creator:     CongYue
+CreateDate:  2017-07-28
+Input:  	 record : 表单记录ID
+Table:       FormRecord,FormRecordItm ##class(web.DHCAdvAction).ALPHAUP()
+Return: 	 报告信息 PatID^PatName^RepSubType  病人ID^病人姓名^报告小类型
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryRepInfo(4)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>record:%String</FormalSpec>
+<Implementation><![CDATA[
+	n (record)
+	s ItmID="",PatID="",PatName="",RepSubType=""
+	f  s ItmID=$o(^User.DHCAdvFormRecordItmI("IndexFormRecord",record,ItmID)) q:ItmID=""  d
+	.s data=^User.DHCAdvFormRecordItmD(ItmID)
+	.s PatIDdicdr=$o(^User.DHCAdvFormDicI("IndexField",##class(web.DHCAdvAction).ALPHAUP("PatID"),"")) ;处理为大写
+	.S:PatIDdicdr=$LIST(data,3) PatID=$LIST(data,4)
+	.s PatNamedr=$o(^User.DHCAdvFormDicI("IndexField",##class(web.DHCAdvAction).ALPHAUP("PatName"),""))
+	.S:PatNamedr=$LIST(data,3) PatName=$LIST(data,4)
+	S RepSubType=..QueryDataInfo(record,"事件类别")
+
+	q PatID_"^"_PatName_"^"_RepSubType
+]]></Implementation>
+</Method>
+
+<Method name="QueryDataInfo">
+<Description>
+Description: 获取 数据保存值（select-change 类型（事件类别，不良事件级别，伤害严重度）） 
+Creator:     CongYue
+CreateDate:  2017-09-07
+Input:  	 record : 表单填写记录表ID, title:所需元素保存值的元素描述（事件类别，不良事件级别，伤害严重度）
+Table:       FormRecordItm,FormDic
+Return: 	 Data  数据保存值
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryDataInfo(33,"事件类别")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>record:%String,title:%String</FormalSpec>
+<Implementation><![CDATA[
+	n (record,title)
+	s ItmID="",Data=""
+	f  s ItmID=$o(^User.DHCAdvFormRecordItmI("IndexFormRecord",record,ItmID)) q:ItmID=""  d
+	.s data=^User.DHCAdvFormRecordItmD(ItmID)
+	.s FormdicID="",RepSubTypedr=""
+	.f  s FormdicID=$o(^User.DHCAdvFormDicI("IndexTitle"," "_title,FormdicID)) q:FormdicID=""  d
+	..s Formdicdata=^User.DHCAdvFormDicD(FormdicID)
+	..s field=$LIST(Formdicdata,2)
+	..s style=$LIST(Formdicdata,3)
+	..q:(style'="")&&(style'="select-change")
+	..s parrefdicID="",parrefdictitle=""
+	..f  s parrefdicID=$o(^User.DHCAdvFormDicI("IndexParef"," "_FormdicID,parrefdicID)) q:parrefdicID=""  d
+	...s parrefdicdata=^User.DHCAdvFormDicD(parrefdicID)
+	...s parrefdictitle=$LIST(parrefdicdata,4)
+	...S:parrefdicID=$LIST(data,4) Data=parrefdictitle
+	...Q:Data'=""
+	
+	q Data
+]]></Implementation>
+</Method>
+
+<Method name="SaveRepInfo">
+<Description>
+Description: 保存 报告信息 
+Creator:     CongYue
+CreateDate:  2017-08-10
+Input:  	 user = 用户ID, formId = 表单ID, formVersion = , par = 表单数据, recordId = 表单填写记录表ID
+				 AuditList:LgUserID用户ID, LgCtLocID科室ID, LgGroupID安全组ID, adrNextLoc指向科室ID, adrLocAdvice科室意见, adrReceive报告接收状态
+Table:       FormRecord,FormRecordItm,FormRecordItmSub
+Return: 	 req^FormRecordID 
+Others:		 w ##class(web.DHCADVCOMMONPART).SaveRepInfo("3","982","14","173112.93374:堵漏事件^173114.93376:小测试堵漏事件事件              经过^173116.93378:测试堵漏事件原因分析^173118.93380:测试堵漏事件改进方法^173122.                      94160:innurse^173126.93383:测试职称^173130.93385:测试职务^173133.94168:2^173139.        93403:innurse^173143.93405:2^173149.93407:测试堵漏行为^173151.93417:众生皆苦东方            航空市政府开始的饭卡上^173104.93567:一病房^173108.93372:2017-12-18^173147.94162:              一病房^173136.93400:是^173154.93410:一般^173158.93415:否^173135.93393:医疗","","","101","")
+Others:		 w ##class(web.DHCADVCOMMONPART).SaveRepInfo"7054","997","1","196811.93983:张恒测试勿动1^196819.89009:1972-      05-24(46岁)^196822.93988:女^196831.93424:1.头痛(岱镇)^196808.94689:2018-10-15^19      6838.95383:药房^196838.95384:急诊室^196838.95385:门诊 ","53","7054^69^23^^^3^0",       "69","183","1")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>user="",formId="",formVersion="",par="",recordId="",AuditList:%String,locdr="",EpisodeID="",flag=""</FormalSpec>
+<Implementation><![CDATA[
+	N (user,formId,formVersion,par,recordId,AuditList,locdr,EpisodeID,flag)
+	s ^TMP("XYYJ")=$lb(user, formId, formVersion,par,recordId,AuditList,locdr,EpisodeID,flag)
+	S RepID=""
+	I recordId'=""  D
+	.S RepID=$o(^DHCADVMASTER(0,"FormRec",recordId,""))
+	.S data=^User.DHCAdvFormRecordD(recordId)
+	.S formId=$LIST(data,2)
+	.S formVersion=$LIST(data,3)
+	S ret=0
+	I RepID="" D
+	.S ret=..Insert(user,formId,formVersion,par,recordId,AuditList,locdr,EpisodeID,flag)
+	E  D
+	.S ret=..Update(RepID,user,formId,formVersion,par,recordId,AuditList,locdr,flag)
+	
+	//不良事件提交成功发送消息提醒到各个科室 add by wangminglong 2019-8-2 start 
+	i ((+ret="0")&(ret'="")&(flag="1")) d
+	.S CreatDoc=user 
+	.S EpisodeID=EpisodeID  //就诊ID 
+	.S ReceiveDocs=""
+	.S Locs="130^122^127^129^138^107^128^82^139"  
+	.S Formdata=^User.DHCAdvFormNameD(formId)
+	.S RepTypeCode=$LIST(Formdata,2)
+	.S RepTypeDr=$o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(RepTypeCode),"")) //类别指向  
+	.S ConsultID=$p(ret,"^",2)_"||"_RepTypeDr
+	.d ##class(web.DHCADVMEDADRREPORT).Sendmessagenew(CreatDoc,EpisodeID,ReceiveDocs,Locs,ConsultID)
+	//不良事件提交成功发送消息提醒到各个科室 add by wangminglong 2019-8-2 end
+	
+	Q ret
+]]></Implementation>
+</Method>
+
+<Method name="Insert">
+<Description>
+Description: 插入 报告信息 
+Creator:     CongYue
+CreateDate:  2017-08-23
+Input:  	 user = 用户ID, formId = 表单ID, formVersion = , par = 表单数据, recordId = 表单填写记录表ID
+				 AuditList:LgUserID用户ID, LgCtLocID科室ID, LgGroupID安全组ID, adrNextLoc指向科室ID, adrLocAdvice科室意见, adrReceive报告接收状态
+Table:       FormRecord,FormRecordItm,FormRecordItmSub,DHC_AdvMaster
+Return: 	 req^RepID 
+Others:		 w ##class(web.DHCADVCOMMONPART).SaveRepInfo("7054","997","1","196811.93983:张恒测试勿动1^196819.89009:1972-05-24(46岁)^196822.93988:女^196831.93424:1.头痛(岱镇)^196808.94689:2018-10-15^196838.95383:药房^196838.95384:急诊室^196838.95385:门诊","53","7054^69^23^^^3^0","69","183","1")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>user="",formId="",formVersion="",par="",recordId="",AuditList="",locdr="",EpisodeID="",flag=""</FormalSpec>
+<Implementation><![CDATA[
+	N (user,formId,formVersion,par,recordId,AuditList,locdr,EpisodeID,flag)
+	s ^qqa("param1")=$lb(user,formId,formVersion,par,recordId,AuditList,locdr,EpisodeID,flag)
+	S Err=0
+	S UserList=$p(AuditList,"^",1,3)
+
+	TS
+	b ;qqa1
+	//保存报告表单数据信息
+	S recordlist=##class(web.DHCADVFormRecord).SaveRecord(user,formId,formVersion,par,recordId)
+	S rep=$p(recordlist,"^",1)
+	S recordId=$p(recordlist,"^",2)
+	I rep'=0 tro
+	Q:rep'=0 rep
+	b ;qqa2
+	//获取报告状态ID与报告类型
+	S RepSubType=..QueryDataInfo(recordId,"事件类别")
+	S Formdata=^User.DHCAdvFormNameD(formId)
+	S RepTypeCode=$LIST(Formdata,2)
+	S RepTypeDr=$o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(RepTypeCode),"")) //类别指向
+	b ;qqa3
+	//保存不良事件主表
+	S RepID=..InsAdvmaster(recordId,RepTypeDr,RepSubType,user,locdr,EpisodeID,formId)
+	I RepID<0 tro
+	Q:RepID<0 RepID
+	b ;qqa4
+	//更新状态
+    S nextStatuDr=""
+	I flag="1" D
+	.S adtList=RepID_"^"_RepTypeDr_"^"_UserList_"^"_$p(AuditList,"^",7)
+	.S nextStatuDr=##class(web.DHCADVCOMMON).GetRepNextStatusDr(adtList)
+	.///提报权限中如果跟直接审核权限下相同，则跳过直接审核那一步 add by wangminglong 2019-4-23 start
+	.i $p(AuditList,"^",7)=0 d
+	..s LgGroupID=$p(AuditList,"^",3)
+	..s nextStatuDr=##class(web.DHCADVMEDADRREPORT).FindStatus(nextStatuDr,LgGroupID)
+	..s $p(AuditList,"^",6)=1     //接收状态
+	.///提报权限中如果跟直接审核权限下相同，则跳过直接审核那一步 add by wangminglong 2019-4-23 end
+	I (flag="1")&(+nextStatuDr'>0) tro
+	Q:(flag="1")&(+nextStatuDr'>0) nextStatuDr
+	b ;qqa5
+	I flag="1" D
+	.&sql(update DHC_AdvMaster set ADV_RepStaus_Dr=:nextStatuDr where ADV_RowID=:RepID)
+	.I SQLCODE'=0 tro
+	.I SQLCODE'=0 S Err="-16"
+	Q:Err'=0 "-16"
+	
+	S advRepAuditList=""
+	s:AuditList'="" $p(AuditList,"^",7)=RepTypeDr
+	S:AuditList'="" advRepAuditList=nextStatuDr_"^"_AuditList
+	
+	//不良反应报告审批流程[默认插入初始状态]
+	I advRepAuditList'="" D
+	.S Err=##class(web.DHCADVCOMMON).InsRepAudit(RepID,advRepAuditList)
+	I Err'=0 tro
+	Q:Err'=0 "-18"
+
+	TC
+	Q "0^"_RepID_"^"_recordId_"^"_RepTypeDr
+]]></Implementation>
+</Method>
+
+<Method name="Update">
+<Description>
+Description: 插入 报告信息 
+Creator:     CongYue
+CreateDate:  2017-08-23
+Input:  	 user = 用户ID, formId = 表单ID, formVersion = , par = 表单数据, recordId = 表单填写记录表ID
+				 AuditList:LgUserID用户ID, LgCtLocID科室ID, LgGroupID安全组ID, adrNextLoc指向科室ID, adrLocAdvice科室意见, adrReceive报告接收状态
+Table:       FormRecord,FormRecordItm,FormRecordItmSub,DHC_AdvMaster
+Return: 	 req^RepID 
+Others:		 w ##class(web.DHCADVCOMMONPART).Insert(223)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RepID,user,formId,formVersion,par,recordId,AuditList:%String,locdr,flag=""</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (RepID,user,formId,formVersion,par,recordId,AuditList,locdr,flag)
+	S Err=0
+	S UserList=$p(AuditList,"^",1,3)
+	S RepStatus=$p(^DHCADVMASTER(RepID),"^",3)
+	TS
+	//保存报告表单数据信息
+	S recordlist=##class(web.DHCADVFormRecord).SaveRecord(user,formId,formVersion,par,recordId)
+	S Err=$p(recordlist,"^",1)
+	S recordId=$p(recordlist,"^",2)
+	I Err'=0 tro
+	Q:Err'=0 Err
+
+	//获取报告状态ID与报告类型
+	S RepSubType=..QueryDataInfo(recordId,"事件类别")
+	S Formdata=^User.DHCAdvFormNameD(formId)
+	S RepTypeCode=$LIST(Formdata,2)
+	S RepTypeDr=$o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(RepTypeCode),"")) //类别指向
+
+	//保存不良事件主表
+	S RepID=..UpdAdvmaster(RepID,recordId,RepTypeDr,RepSubType,user,locdr,formId)
+	I RepID<0 tro
+	Q:RepID<0 RepID
+	
+	//更新状态
+    S nextStatuDr=""
+	I flag="1" D
+	.S adtList=RepID_"^"_RepTypeDr_"^"_UserList_"^"_$p(AuditList,"^",7)
+	.S nextStatuDr=##class(web.DHCADVCOMMON).GetRepNextStatusDr(adtList)
+	.///提报权限中如果跟直接审核权限下相同，则跳过直接审核那一步 add by wangminglong 2019-4-23 start
+	.i $p(AuditList,"^",7)=0 d
+	..s LgGroupID=$p(AuditList,"^",3)
+	..s nextStatuDr=##class(web.DHCADVMEDADRREPORT).FindStatus(nextStatuDr,LgGroupID)
+	..s $p(AuditList,"^",6)=1     //接收状态
+	.///提报权限中如果跟直接审核权限下相同，则跳过直接审核那一步 add by wangminglong 2019-4-23 end
+	I (flag="1")&(+nextStatuDr'>0) tro
+	Q:(flag="1")&(+nextStatuDr'>0) nextStatuDr
+	
+	I flag="1" D
+	.&sql(update DHC_AdvMaster set ADV_RepStaus_Dr=:nextStatuDr where ADV_RowID=:RepID)
+	.I SQLCODE'=0 tro
+	.I SQLCODE'=0 S Err="-16"
+	Q:Err'=0 "-16"
+	
+	S advRepAuditList=""
+	s:AuditList'="" $p(AuditList,"^",7)=RepTypeDr
+	S:(AuditList'="")&&(flag=1) advRepAuditList=nextStatuDr_"^"_AuditList
+	S:(AuditList'="")&&(flag=0) advRepAuditList=RepStatus_"^"_AuditList
+	
+	//不良反应报告审批流程[默认插入初始状态]
+	I advRepAuditList'="" D
+	.S Err=##class(web.DHCADVCOMMON).InsRepAudit(RepID,advRepAuditList)
+	I Err'=0 tro
+	Q:Err'=0 "-18"
+
+	TC
+	Q "0^"_RepID_"^"_recordId_"^"_RepTypeDr
+]]></Implementation>
+</Method>
+
+<Method name="InsAdvmaster">
+<Description>
+Description: 插入 不良事件主表信息 
+Creator:     CongYue
+CreateDate:  2017-08-23
+Input:  	 表单填写记录表ID, 报告类型ID,报告子类型描述,user人员ID,locdr科室ID
+Table:       DHC_AdvMaster
+Return: 	 RepID 
+Others:		 w ##class(web.DHCADVCOMMONPART).InsAdvmaster()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>recordId,RepTypeDr,RepSubType,user,locdr,EpisodeID,formId</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (recordId, RepTypeDr, RepSubType, user, locdr,EpisodeID,formId)
+	S advRepImpFlag="N"
+	k ^yy
+	s ^yy=formId_","_recordId
+	S RepLevel=..QueryDataInfo(recordId,"事件级别")
+	S RepInjSev=..QueryDataInfo(recordId,"伤害严重度")
+	S PatID=..QueryInputDataInfo(recordId,"患者ID")
+	S AdmType=..QueryInputDataInfo(recordId,"就诊形式")
+	
+	S PatName=..GetSaveInfo("PatName", formId, recordId)
+	S PatSex=..GetSaveInfo("PatSex", formId, recordId)
+	S PatAge=..GetSaveInfo("PatAge", formId, recordId)
+	S AdmNo=..GetSaveInfo("AdmNo", formId, recordId) ;病案号
+	S PatDiag=..GetSaveInfo("PatDiag", formId, recordId) ;诊断
+	
+	S HospAdmDate=..GetSaveInfo("HospAdmDate", formId, recordId) ;入院日期
+	S:HospAdmDate'="" HospAdmDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(HospAdmDate)
+	S OccurDate=..GetSaveInfo("OccurDate", formId, recordId) ;发生日期
+	S:OccurDate'="" OccurDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(OccurDate)
+	S OccurTime=..GetSaveInfo("OccurTime", formId, recordId) ;发生时间
+	S:OccurTime'="" OccurTime=$zth(OccurTime,1)
+	S OccurLoc=..GetSaveInfo("OccurLoc", formId, recordId)  ;发生科室
+	S:OccurLoc'="" OccurLoc=$o(^CTLOC(0,"Desc",$$ALPHAUP^SSUTIL4(OccurLoc),""))
+
+	S RepUserTitle=..GetSaveInfo("RepUserTitle", formId, recordId) ;填报人职称
+	S RepUseWorYears=..GetSaveInfo("RepUseWorYears", formId, recordId) ;工作年限
+	S RepDate=..GetSaveInfo("RepDate", formId, recordId) ;报告日期
+	S:RepDate'="" RepDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(RepDate)
+	S:RepDate="" RepDate=+$h
+	S RepTime=$p($h,",",2) ;报告时间
+	S RepUser=..GetSaveInfo("RepUser", formId, recordId) ;报告人
+	S:RepUser'="" RepUser=$o(^SSU("SSUSR",0,"SSUSR_Name",$$ALPHAUP^SSUTIL4(RepUser),""))
+	S:RepUser="" RepUser=user
+	S RepLoc=..GetSaveInfo("RepLoc", formId, recordId) ;报告科室
+	S:RepLoc'="" RepLoc=$o(^CTLOC(0,"Desc",$$ALPHAUP^SSUTIL4(RepLoc),""))
+	S:RepLoc="" RepLoc=locdr
+	
+	&SQL(Insert Into DHC_AdvMaster(ADV_FormRec_Dr,ADV_RepType_Dr,ADV_RepDate,ADV_RepTime,
+		ADV_RepUser_Dr,ADV_RepLoc_Dr,ADV_RepSubType,ADV_RepImpFlag,ADV_RepLevel,ADV_RepInjSev,ADV_PatID,ADV_AdmType,ADV_Adm,
+		ADV_PatName,ADV_PatSex,ADV_PatAge,ADV_AdmNo,ADV_PatDiag,ADV_HospAdmDate,ADV_OccurDate,ADV_OccurTime,
+		ADV_OccurLoc,ADV_RepUserTitle,ADV_RepUseWorYears
+	) Values(:recordId,:RepTypeDr,:RepDate,:RepTime,
+		:RepUser,:RepLoc,:RepSubType,:advRepImpFlag,:RepLevel,:RepInjSev,:PatID,:AdmType,:EpisodeID,
+		:PatName,:PatSex,:PatAge,:AdmNo,:PatDiag,:HospAdmDate,:OccurDate,:OccurTime,
+		:OccurLoc,:RepUserTitle,:RepUseWorYears
+	))
+	I SQLCODE'=0  Q SQLCODE
+	Q +%ROWID
+]]></Implementation>
+</Method>
+
+<Method name="UpdAdvmaster">
+<Description>
+Description: 修改 不良事件主表信息 
+Creator:     CongYue
+CreateDate:  2017-08-23
+Input:  	 不良事件主表ID, 表单填写记录表ID, 报告类型ID,报告子类型描述,user人员ID,locdr科室ID
+Table:       DHC_AdvMaster
+Return: 	 RepID 
+Others:		 w ##class(web.DHCADVCOMMONPART).UpdAdvmaster()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RepID,recordId,RepTypeDr,RepSubType,user,locdr,formId</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (RepID,recordId, RepTypeDr, RepSubType, user, locdr,formId)
+	k ^yyy
+	s ^yyy=formId_","_recordId
+
+	S RepLevel=..QueryDataInfo(recordId,"事件级别")
+	S RepInjSev=..QueryDataInfo(recordId,"伤害严重度")
+	S PatID=..QueryInputDataInfo(recordId,"患者ID")
+	S AdmType=..QueryInputDataInfo(recordId,"就诊形式")
+	
+	S PatName=..GetSaveInfo("PatName", formId, recordId)
+	S PatSex=..GetSaveInfo("PatSex", formId, recordId)
+	S PatAge=..GetSaveInfo("PatAge", formId, recordId)
+	S AdmNo=..GetSaveInfo("AdmNo", formId, recordId) ;病案号
+	S PatDiag=..GetSaveInfo("PatDiag", formId, recordId) ;诊断
+	
+	S HospAdmDate=..GetSaveInfo("HospAdmDate", formId, recordId) ;入院日期
+	S:HospAdmDate'="" HospAdmDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(HospAdmDate)
+	S OccurDate=..GetSaveInfo("OccurDate", formId, recordId) ;发生日期
+	S:OccurDate'="" OccurDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(OccurDate)
+	S OccurTime=..GetSaveInfo("OccurTime", formId, recordId) ;发生时间
+	S:OccurTime'="" OccurTime=$zth(OccurTime,1)
+	S OccurLoc=..GetSaveInfo("OccurLoc", formId, recordId)  ;发生科室
+	S:OccurLoc'="" OccurLoc=$o(^CTLOC(0,"Desc",$$ALPHAUP^SSUTIL4(OccurLoc),""))
+
+	S RepUserTitle=..GetSaveInfo("RepUserTitle", formId, recordId) ;填报人职称
+	S RepUseWorYears=..GetSaveInfo("RepUseWorYears", formId, recordId) ;工作年限
+	S RepDate=..GetSaveInfo("RepDate", formId, recordId) ;报告日期
+	S:RepDate'="" RepDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(RepDate)
+	S:RepDate="" RepDate=+$h
+	S RepTime=$p($h,",",2) ;报告时间
+	S RepUser=..GetSaveInfo("RepUser", formId, recordId) ;报告人
+	S:RepUser'="" RepUser=$o(^SSU("SSUSR",0,"SSUSR_Name",$$ALPHAUP^SSUTIL4(RepUser),""))
+	S:RepUser="" RepUser=user
+	S RepLoc=..GetSaveInfo("RepLoc", formId, recordId) ;报告科室
+	S:RepLoc'="" RepLoc=$o(^CTLOC(0,"Desc",$$ALPHAUP^SSUTIL4(RepLoc),""))
+	S:RepLoc="" RepLoc=locdr
+	
+	&SQL(update DHC_AdvMaster set ADV_FormRec_Dr=:recordId,ADV_RepType_Dr=:RepTypeDr,ADV_RepDate=:RepDate,ADV_RepSubType=:RepSubType,
+	ADV_RepLevel=:RepLevel,ADV_RepInjSev=:RepInjSev,ADV_PatID=:PatID,ADV_AdmType=:AdmType,
+	ADV_PatName=:PatName,ADV_PatSex=:PatSex,ADV_PatAge=:PatAge,ADV_AdmNo=:AdmNo,ADV_PatDiag=:PatDiag,ADV_HospAdmDate=:HospAdmDate,ADV_OccurDate=:OccurDate,ADV_OccurTime=:OccurTime,
+	ADV_OccurLoc=:OccurLoc,ADV_RepUserTitle=:RepUserTitle,ADV_RepUseWorYears=:RepUseWorYears
+	 where ADV_RowID=:RepID)
+	I SQLCODE'=0  Q SQLCODE
+	Q +%ROWID
+]]></Implementation>
+</Method>
+
+<Method name="QueryRepList">
+<Description>
+Description: 不良事件查询 
+Creator:     CongYue
+CreateDate:  2017-08-28
+Input:  	 StrParam : 以字符"^"分割,格式为:开始时间^结束时间
+Table:       FormRecord,FormRecordItm,FormRecordItmSub
+Return: 	 不良事件 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryRepList("10","1","07/02/2018^07/02/2018^193^^25^193^4926^^^^^^^^^^")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rows=10,page=1,StrParam:%String</FormalSpec>
+<Implementation><![CDATA[
+  
+	N (rows,page,StrParam)
+	q:StrParam="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(0) //输出json结尾符
+	S End = page*rows
+	S Start=(page-1)*rows+1
+	S EndPage=page*rows  //结束行
+	S StPage=((page-1)*rows)+1     //开始行
+	S StDate=$p(StrParam,"^",1)    //开始日期
+	S EndDate=$p(StrParam,"^",2)   //结束日期
+	S DeptID=$p(StrParam,"^",3)    //科室
+	S patNo=$p(StrParam,"^",4)     //登记号
+	S GroupId=$p(StrParam,"^",5)   //安全组ID
+    S LocId=$p(StrParam,"^",6)     //科室ID
+    S UserId=$p(StrParam,"^",7)    //用户ID
+    S StatType=$p(StrParam,"^",8)  //状态
+    I StatType="全部" S StatType=""
+    S typeevent=$p(StrParam,"^",9)    //填报类型
+    S statShare=$p(StrParam,"^",10)    //分享状态
+    S receive=$p(StrParam,"^",11)    //接收
+    S repflag=$p(StrParam,"^",12)    //已报标识(Y) 草稿标识(N)
+    S inpfileflag=$p(StrParam,"^",14)    //归档标识
+	S OverTime=$p(StrParam,"^",15)    //是否超时
+	S homeRepOverTime=$p(StrParam,"^",16)    //首页是否填报超时
+	S Cancelflag=$p(StrParam,"^",17)    //作废界面查询
+	S list=UserId_"^"_LocId_"^"_GroupId
+    S h=0  //yangyongtao  2017-11-22 
+	S:StDate'="" StDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(StDate)
+	S:EndDate'="" EndDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(EndDate)
+	q:StDate="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(h) //输出json结尾符
+	s count=0
+	w "{""rows"":["
+	f date=EndDate:-1:StDate d
+	.s RepID=""
+	.f  s RepID=$o(^DHCADVMASTER(0,"RepDate",date,RepID)) q:RepID=""  d
+	..S RepTypeCode="",RepType="",RepStaus="",RepUser="",RepLoc="",RepSubType="",RepImpFlag="",Medadrreceive="",Medadrreceivedr="",FileFlag="",RepOverTimeflag="",AutOverTimeflag="",RepOverTime="",AutOverTime="",RepCancelflag="",StaFistAuditUser="",BackAuditUser=""
+	..S recordID=$p(^DHCADVMASTER(RepID),"^",1)
+	..Q:recordID=""
+	..S RepTypeDr=$p(^DHCADVMASTER(RepID),"^",2)
+	..S:RepTypeDr'="" RepTypeCode=$p(^DHCMEDADREVT(RepTypeDr),"^",1)
+	..S:RepTypeDr'="" RepType=$p(^DHCMEDADREVT(RepTypeDr),"^",2)
+	..S FILERowID=$o(^DHCADVFILE(0,"RepDrType",RepID,RepTypeDr,""))
+	..S File="",FileFlag=""
+	..S:FILERowID'="" File=$p(^DHCADVFILE(FILERowID),"^",3)
+	..S FileFlag=$S(File="":"未归档",File="N":"撤销归档",File="Y":"已归档",1:"")
+	..S RepDate=$p(^DHCADVMASTER(RepID),"^",4)
+	..S RepTime=$p(^DHCADVMASTER(RepID),"^",5)
+	..S OccurDate=$p(^DHCADVMASTER(RepID),"^",25)  ///发生日期
+	..S:OccurDate="" OccurDate=0
+	..S OccurTime=$p(^DHCADVMASTER(RepID),"^",26)  ///发生时间
+	..S:OccurTime="" OccurTime=0
+	..S RepOverTime=""
+	..S HolidayDate=##class(web.DHCADVCOMMONPART).CheckTimeEscapeHoliday(OccurDate,OccurTime,RepDate,RepTime)
+	..I (HolidayDate>24) S RepOverTimeflag="Y"   //如果报告填报超过24小时
+	..S RepOverTime=$S(RepOverTimeflag="":"未超时",RepOverTimeflag="N":"未超时",RepOverTimeflag="Y":"已超时",1:"")
+	..S RepStausDr=$p(^DHCADVMASTER(RepID),"^",3)
+	..I RepStausDr=""  D
+	...S RepStaus="未提交"
+	...S status="N"
+	..E  D 
+	...S status="Y"
+	...S RepStaus=$p(^DHCADREVTWFI(+RepStausDr,"ADREWI",$p(RepStausDr,"||",2)),"^",2)
+	..S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	..I MedadrID'=""  D
+	...S:RepStaus="护士长审核" AutOverTimeflag=$p(^DHCMEDREPADT(MedadrID),"^",15) ;护士长审核超时标志
+	...S MedadrUserID=$p(^DHCMEDREPADT(MedadrID),"^",4)
+	...S Medadrreceivedr=$p(^DHCMEDREPADT(MedadrID),"^",9)
+	...S Medadrreceive=$S(Medadrreceivedr="":"未接收",Medadrreceivedr="1":"接收",Medadrreceivedr="2":"驳回",Medadrreceivedr="3":"撤销",Medadrreceivedr="4":"审核",Medadrreceivedr="5":"归档",Medadrreceivedr="6":"撤销归档",1:"")
+	...S:(Medadrreceive'="")&&(status="Y") RepStaus=RepStaus_"："_Medadrreceive
+	...S RepCancelflag=$p(^DHCMEDREPADT(MedadrID),"^",11) ;作废标识
+	...S MedadrRevStatus=$p(^DHCMEDREPADT(MedadrID),"^",14) ;驳回指向
+	...S StaFistAuditDr="",StaFistAuditUserDr="",BackAuditUserDr=""
+	...S:(RepTypeDr'="")&&(MedadrRevStatus'="") StaFistAuditUserDr=##class(web.DHCADVCOMMON).GetStaFisUserID(RepID, RepTypeDr, MedadrRevStatus ) ;$o(^DHCMEDREPADT(0,"TypeSta",RepTypeDr,MedadrRevStatus,""))
+	...S:StaFistAuditUserDr'="" StaFistAuditUser=$p(^SSU("SSUSR",StaFistAuditUserDr),"^",2) ;被驳回人
+	...S:Medadrreceivedr="2" BackAuditUserDr=MedadrUserID
+	...S:BackAuditUserDr'="" BackAuditUser=$p(^SSU("SSUSR",BackAuditUserDr),"^",2) ;驳回操作人
+	..S AutOverTime=""
+	..S AutOverTime=$S(AutOverTimeflag="":"未超时",AutOverTimeflag="N":"未超时",AutOverTimeflag="Y":"已超时",1:"")
+	...
+	..;S RepDate=$p(^DHCADVMASTER(RepID),"^",4)
+	..S:RepDate'="" RepDate=##class(web.DHCADVCOMMON).DateLogicalToHtml(RepDate)
+	..;S RepTime=$p(^DHCADVMASTER(RepID),"^",5)
+	..S RepUserDr=$p(^DHCADVMASTER(RepID),"^",6)
+	..S:RepUserDr'="" RepUser=$p(^SSU("SSUSR",RepUserDr),"^",2)
+	..S RepLocDr=$p(^DHCADVMASTER(RepID),"^",7)
+	..S:RepLocDr'="" RepLoc=$p(^CTLOC(RepLocDr),"^",2)
+	..S:RepLoc["-" RepLoc=$p(RepLoc,"-",2)
+	..S RepSubType=$p(^DHCADVMASTER(RepID),"^",8)
+	..S RepImpFlag=$p(^DHCADVMASTER(RepID),"^",9)
+	..S RepLevel=$p(^DHCADVMASTER(RepID),"^",12)  ///不良事件级别
+	..S RepInjSev=$p(^DHCADVMASTER(RepID),"^",13) ///伤害严重度
+	
+	..S PatName=$p(^DHCADVMASTER(RepID),"^",17)  
+	..S AdmNo=$p(^DHCADVMASTER(RepID),"^",20)  ///病案号
+	
+	..S OccurLoc=$p(^DHCADVMASTER(RepID),"^",27)  ///发生科室
+	..S:OccurLoc'="" OccurLoc=$p(^CTLOC(OccurLoc),"^",2)
+	..S:OccurLoc["-" OccurLoc=$p(OccurLoc,"-",2)
+	..;S OccurDate=$p(^DHCADVMASTER(RepID),"^",25)  ///发生日期
+	..S:OccurDate="0" OccurDate=""
+	..S:(OccurDate'="")&&(OccurDate'="0") OccurDate=##class(web.DHCADVCOMMON).DateLogicalToHtml(OccurDate)
+	..s PatID="" 
+	..S RepList=RepTypeDr_"^"_RepLocDr_"^"_RepUserDr_"^"_RepID 
+	..S flag=##class(web.DHCADVSEARCHREPORT).CheckQuerySec(RepList,list)
+	..S RepShareStatus="未分享"
+	..S rshShare=$o(^DHCADVRSH(0,"TypePointer",RepTypeDr,RepID,""))
+	..I rshShare'="" D
+	...S RepShareStatus="分享"
+	..S Listt=RepID_"^"_RepTypeDr_"^"_list_"^"_RepStausDr
+	..S matalast=##class(web.DHCADVCOMMON).InsStatusLast(Listt) 
+	..S StatusLastID=$p(matalast,"^",2)  //上一状态
+	..S StatusLast=""
+	..I StatusLastID'=""  D
+	...S AdrewRowIDnLast=$p(StatusLastID,"||",1)
+	...S AdrewChildSubnLast=$p(StatusLastID,"||",2)
+	...S StatusLast=$p(^DHCADREVTWFI(AdrewRowIDnLast,"ADREWI",AdrewChildSubnLast),"^",2)
+	..S Secuflag=..GetSecuGroupWard(UserId, RepLocDr) ;判断登录人是否属于大科安全组 是否有查看权限
+	..S SecuLocflag=..GetSecuGroupLoc(UserId, RepLocDr) ;判断登录人是否属于大科安全组 是否有查看权限
+	..S GroupDesc=$p(^SSU("SSGRP",GroupId),"^",1)
+	..S LocDep=""
+	..S:RepLocDr'="" LocDep=##class(web.DHCADVCOMMONPART).GetSecuGroupDesc(RepLocDr)  ;报告科室所属大科系统
+	..S CaseShareflag="",CaseShareLoclist=""
+	..S CaseShareDr=$o(^DHCADVCASHARE(0,"RepDrType",RepID,RepTypeDr,LocId,""))
+	..S:CaseShareDr'="" CaseShareflag=$p(^DHCADVCASHARE(CaseShareDr),"^",4)
+	..S CaseShareLoclist=..GetCaseLocList(RepID,RepTypeDr)	
+	..Q:(flag'=1)||(((GroupDesc["护士长"))&&((Secuflag'=1)&&(SecuLocflag'=1)))&(CaseShareflag'="Y")
+	..;Q:(flag'=1)||(((GroupDesc["护士长")||(GroupDesc["护理部"))&&((Secuflag'=1)&&(SecuLocflag'=1)))
+	..Q:(StatType'="")&(StatType'=status)
+	..Q:(DeptID'="")&(DeptID'=RepLocDr)
+	..Q:(patNo'="")&(patNo'=PatID)
+	..Q:(typeevent'="")&(typeevent'=RepTypeDr)
+	..Q:(statShare'="")&(statShare'=RepShareStatus)
+	..Q:(repflag'="")&(RepUserDr'=UserId)
+	..Q:(inpfileflag="N")&(FileFlag="已归档")
+	..Q:(inpfileflag="Y")&(FileFlag'="已归档")
+	..Q:(OverTime="N")&(RepOverTime'="未超时")&(AutOverTime'="未超时")
+	..Q:(OverTime="Y")&(RepOverTime'="已超时")&(AutOverTime'="已超时")
+	..Q:(homeRepOverTime="Y")&(RepOverTime'="已超时")
+	..Q:(RepCancelflag'=Cancelflag)
+	..s count=count+1
+	..q:count<Start
+	..q:count>End
+	..w $case(count,Start:"",:",")
+	..s tmpObj={}
+	..s tmpObj.RepID=RepID
+	..s tmpObj.recordID=recordID
+	..s tmpObj.RepTypeCode=RepTypeCode
+	..s tmpObj.RepType=RepType
+	..s tmpObj.RepStaus=RepStaus
+	..s tmpObj.RepDate=RepDate
+	..s tmpObj.RepUser=RepUser
+	..s tmpObj.RepLoc=RepLoc 
+	..s tmpObj.RepImpFlag=RepImpFlag 
+	..s tmpObj.RepShareStatus=RepShareStatus 
+	..s tmpObj.PatID=PatID
+	..s tmpObj.PatName=PatName
+	..s tmpObj.RepSubType=RepSubType
+	..s tmpObj.RepLevel=RepLevel
+	..s tmpObj.RepInjSev=RepInjSev
+	..s tmpObj.RepTypeDr=RepTypeDr
+	..s tmpObj.StatusLast=StatusLast
+	..s tmpObj.StatusLastID=StatusLastID
+	..s tmpObj.Medadrreceivedr=Medadrreceivedr
+	..s tmpObj.Medadrreceive=Medadrreceive
+	..s tmpObj.AdmNo=AdmNo
+	..s tmpObj.OccurLoc=OccurLoc
+	..s tmpObj.OccurDate=OccurDate
+	..s tmpObj.LocDep=LocDep
+	..s tmpObj.FileFlag=FileFlag
+	..s tmpObj.RepOverTimeflag=RepOverTime
+	..s tmpObj.AutOverTimeflag=AutOverTime
+	..s tmpObj.CaseShareLoclist=CaseShareLoclist
+	..s tmpObj.StaFistAuditUser=StaFistAuditUser
+	..s tmpObj.BackAuditUser=BackAuditUser
+	..s tmpObj.RepStausDr=RepStausDr
+	..w tmpObj.%ToJSON()
+	w "],""total"":"_count_"}"
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryRepStatList">
+<Description>
+Description: 不良事件统计界面使用
+Creator:     QQA
+CreateDate:  2017-08-28
+Input:  	 StrParam : 以字符"^"分割,格式为:开始时间^结束时间
+Table:       FormRecord,FormRecordItm,FormRecordItmSub
+Return: 	 不良事件 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryRepStatList("10","1","2017-01-24^2018-01-24^^^^^^^987^^")
+</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rows=10,page=1,StrParam:%String</FormalSpec>
+<Implementation><![CDATA[
+	N (rows,page,StrParam)
+	q:StrParam="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(0) //输出json结尾符
+	S StDate=$p(StrParam,"^",1)    //开始日期
+	S EndDate=$p(StrParam,"^",2)   //结束日期
+	S DeptID=$p(StrParam,"^",3)    //科室
+	S patNo=$p(StrParam,"^",4)     //登记号
+	S GroupId=$p(StrParam,"^",5)   //安全组ID
+    S LocId=$p(StrParam,"^",6)     //科室ID
+    S UserId=$p(StrParam,"^",7)    //用户ID
+    S StatType=$p(StrParam,"^",8)  //状态
+    ;S ShowDetail=$p(StrParam,"^",9)  //是否查询明细
+    I StatType="全部" S StatType=""
+    S FormNameID=$p(StrParam,"^",9)
+    s ShowDetail="N"
+    s:FormNameID'="" ShowDetail="Y"
+    s typeevent=""
+    i FormNameID'="" d
+    .S FormNameCode = $lg(^User.DHCAdvFormNameD(FormNameID),2)
+    .S typeevent = $o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(FormNameCode),""),-1)
+    S statShare=$p(StrParam,"^",10)   //分享状态
+    S receive=$p(StrParam,"^",11)    //接收
+    S repflag=$p(StrParam,"^",12)    //已报标识(Y) 草稿标识(N)
+	
+	S list=UserId_"^"_LocId_"^"_GroupId
+    S h=0  //yangyongtao  2017-11-22 
+	S:StDate'="" StDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(StDate)
+	S:EndDate'="" EndDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(EndDate)
+	q:StDate="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(h) //输出json结尾符
+	s count=0
+	w "{""rows"":["
+	f date=EndDate:-1:StDate d
+	.s RepID=""
+	.f  s RepID=$o(^DHCADVMASTER(0,"RepDate",date,RepID)) q:RepID=""  d
+	..S RepTypeCode="",RepType="",RepStaus="",RepUser="",RepLoc="",RepSubType="",RepImpFlag="",Medadrreceive="",Medadrreceivedr=""
+	..S recordID=$p(^DHCADVMASTER(RepID),"^",1)
+	..Q:recordID=""
+	..S RepTypeDr=$p(^DHCADVMASTER(RepID),"^",2)
+	..S:RepTypeDr'="" RepTypeCode=$p(^DHCMEDADREVT(RepTypeDr),"^",1)
+	..S:RepTypeDr'="" RepType=$p(^DHCMEDADREVT(RepTypeDr),"^",2)
+	..S RepStausDr=$p(^DHCADVMASTER(RepID),"^",3)
+	..I RepStausDr=""  D
+	...S RepStaus="未提交"
+	...S status="N"
+	..E  D 
+	...S status="Y"
+	...S RepStaus=$p(^DHCADREVTWFI(+RepStausDr,"ADREWI",$p(RepStausDr,"||",2)),"^",2)
+	...S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	...I MedadrID'=""  D
+	....S Medadrreceivedr=$p(^DHCMEDREPADT(MedadrID),"^",9)
+	....S Medadrreceive=$S(Medadrreceivedr="":"未接收",Medadrreceivedr="1":"接收",Medadrreceivedr="2":"驳回",1:"")
+	....S:Medadrreceive'="" RepStaus=RepStaus_"："_Medadrreceive
+	...
+	..S RepDate=$p(^DHCADVMASTER(RepID),"^",4)
+	..S:RepDate'="" RepDate=$zd(RepDate,3) ;##class(web.DHCADVCOMMON).DateLogicalToHtml(RepDate)
+	..S RepTime=$p(^DHCADVMASTER(RepID),"^",5)
+	..S RepUserDr=$p(^DHCADVMASTER(RepID),"^",6)
+	..S:RepUserDr'="" RepUser=$p(^SSU("SSUSR",RepUserDr),"^",2)
+	..S RepLocDr=$p(^DHCADVMASTER(RepID),"^",7)
+	..S:RepLocDr'="" RepLoc=$p(^CTLOC(RepLocDr),"^",2)
+	..S:RepLoc["-" RepLoc=$p(RepLoc,"-",2)
+	..S RepSubType=$p(^DHCADVMASTER(RepID),"^",8)
+	..S RepImpFlag=$p(^DHCADVMASTER(RepID),"^",9) 
+	..S RepLevel=$p(^DHCADVMASTER(RepID),"^",12)  ///不良事件级别
+	..S RepInjSev=$p(^DHCADVMASTER(RepID),"^",13) ///伤害严重度
+	..S PatName=$p(^DHCADVMASTER(RepID),"^",17)   ///病人姓名
+	..s PatSex = $p(^DHCADVMASTER(RepID),"^",18)  ///病人性别
+	..s PatAge = $p(^DHCADVMASTER(RepID),"^",19)  ///病人年龄
+	..S AdmNo=$p(^DHCADVMASTER(RepID),"^",20)  	  ///病案号
+	..S OccurLoc=$p(^DHCADVMASTER(RepID),"^",27)  ///发生科室
+	..S:OccurLoc'="" OccurLoc=$p(^CTLOC(OccurLoc),"^",2)
+	..S:OccurLoc["-" OccurLoc=$p(OccurLoc,"-",2)
+	..S OccurDate=$p(^DHCADVMASTER(RepID),"^",25)  ///发生日期
+	..S:OccurDate'="" OccurDate=$zd(OccurDate,3) ;##class(web.DHCADVCOMMON).DateLogicalToHtml(OccurDate)
+	..s PatID=""  ;,PatName=""
+	..S RepList=RepTypeDr_"^"_RepLocDr_"^"_RepUserDr_"^"_RepID 
+	..S RepShareStatus="未分享"
+	..S rshShare=$o(^DHCADVRSH(0,"TypePointer",RepTypeDr,RepID,""))
+	..I rshShare'="" D
+	...S RepShareStatus="分享"
+	..S Listt=RepID_"^"_RepTypeDr_"^"_list_"^"_RepStausDr
+	..S matalast=##class(web.DHCADVCOMMON).InsStatusLast(Listt) 
+	..S StatusLastID=$p(matalast,"^",2)  //上一状态
+	..S StatusLast=""
+	..I StatusLastID'=""  D
+	...S AdrewRowIDnLast=$p(StatusLastID,"||",1)
+	...S AdrewChildSubnLast=$p(StatusLastID,"||",2)
+	...S StatusLast=$p(^DHCADREVTWFI(AdrewRowIDnLast,"ADREWI",AdrewChildSubnLast),"^",2)
+	..S LocDep=""
+	..S:RepLocDr'="" LocDep=##class(web.DHCADVCOMMONPART).GetSecuGroupDesc(RepLocDr)
+	..Q:(StatType'="")&(StatType'=status)
+	..Q:(DeptID'="")&(DeptID'=RepLocDr)
+	..Q:(patNo'="")&(patNo'=PatID)
+	..Q:(typeevent'="")&(typeevent'=RepTypeDr)
+	..Q:(statShare'="")&(statShare'=RepShareStatus)
+	..Q:(repflag'="")&(RepUserDr'=UserId)
+	..s count=count+1
+	..w $case(count,1:"",:",")
+	..s tmpObj={}
+	..s tmpObj.RepID=RepID
+	..s tmpObj.recordID=recordID
+	..s tmpObj.RepTypeCode=RepTypeCode
+	..s tmpObj.RepType=RepType
+	..s tmpObj.RepStaus=RepStaus
+	..s tmpObj.RepDate=RepDate
+	..s tmpObj.RepUser=RepUser
+	..s tmpObj.RepLoc=RepLoc 
+	..s tmpObj.RepImpFlag=RepImpFlag 
+	..s tmpObj.RepShareStatus=RepShareStatus 
+	..s tmpObj.PatID=PatID
+	..s tmpObj.PatName=PatName
+	..s tmpObj.PatSex=PatSex
+	..s tmpObj.PatAge=PatAge
+	..s tmpObj.RepSubType=RepSubType
+	..s tmpObj.RepLevel=RepLevel
+	..s tmpObj.RepInjSev=RepInjSev
+	..s tmpObj.RepTypeDr=RepTypeDr
+	..s tmpObj.StatusLast=StatusLast
+	..s tmpObj.StatusLastID=StatusLastID
+	..s tmpObj.Medadrreceivedr=Medadrreceivedr
+	..s tmpObj.Medadrreceive=Medadrreceive
+	..s tmpObj.AdmNo=AdmNo
+	..s tmpObj.OccurLoc=OccurLoc
+	..s tmpObj.OccurDate=OccurDate
+	..s tmpObj.LocDep=LocDep
+	..i ShowDetail= "Y" d
+	...s AdvMasterDr = RepID              //DHC_AdvMaster的ID
+	...s RsDate="",RsString="",tableName=""
+	...S RepLocDr=$p(^DHCADVMASTER(AdvMasterDr),"^",7)
+	...S:RepLocDr'="" RepLoc=$p(^CTLOC(RepLocDr),"^",2)
+	...S:RepLoc["-" RepLoc=$p(RepLoc,"-",2)
+	...S LocDep=##class(web.DHCADVCOMMONPART).GetSecuGroupDesc(RepLocDr)   //获取大科描述
+	...s ADVFormRecDr = $p(^DHCADVMASTER(AdvMasterDr),"^",1)
+	...s ADVFormRecItmDr=""
+	...f  s ADVFormRecItmDr = $o(^User.DHCAdvFormRecordItmI("IndexFormRecord",ADVFormRecDr,ADVFormRecItmDr))  q:ADVFormRecItmDr=""  d
+	....s ADVFormDicID = $lg(^User.DHCAdvFormRecordItmD(ADVFormRecItmDr),3)  //元素ID
+	....s ItmValue = $lg(^User.DHCAdvFormRecordItmD(ADVFormRecItmDr),4)  //值
+	....s ItmID = $lg(^User.DHCAdvFormDicD(ADVFormDicID),2)        //元素唯一标示，对应界面的ID
+	....q:ItmID["UlcerPart"   //取消掉关于table的数据获取
+	....s DataRowKey = $lg(^User.DHCAdvFormRecordItmD(ADVFormRecItmDr),7)  //Key 只有table才有的标识
+	....q:DataRowKey'=""     //table 数据单独写 先过滤掉
+	....q:ItmValue="title"
+	....d tmpObj.%Set(ItmID,ItmValue)
+	..
+	..;s Data = $p(##class(web.DHCADVCOMMONPRINT).GetTableData(RepID,"UlcerPart","UlcerPart-95158-95162"),",",1)
+	..;d tmpObj.%Set("UlcerPart-95158-95162",Data)
+	..
+	..;s Data = ##class(web.DHCADVCOMMONPRINT).GetTableData(RepID,"UlcerPart","UlcerPart-95158-95166")
+	..;d tmpObj.%Set("UlcerPart-95158-95166",Data)
+	..
+	..;s Data = ##class(web.DHCADVCOMMONPRINT).GetTableData(RepID,"UlcerPart","UlcerPart-95158-95163")
+	..;d tmpObj.%Set("UlcerPart-95158-95163",Data)
+	..
+	..;s Data = ##class(web.DHCADVCOMMONPRINT).GetTableData(RepID,"UlcerPart","UlcerPart-95158-95169")
+	..;d tmpObj.%Set("UlcerPart-95158-95169",Data)
+	..
+	..;s Data = ##class(web.DHCADVCOMMONPRINT).GetTableData(RepID,"UlcerPart","UlcerPart-95158-95189")
+	..;d tmpObj.%Set("UlcerPart-95158-95189",Data)
+	..
+	..w tmpObj.%ToJSON()
+
+	w "],""total"":"_count_"}"
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="QueryAuditRepList">
+<Description>
+Description: 不良事件审核查询（查询已审核的报告记录 —）
+Creator:     CongYue
+CreateDate:  2017-08-31
+Input:  	 StrParam : 以字符"^"分割,格式为:开始时间^结束时间
+Table:       FormRecord,FormRecordItm,FormRecordItmSub
+Return: 	 不良事件 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryAuditRepList("40","1","2018-01-01^2018-06-08^^^25^76^7054^^^^^^^^^^^")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rows=10,page=1,StrParam:%String</FormalSpec>
+<Implementation><![CDATA[
+  
+	N (rows,page,StrParam)
+	;s ^qqa = $lb(rows,page,StrParam)
+	q:StrParam="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(0) //输出json结尾符
+	S End = page*rows
+	S Start=(page-1)*rows+1
+	S EndPage=page*rows  //结束行
+	S StPage=((page-1)*rows)+1     //开始行
+	S StDate=$p(StrParam,"^",1)    //开始日期
+	S EndDate=$p(StrParam,"^",2)   //结束日期
+	S DeptID=$p(StrParam,"^",3)    //科室
+	S patNo=$p(StrParam,"^",4)     //登记号
+	S GroupId=$p(StrParam,"^",5)   //安全组ID
+    S LocId=$p(StrParam,"^",6)     //科室ID
+    S UserId=$p(StrParam,"^",7)    //用户ID
+    S StatTypedr=$p(StrParam,"^",8)  //状态
+	S StatType=$S(StatTypedr="全部":"",StatTypedr="1":"填报",StatTypedr="2":"护士长审核",StatTypedr="3":"总护士长审核",StatTypedr="4":"护理部审核",1:"")
+    
+    S typeevent=$p(StrParam,"^",9)    //填报类型
+    S receive=$p(StrParam,"^",10)    //接收状态
+    S statShare=$p(StrParam,"^",11)    //分享状态
+    S receiveflag=$p(StrParam,"^",12)    //接收标识
+    S impflag=$p(StrParam,"^",13)    //重点关注
+    S appauditflag=$p(StrParam,"^",14) //待审批标识
+    S backflag=$p(StrParam,"^",15) //退回标识
+    S auditflag=$p(StrParam,"^",16)  //已处理标识
+   	S inpfileflag=$p(StrParam,"^",17)  //归档标识
+	S OverTime=$p(StrParam,"^",18)    //是否超时
+	S homeAutOverTime=$p(StrParam,"^",19)    //首页是否护士长审核超时
+	S list=UserId_"^"_LocId_"^"_GroupId
+    S h=0  
+	S:StDate'="" StDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(StDate)
+	S:EndDate'="" EndDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(EndDate)
+	q:StDate="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(h) //输出json结尾符  //yangyongtao   2017-11-22
+	;q:StDate="" ""
+	s count=0
+	w "{""rows"":["
+	f date=EndDate:-1:StDate d
+	.s RepID=""
+	.f  s RepID=$o(^DHCADVMASTER(0,"RepDate",date,RepID)) q:RepID=""  d
+	..S RepTypeDr="",RepTypeCode="",RepType="",RepStaus="",RepUser="",RepLoc="",RepSubType="",RepImpFlag="",Medadrreceive="",Medadrreceivedr="",StatusNext="",MedadrUserID="",MedadrRevStatus="",StaFistAuditUser="",BackAuditUser="",RepOverTimeflag="",AutOverTimeflag="",RepOverTime="",AutOverTime="",RepCancelflag="",StaFistAuditUserDr="",BackAuditUserDr=""
+	..S recordID=$p(^DHCADVMASTER(RepID),"^",1)
+	..Q:recordID=""
+	..S RepTypeDr=$p(^DHCADVMASTER(RepID),"^",2)
+	..S:RepTypeDr'="" RepTypeCode=$p(^DHCMEDADREVT(RepTypeDr),"^",1)
+	..S:RepTypeDr'="" RepType=$p(^DHCMEDADREVT(RepTypeDr),"^",2)
+	..S FILERowID=$o(^DHCADVFILE(0,"RepDrType",RepID,RepTypeDr,""))
+	..S File="",FileFlag=""
+	..S:FILERowID'="" File=$p(^DHCADVFILE(FILERowID),"^",3)
+	..S FileFlag=$S(File="":"未归档",File="N":"撤销归档",File="Y":"已归档",1:"")
+	..S RepStausDr=$p(^DHCADVMASTER(RepID),"^",3)
+	..Q:RepStausDr=""
+	..S RepStaus=$p(^DHCADREVTWFI(+RepStausDr,"ADREWI",$p(RepStausDr,"||",2)),"^",2)
+	..;S:FileFlag="Y" RepStaus="已归档"
+	..S RepDate=$p(^DHCADVMASTER(RepID),"^",4)
+	..S RepTime=$p(^DHCADVMASTER(RepID),"^",5)
+	..S OccurDate=$p(^DHCADVMASTER(RepID),"^",25)  ///发生日期
+	..S:OccurDate="" OccurDate=0
+	..S OccurTime=$p(^DHCADVMASTER(RepID),"^",26)  ///发生时间
+	..S:OccurTime="" OccurTime=0
+	..S RepOverTime=""
+	..S HolidayDate=##class(web.DHCADVCOMMONPART).CheckTimeEscapeHoliday(OccurDate,OccurTime,RepDate,RepTime)
+	..I (HolidayDate>24) S RepOverTimeflag="Y"   //如果报告填报超过24小时
+	..S RepOverTime=$S(RepOverTimeflag="":"未超时",RepOverTimeflag="N":"未超时",RepOverTimeflag="Y":"已超时",1:"")
+	..S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	..S Subflag=0
+	..S SubUserflag=0 
+	..I MedadrID'=""  D
+	...S Medadrreceivedr=$p(^DHCMEDREPADT(MedadrID),"^",9) 
+	...I Medadrreceivedr=""  S Medadrreceivedr="未接收"
+	...S Medadrreceive=$S(Medadrreceivedr="未接收":"未接收",Medadrreceivedr="1":"接收",Medadrreceivedr="2":"驳回",Medadrreceivedr="3":"撤销",Medadrreceivedr="4":"审核",Medadrreceivedr="5":"归档",Medadrreceivedr="6":"撤销归档",1:"")
+	...S MedadrUserID=$p(^DHCMEDREPADT(MedadrID),"^",4)
+	...S MedadrRevStatus=$p(^DHCMEDREPADT(MedadrID),"^",14) ;驳回指向
+	...S StaFistAuditDr=""
+	...S:(RepTypeDr'="")&&(MedadrRevStatus'="") StaFistAuditUserDr=##class(web.DHCADVCOMMON).GetStaFisUserID(RepID, RepTypeDr, MedadrRevStatus ) ;$o(^DHCMEDREPADT(0,"TypeSta",RepTypeDr,MedadrRevStatus,""))
+	...S:StaFistAuditUserDr'="" StaFistAuditUser=$p(^SSU("SSUSR",StaFistAuditUserDr),"^",2) ;被驳回人
+	...S:Medadrreceivedr="2" BackAuditUserDr=MedadrUserID
+	...S:BackAuditUserDr'="" BackAuditUser=$p(^SSU("SSUSR",BackAuditUserDr),"^",2) ;驳回操作人
+	...S:RepStaus="护士长审核" AutOverTimeflag=$p(^DHCMEDREPADT(MedadrID),"^",15) ;护士长审核超时标志
+	...S RepCancelflag=$p(^DHCMEDREPADT(MedadrID),"^",11) ;作废标识
+	..S AutOverTime=""
+	..S AutOverTime=$S(AutOverTimeflag="":"未超时",AutOverTimeflag="N":"未超时",AutOverTimeflag="Y":"已超时",1:"")
+	..S Medadrflag=##class(web.DHCADVSEARCHREPORT).SearchAuditIMess(MedadrID)
+	..S:Medadrflag=1 Subflag=1 //转抄 
+	..S:Medadrflag=2 Subflag=2 //全部回复 
+	..S:Medadrflag=3 Subflag=3 //部分回复 
+	..S params=RepID_"^"_RepTypeCode_"^"_UserId_"^"_LocId 
+	..S SubUserflag=##class(web.DHCADVSEARCHREPORT).SearchAuditIUser(MedadrID,params) 
+	..S Listt=RepID_"^"_RepTypeDr_"^"_list_"^"_RepStausDr
+	..S matalast=##class(web.DHCADVCOMMON).InsStatusLast(Listt) 
+	..S StatusLastID=$p(matalast,"^",2)  //上一状态
+	..S StatusLast=""
+	..I StatusLastID'=""  D
+	...S AdrewRowIDnLast=$p(StatusLastID,"||",1)
+	...S AdrewChildSubnLast=$p(StatusLastID,"||",2)
+	...S StatusLast=$p(^DHCADREVTWFI(AdrewRowIDnLast,"ADREWI",AdrewChildSubnLast),"^",2)
+	..S matalist=##class(web.DHCADVCOMMON).InsStatusDr(Listt) 
+	..S StatusNextID=$p(matalist,"^",2)  //下一状态
+	..I StatusNextID'=""  D
+	...S AdrewRowIDn=$p(StatusNextID,"||",1)
+	...S AdrewChildSubn=$p(StatusNextID,"||",2)
+	...S StatusNext=$p(^DHCADREVTWFI(AdrewRowIDn,"ADREWI",AdrewChildSubn),"^",2)
+	..S:RepDate'="" RepDate=##class(web.DHCADVCOMMON).DateLogicalToHtml(RepDate)
+	..S RepUserDr=$p(^DHCADVMASTER(RepID),"^",6)
+	..S:RepUserDr'="" RepUser=$p(^SSU("SSUSR",RepUserDr),"^",2)
+	..S RepLocDr=$p(^DHCADVMASTER(RepID),"^",7)
+	..S:RepLocDr'="" RepLoc=$p(^CTLOC(RepLocDr),"^",2)
+	..S:RepLoc["-" RepLoc=$p(RepLoc,"-",2)
+	..S RepSubType=$p(^DHCADVMASTER(RepID),"^",8)
+	..S RepImp=$p(^DHCADVMASTER(RepID),"^",9)
+	..S RepImpFlag=$S(RepImp="Y":"关注",RepImp="N":"未关注",1:"")
+	..S RepLevel=$p(^DHCADVMASTER(RepID),"^",12)  ///不良事件级别
+	..S RepInjSev=$p(^DHCADVMASTER(RepID),"^",13) ///伤害严重度
+	..S PatName=$p(^DHCADVMASTER(RepID),"^",17)  
+	..S AdmNo=$p(^DHCADVMASTER(RepID),"^",20)  ///病案号	
+	..S OccurLoc=$p(^DHCADVMASTER(RepID),"^",27)  ///发生科室
+	..S:OccurLoc'="" OccurLoc=$p(^CTLOC(OccurLoc),"^",2)
+	..S:OccurLoc["-" OccurLoc=$p(OccurLoc,"-",2)
+	..S:OccurDate="0" OccurDate=""
+	..S:(OccurDate'="")&&(OccurDate'="0") OccurDate=##class(web.DHCADVCOMMON).DateLogicalToHtml(OccurDate)
+	..s PatID=""  ;,PatName=""
+	..S RepList=RepTypeDr_"^"_RepLocDr_"^"_RepUserDr_"^"_RepID 
+	..S flag=##class(web.DHCADVSEARCHREPORT).CheckQuerySec(RepList,list)
+	..S RepShareStatus="未分享"
+	..S rshShare=$o(^DHCADVRSH(0,"TypePointer",RepTypeDr,RepID,""))
+	..I rshShare'="" D
+	...S RepShareStatus="分享"
+	..I Subflag=0 S Medadrreceive=Medadrreceive
+	..I Subflag=1 S Medadrreceive=Medadrreceive_"："_"已转抄"
+	..I Subflag=2 S Medadrreceive=Medadrreceive_"："_"全部回复"
+	..I Subflag=3 S Medadrreceive=Medadrreceive_"："_"部分回复"
+	..S GroupDesc=$p(^SSU("SSGRP",GroupId),"^",1)
+	..b ;err
+	..S StsusGrant=##class(web.DHCADVCOMMON).CheckWorkItmGrant(RepStausDr,list)
+	..S UserLeadflag=..GetSecuUserLeader(UserId)
+	..b ;err1.1
+	..S:(StsusGrant=1)&&(GroupDesc["护士长")&&((UserLeadflag=1)&&(RepStaus'["总")) StsusGrant=0
+	..s:(StsusGrant=1)&&(GroupDesc["护士长")&&(RepStaus="填报") StsusGrant= 0
+	..S StatusNextIDaudit=##class(web.DHCADVCOMMON).GetRepNextStatusDr(Listt)
+	..S Secuflag=..GetSecuGroupWard(UserId, RepLocDr) ;判断登录人是否属于大科安全组 病区 是否有查看权限
+	..S SecuLocflag=..GetSecuGroupLoc(UserId, RepLocDr) ;判断登录人是否属于大科安全组 科室 是否有查看权限
+	..S LocDep=""
+	..S:RepLocDr'="" LocDep=##class(web.DHCADVCOMMONPART).GetSecuGroupDesc(RepLocDr)  ;报告科室所属大科系统
+	..S CaseShareflag="",CaseShareLoclist=""
+	..S CaseShareDr=$o(^DHCADVCASHARE(0,"RepDrType",RepID,RepTypeDr,LocId,""))
+	..S:CaseShareDr'="" CaseShareflag=$p(^DHCADVCASHARE(CaseShareDr),"^",4)	
+	..S CaseShareLoclist=..GetCaseLocList(RepID,RepTypeDr)
+	..Q:(flag'=1)||(((GroupDesc["护士长"))&&((Secuflag'=1)&&(SecuLocflag'=1)))&&(CaseShareflag'="Y")
+	..;Q:(flag'=1)||(((GroupDesc["护士长")||(GroupDesc["护理部"))&&((Secuflag'=1)&&(SecuLocflag'=1)))
+	..Q:(StatType'="")&&(StatType'=RepStaus)
+	..Q:(DeptID'="")&&(DeptID'=RepLocDr)
+	..Q:(patNo'="")&&(patNo'=PatID)
+	..Q:(typeevent'="")&&(typeevent'=RepTypeDr) 
+	..Q:(receive'="")&&(receive'[Medadrreceivedr) 
+	..Q:(statShare'="")&&(statShare'=RepShareStatus)
+	..Q:(receiveflag="Y")&(MedadrUserID'=UserId) ;校验报告是否为本人接收的报告
+	..Q:(impflag'="")&&(impflag'=RepImp) 
+	..Q:(appauditflag'="")&&(StatusNextIDaudit'=StatusNextID)  ;校验报告是否为本人待审批的报告
+	..Q:(backflag="Y")&&(Medadrreceivedr="2")&&(StaFistAuditUserDr'=UserId)&&(BackAuditUserDr'=UserId)  ;校验报告是否为本人审核并且被驳回来的报告
+	..Q:(auditflag="Y")&&((MedadrUserID'=UserId)||(Medadrreceivedr="未接收")||(Medadrreceivedr="1")||(Medadrreceivedr="3"))  ;校验报告是否为本人处理的报告(最新操作 驳回或者审核)	
+	..Q:(inpfileflag="N")&&(FileFlag="已归档")  ;||((StsusGrant'=1)&&(BackAuditUserDr'=UserId))
+	..Q:(inpfileflag="Y")&&(FileFlag'="已归档")
+	..;Q:(OverTime'="")&(OverTime'=RepOverTimeflag)&(OverTime'=AutOverTimeflag)
+	..Q:(OverTime="N")&&(RepOverTime'="未超时")&&(AutOverTime'="未超时")
+	..Q:(OverTime="Y")&&(RepOverTime'="已超时")&&(AutOverTime'="已超时")
+	..Q:(homeAutOverTime="Y")&(AutOverTime="未超时")
+	..Q:(RepCancelflag="Y")
+	..s count=count+1
+	..q:count<Start
+	..q:count>End
+	..w $case(count,Start:"",:",")
+	..b ;err2
+	..s tmpObj={}
+	..s tmpObj.RepID=RepID
+	..s tmpObj.recordID=recordID
+	..s tmpObj.RepTypeCode=RepTypeCode
+	..s tmpObj.RepType=RepType
+	..s tmpObj.RepStaus=RepStaus
+	..s tmpObj.RepStausDr=RepStausDr
+	..s tmpObj.StatusNext=StatusNext
+	..s tmpObj.StatusNextID=StatusNextID
+	..s tmpObj.RepDate=RepDate
+	..s tmpObj.Medadrreceive=Medadrreceive
+	..s tmpObj.Medadrreceivedr=Medadrreceivedr
+	..s tmpObj.RepUser=RepUser
+	..s tmpObj.RepLoc=RepLoc 
+	..s tmpObj.RepImpFlag=RepImpFlag 
+	..s tmpObj.RepShareStatus=RepShareStatus 
+	..s tmpObj.PatID=PatID
+	..s tmpObj.PatName=PatName
+	..s tmpObj.RepSubType=RepSubType
+	..s tmpObj.Subflag=Subflag
+	..s tmpObj.SubUserflag=SubUserflag
+	..s tmpObj.RepLevel=RepLevel
+	..s tmpObj.RepInjSev=RepInjSev
+	..s tmpObj.StatusLast=StatusLast
+	..s tmpObj.StatusLastID=StatusLastID
+	..s tmpObj.RepTypeDr=RepTypeDr
+	..s tmpObj.AdmNo=AdmNo
+	..s tmpObj.OccurLoc=OccurLoc
+	..s tmpObj.OccurDate=OccurDate
+	..s tmpObj.LocDep=LocDep
+	..s tmpObj.StsusGrant=StsusGrant
+	..s tmpObj.MedadrRevStatus=MedadrRevStatus
+	..s tmpObj.StaFistAuditUser=StaFistAuditUser
+	..s tmpObj.BackAuditUser=BackAuditUser
+	..s tmpObj.FileFlag=FileFlag
+	..s tmpObj.RepOverTimeflag=RepOverTime
+	..s tmpObj.AutOverTimeflag=AutOverTime
+	..s tmpObj.CaseShareLoclist=CaseShareLoclist
+	..w tmpObj.%ToJSON()
+	w "],""total"":"_count_"}"
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="InsRepImp">
+<Description>
+Description: 不良事件升级中的重点关注
+Creator:     CongYue
+CreateDate:  2017-9-5
+Table: 		 DHC_AdvMaster
+Input:  	 报告主表ID 重点关注标记
+Return： 	 0 修改成功，非0 修改失败
+Others:		 w ##class(web.DHCADVCOMMONPART).InsRepImp("59","N")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RepID:%String,RepImpFlag:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (RepID,RepImpFlag)
+	;S ^TMP("CHYDY")=RepID_"**"_RepImpFlag
+    I RepImpFlag="N" D
+    .S RepImpFlag="Y"
+    E  S RepImpFlag="N"  
+    &SQL(Update DHC_AdvMaster Set ADV_RepImpFlag=:RepImpFlag where ADV_RowID=:RepID)	
+	Q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="GetRepTypeList">
+<Description>
+Description: 首页 获取事件填报类型
+Creator:     CongYue
+CreateDate:  2017-9-6
+Table: 		 DHC_MedAdrRepEvent  DHC_AdvQuerySec
+Input:  	 报告主表ID 重点关注标记
+Return： 	 0 修改成功，非0 修改失败
+Others:		 w ##class(web.DHCADVCOMMONPART).GetRepTypeList("1223^6^235")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>UserList:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (UserList)
+	;S ^TMP("CHYDY")=UserList
+	S UserDR=$p(UserList,"^",1)
+	S LocDR=$p(UserList,"^",2)
+	S GroupDR=$p(UserList,"^",3)
+	s ListTitle="id^value"
+	S count = 0
+	W "["
+	S RepTypeID=""
+	F  S RepTypeID=$o(^DHCMEDADREVT(RepTypeID))  Q:RepTypeID=""  D
+	.Q:RepTypeID=0
+	.S RepTypeCode=$p(^DHCMEDADREVT(RepTypeID),"^",1)
+	.S RepTypeDesc=$p(^DHCMEDADREVT(RepTypeID),"^",2)
+	.S RepTypeActiveFlag=$p(^DHCMEDADREVT(RepTypeID),"^",3)
+	.Q:(RepTypeCode'="")&(RepTypeCode'["adv")
+	.Q:RepTypeActiveFlag="N"
+	.;^DHCADVQUS(0,"RepType",{ADVQS_RepTyep_Dr},{ADVQS_Type},{ADVQS_Pointer},{ADVQS_RowID})
+	.Q:('$d(^DHCADVQUS(0,"RepType",RepTypeID,3,UserDR)))&&('$d(^DHCADVQUS(0,"RepType",RepTypeID,2,LocDR)))&&('$d(^DHCADVQUS(0,"RepType",RepTypeID,1,GroupDR)))
+	.;Q:'$d(^DHCADVQUS(0,"RepType",RepTypeID,2,LocDR))
+	.;Q:'$d(^DHCADVQUS(0,"RepType",RepTypeID,1,GroupDR))
+	.S ListData=RepTypeCode_"^"_RepTypeDesc
+	.S count = count+1
+	.I count=1 D
+	..W ##class(web.DHCADVJSONCOMMON).getJsonData(ListTitle,ListData)
+	.E  D
+	..W ","_##class(web.DHCADVJSONCOMMON).getJsonData(ListTitle,ListData)
+	W "]"
+	Q ""
+]]></Implementation>
+</Method>
+
+<Method name="AuditMataReport">
+<Description>
+Description: 不良反应报告审批
+Creator:     CongYue
+CreateDate:  2016-03-09
+Input:  	 params :以字符"^"分割,格式为:不良反应报告ID^审核状态^用户ID^科室ID^安全组ID^科室指向^建议^接收状态^报告类型代码
+Return: 	 0 审批成功
+Others:		 w ##class(web.DHCADVCOMMONPART).AuditMataReport("66^34||2^1223^4^235^^人太少隔热率^^advMedical")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>params:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (params)
+	s ^tempwml("AuditMataReport")=$lb(params)
+	S ListData = ..AuditReport(params)
+	S ListTitle="ErrCode^ErrMsg"
+	W ##class(web.DHCADVJSONCOMMON).getJsonData(ListTitle,ListData)
+	Q ""
+]]></Implementation>
+</Method>
+
+<Method name="AuditReport">
+<Description>
+Description: 不良反应报告审批
+Creator:     CongYue
+CreateDate:  2015-11-10
+Input:  	 params :以字符"^"分割,格式为:不良反应报告ID^审核状态^用户ID^科室ID^安全组ID^科室指向^建议^接收状态^报告类型代码
+Return: 	 0 审批成功
+Others:		 w ##class(web.DHCADVCOMMONPART).AuditReport("138^5||2^600^63^126^2^wqdewq^未接收^med")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>params:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	
+	N (params)
+	
+	S ID=+$p(params,"^",1)       //不良反应报告ID
+	S medadrStatusDR=$p(params,"^",2)  //审核状态
+	S medadrAuditUserDR=+$p(params,"^",3)     //用户ID
+	S LgCtLocID=+$p(params,"^",4)     //科室ID
+	S LgGroupID=+$p(params,"^",5)     //安全组ID
+	S medadrNextLocDR=$p(params,"^",6)
+	S medadrLocAdvice=$p(params,"^",7)
+	S medadrReceive=$p(params,"^",8)
+	Q:medadrReceive="2" "-6^报告已驳回，不能审核"
+	
+	S medadrAuditDate=+$h
+	S medadrAuditTime=$p($h,",",2)
+	S typecode=$p(params,"^",9) // 报告类型代码
+	S eventDr=$o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(typecode),"")) //报告类型id
+	S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",eventDr,ID,""),-1)
+	S NextLocDR=$p(^DHCMEDREPADT(MedadrID),"^",7) ;指向科室（被指向的审批科室）
+	Q:(NextLocDR'="")&&(LgCtLocID'=NextLocDR) "-8^当前登录科室无审批权限，不能审核"
+	S flag=##class(web.DHCADVSEARCHREPORT).SearchAuditIMess(MedadrID)
+	;Q:flag="-1" "-7^转抄审批信息未完成，不能审核"
+	Q:(flag'="2")&&(flag'="0") "-7^转抄审批信息未完成，不能审核"
+	
+	S list=medadrAuditUserDR_"^"_LgCtLocID_"^"_LgGroupID
+	S Listt=ID_"^"_eventDr_"^"_list
+	
+	S StatusNextID=##class(web.DHCADVCOMMON).GetRepNextStatusDr(Listt)
+	Q:StatusNextID="-1" "-1^无权限"
+	Q:StatusNextID="-2" "-2^已是最后一个权限"
+	Q:StatusNextID="-3" "-3^无授权工作流"
+	Q:StatusNextID="-4" "-4^无配置子项"
+	I StatusNextID'="" D
+	.S AdrewRowIDn=$p(StatusNextID,"||",1)
+	.S AdrewChildSubn=$p(StatusNextID,"||",2)
+	.S MataStatusNext=$p(^DHCADREVTWFI(AdrewRowIDn,"ADREWI",AdrewChildSubn),"^",2)
+	
+	;S medadrReceive="1"
+	S Insflag=0
+	I medadrReceive="未接收"  D
+	.S medadrReceive="1"
+	;.S matadrRepAuditList=medadrStatusDR_"^"_list_"^"_""_"^"_""_"^"_medadrReceive_"^"_eventDr
+	;.S Insflag=##class(web.DHCADVCOMMON).InsRepAudit(ID,matadrRepAuditList)
+	;Q:Insflhhag'=0 "-5^审核失败"
+	S medadrReceive=4 ;审核
+	
+	S TimeOutFlag=""
+	S OccurDate=$p(^DHCADVMASTER(ID),"^",25)  ///发生日期
+	S:OccurDate="" OccurDate=0
+	S OccurTime=$p(^DHCADVMASTER(ID),"^",26)  ///发生时间
+	S:OccurTime="" OccurTime=0
+	;i +MedAduit'=0 d
+	;.S MedAuditDate=$p(^DHCMEDREPADT(MedAduit),"^",5)
+	;.S MedAuditTime=$p(^DHCMEDREPADT(MedAduit),"^",6)
+	s HolidayDate=##class(web.DHCADVCOMMONPART).CheckTimeEscapeHoliday(OccurDate,OccurTime,medadrAuditDate,medadrAuditTime)
+	I (HolidayDate>72) S TimeOutFlag="Y"   //如果报告审核超过24小时
+	S medadrRetReason="",RevStatus="",RepCancelFlag=""
+	
+	TS
+	S Err=0
+
+	S Err=..InsAdvMasterStart(ID,medadrStatusDR)
+	I Err'=0 tro
+	Q:Err'=0 "-05"
+
+	S matadrRepAuditList=medadrStatusDR_"^"_list_"^"_medadrNextLocDR_"^"_medadrLocAdvice_"^"_medadrReceive_"^"_eventDr_"^"_medadrRetReason_"^"_RevStatus_"^"_TimeOutFlag_"^"_RepCancelFlag
+	S retVal=##class(web.DHCADVCOMMON).InsRepAudit(ID,matadrRepAuditList)
+	I retVal'=0 tro
+	Q:retVal'=0 retVal
+	
+	TC
+	Q 0
+]]></Implementation>
+</Method>
+
+<Method name="InsAdvMasterStart">
+<Description>
+Description: 插入不良事件关联表主表报告状态
+Creator:     CongYue
+CreateDate:  2017-09-11
+Input:  	 主表id , 报告状态
+Return:		 插入成功 0,插入失败 非0</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RepID:%String,StatuDr:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (RepID,StatuDr)
+	&sql(update DHC_AdvMaster set ADV_RepStaus_Dr=:StatuDr where ADV_RowID=:RepID)
+	Q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="QueryRepListAll11">
+<Description>
+Description: 不良事件查询 
+Creator:     CongYue
+CreateDate:  2017-08-28
+Input:  	 StrParam : 以字符"^"分割,格式为:开始时间^结束时间
+Table:       FormRecord,FormRecordItm,FormRecordItmSub
+Return: 	 收件一览 已报事件 重点关注 草稿箱 归档事件 待审批报告 被退回报告
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryRepListAll("10","1","2017-09-21^2017-09-29^^^235^4^1223^^^")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rows=10,page=1,StrParam:%String</FormalSpec>
+<Implementation><![CDATA[
+  
+	N (rows,page,StrParam)
+	q:StrParam="" "" 
+	S RecListnum=0, Complenum=0, RepImpnum=0, Draftsnum=0,Filenum=0,PendAuditnum=0,Backnum=0  
+	S End = page*rows
+	S Start=(page-1)*rows+1
+	S EndPage=page*rows  //结束行
+	S StPage=((page-1)*rows)+1     //开始行
+	
+	S StDate=+$h-7    //开始日期
+	S EndDate=+$h   //结束日期
+	S GroupId=$p(StrParam,"^",1)   //安全组ID
+    S LocId=$p(StrParam,"^",2)     //科室ID
+    S UserId=$p(StrParam,"^",3)    //用户ID
+	S list=UserId_"^"_LocId_"^"_GroupId
+	
+	S:StDate'="" StDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(StDate)
+	S:EndDate'="" EndDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(EndDate)
+	q:StDate="" "" 
+	s count=0
+	f date=StDate:1:EndDate d
+	.s RepID=""
+	.f  s RepID=$o(^DHCADVMASTER(0,"RepDate",date,RepID)) q:RepID=""  d
+	..S RepTypeCode="",RepType="",RepStaus="",RepUser="",RepLoc="",RepSubType="",RepImpFlag="",MedadrReceive=""
+	..S recordID=$p(^DHCADVMASTER(RepID),"^",1)
+	..Q:recordID=""
+	..S RepTypeDr=$p(^DHCADVMASTER(RepID),"^",2)
+	..Q:RepTypeDr=""
+	..S:RepTypeDr'="" RepTypeCode=$p(^DHCMEDADREVT(RepTypeDr),"^",1)
+	..S RepStausDr=$p(^DHCADVMASTER(RepID),"^",3)
+	..S RepUserDr=$p(^DHCADVMASTER(RepID),"^",6)
+	..S:RepUserDr'="" RepUser=$p(^SSU("SSUSR",RepUserDr),"^",2)
+	..S RepLocDr=$p(^DHCADVMASTER(RepID),"^",7)
+	..S:RepLocDr'="" RepLoc=$p(^CTLOC(RepLocDr),"^",2)
+	..S RepList=RepTypeDr_"^"_RepLocDr_"^"_RepUserDr_"^"_RepID 
+	..S flag=##class(web.DHCADVSEARCHREPORT).CheckQuerySec(RepList,list)
+	..Q:flag'=1
+	..S:RepLocDr=LocId RecListnum=RecListnum+1
+	..S:(RepStausDr="")&&(RepLocDr=LocId) Draftsnum=Draftsnum+1
+	..I RepStausDr'=""  D
+	...S:RepLocDr=LocId Complenum=Complenum+1
+	...S RepStaus=$p(^DHCADREVTWFI(+RepStausDr,"ADREWI",$p(RepStausDr,"||",2)),"^",2)
+	...S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	...S:MedadrID'="" MedadrReceivedr=$p(^DHCMEDREPADT(MedadrID),"^",9)
+	...S:MedadrReceivedr="2" Backnum=Backnum+1
+	..S RepImpFlag=$p(^DHCADVMASTER(RepID),"^",9)
+	..S:RepImpFlag="Y" RepImpnum=RepImpnum+1
+	
+	S NumList=RecListnum_"^"_Complenum_"^"_RepImpnum_"^"_Draftsnum_"^"_Filenum_"^"_PendAuditnum_"^"_Backnum  
+	
+	q NumList
+]]></Implementation>
+</Method>
+
+<Method name="QueryRepListAll">
+<Description>
+Description: 不良事件查询 
+Creator:     CongYue
+CreateDate:  2017-08-28
+Input:  	 StrParam : 以字符"^"分割,格式为:开始时间^结束时间
+Table:       FormRecord,FormRecordItm,FormRecordItmSub
+Return: 	 收件一览 已报事件 重点关注 草稿箱 归档事件 待审批报告 被退回报告 填写时限 受理时限 全部已处理报告 待定
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryRepListAll("10","1","132^101^3")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rows=10,page=1,StrParam:%String</FormalSpec>
+<Implementation><![CDATA[
+  
+	N (rows,page,StrParam)
+	q:StrParam="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(0) //输出json结尾符
+	S RecListnum="", Complenum="", RepImpnum="", Draftsnum="",Filenum="",PendAuditnum="",Backnum="",FillTimenum="",AcceptTimenum="",Auditnum="",Pendnum=""  
+	S End = page*rows
+	S Start=(page-1)*rows+1
+	S EndPage=page*rows  //结束行
+	S StPage=((page-1)*rows)+1     //开始行
+	
+	S StDate="2018-01-01"    //开始日期
+	S:StDate'="" StDate=$zdh(StDate,3)
+	S EndDate=+$h   //结束日期
+	S GroupId=$p(StrParam,"^",1)   //安全组ID
+    S LocId=$p(StrParam,"^",2)     //科室ID
+    S UserId=$p(StrParam,"^",3)    //用户ID
+	S list=UserId_"^"_LocId_"^"_GroupId
+	
+	;S:StDate'="" StDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(StDate)
+	;S:EndDate'="" EndDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(EndDate)
+	q:StDate="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(0) //输出json结尾符
+	s count=0
+	;w "["
+	f date=StDate:1:EndDate d
+	.s RepID=""
+	.f  s RepID=$o(^DHCADVMASTER(0,"RepDate",date,RepID)) q:RepID=""  d
+	..S RepTypeCode="",RepType="",RepStaus="",RepUser="",RepLoc="",RepSubType="",RepImpFlag="",MedadrReceive="",RepOverTimeflag="",AutOverTimeflag="",RepCancelflag="",StaFistAuditUserDr="",StaFistAuditUser="",BackAuditUserDr="",BackAuditUser=""
+	..S recordID=$p(^DHCADVMASTER(RepID),"^",1)
+	..Q:recordID=""
+	..S RepTypeDr=$p(^DHCADVMASTER(RepID),"^",2)
+	..Q:RepTypeDr=""
+	..S:RepTypeDr'="" RepTypeCode=$p(^DHCMEDADREVT(RepTypeDr),"^",1)
+	..S RepStausDr=$p(^DHCADVMASTER(RepID),"^",3)
+	..S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	..S:MedadrID'="" RepCancelflag=$p(^DHCMEDREPADT(MedadrID),"^",11) ;作废标识
+	..Q:RepCancelflag="Y"
+	..S RepUserDr=$p(^DHCADVMASTER(RepID),"^",6)
+	..S:RepUserDr'="" RepUser=$p(^SSU("SSUSR",RepUserDr),"^",2)
+	..S RepLocDr=$p(^DHCADVMASTER(RepID),"^",7)
+	..S:RepLocDr'="" RepLoc=$p(^CTLOC(RepLocDr),"^",2)
+	..S RepList=RepTypeDr_"^"_RepLocDr_"^"_RepUserDr_"^"_RepID 
+	..S flag=##class(web.DHCADVSEARCHREPORT).CheckQuerySec(RepList,list)
+	..S GroupDesc=$p(^SSU("SSGRP",GroupId),"^",1)
+	..S Secuflag=..GetSecuGroupWard(UserId, RepLocDr) ;判断登录人是否属于大科安全组 病区 是否有查看权限
+	..S SecuLocflag=..GetSecuGroupLoc(UserId, RepLocDr) ;判断登录人是否属于大科安全组 科室 是否有查看权限
+	..Q:(flag'=1)||(((GroupDesc["护士长"))&&((Secuflag'=1)&&(SecuLocflag'=1)))
+	..S FILERowID=$o(^DHCADVFILE(0,"RepDrType",RepID,RepTypeDr,""))
+	..S File="",FileFlag=""
+	..S:FILERowID'="" FileFlag=$p(^DHCADVFILE(FILERowID),"^",3)
+	..;S FileFlag=$S(File="":"未归档",File="N":"撤销归档",File="Y":"已归档",1:"")
+	..S:FileFlag="Y" Filenum=Filenum+1  //归档事件
+	..;Q:RepLocDr'=LocId
+	..;S:RepLocDr=LocId RecListnum=RecListnum+1
+	..S:(RepLocDr=LocId)&&(RepStausDr="")&&(RepUserDr=UserId) Draftsnum=Draftsnum+1  ;草稿箱
+	..I RepStausDr'=""  D
+	...S:(RepLocDr=LocId)&&(RepUserDr=UserId)&&(FileFlag'="Y") Complenum=Complenum+1 ;已报事件
+	...S RepStaus=$p(^DHCADREVTWFI(+RepStausDr,"ADREWI",$p(RepStausDr,"||",2)),"^",2)
+	...S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	...S MedadrUserID=$p(^DHCMEDREPADT(MedadrID),"^",4)
+	...S:MedadrID'="" MedadrReceivedr=$p(^DHCMEDREPADT(MedadrID),"^",9)
+	...S MedadrRevStatus=$p(^DHCMEDREPADT(MedadrID),"^",14) ;驳回指向
+	...S StaFistAuditDr=""
+	...S:(RepTypeDr'="")&&(MedadrRevStatus'="") StaFistAuditUserDr=##class(web.DHCADVCOMMON).GetStaFisUserID(RepID, RepTypeDr, MedadrRevStatus ) ;$o(^DHCMEDREPADT(0,"TypeSta",RepTypeDr,MedadrRevStatus,""))
+	...S:StaFistAuditUserDr'="" StaFistAuditUser=$p(^SSU("SSUSR",StaFistAuditUserDr),"^",2) ;被驳回人
+	...S:MedadrReceivedr="2" BackAuditUserDr=MedadrUserID
+	...S:BackAuditUserDr'="" BackAuditUser=$p(^SSU("SSUSR",BackAuditUserDr),"^",2) ;驳回操作人
+	...S:(MedadrID'="")&(RepStaus="护士长审核") AutOverTimeflag=$p(^DHCMEDREPADT(MedadrID),"^",15) ;护士长审核超时标志
+	...S:(MedadrReceivedr="1")&&(MedadrUserID=UserId) RecListnum=RecListnum+1  ;收件一览
+	...S StsusGrant=##class(web.DHCADVCOMMON).CheckWorkItmGrant(RepStausDr,list)
+	...S:(MedadrReceivedr="2")&&((StaFistAuditUserDr=UserId)||(BackAuditUserDr=UserId)) Backnum=Backnum+1  ;被退回报告
+	
+	...S Listt=RepID_"^"_RepTypeDr_"^"_list_"^"_RepStausDr	
+	...S StatusNextIDaudit=##class(web.DHCADVCOMMON).GetRepNextStatusDr(Listt) ;报告下一状态（根据报告审批记录获取）
+	...S matalist=##class(web.DHCADVCOMMON).InsStatusDr(Listt) 
+	...S StatusNextID=$p(matalist,"^",2) ;报告下一状态 （根据报告状态获取）
+	...S:StatusNextIDaudit=StatusNextID PendAuditnum=PendAuditnum+1   //待审批报告
+	
+	...S matalast=##class(web.DHCADVCOMMON).InsStatusLast(Listt) 
+	...S StatusLastID=$p(matalast,"^",2)  //上一状态
+	...S:(MedadrReceivedr'="")&&(MedadrReceivedr'=1)&&(MedadrReceivedr'=3)&&(MedadrUserID=UserId) Auditnum=Auditnum+1   //全部已处理报告  上一状态不为空，且是我对该报告进行的最后一次处理（除了接收操作）
+	...;w:(MedadrReceivedr'=1)&&(MedadrReceivedr'="")&&(MedadrReceivedr'=3)&&(MedadrUserID=UserId) "**"_MedadrReceivedr_"^"_MedadrUserID_"^"_UserId_"^"_RepID
+	..S RepImpFlag=$p(^DHCADVMASTER(RepID),"^",9)
+	..S:RepImpFlag="Y" RepImpnum=RepImpnum+1  //重点关注
+	..S RepDate=$p(^DHCADVMASTER(RepID),"^",4)
+	..S RepTime=$p(^DHCADVMASTER(RepID),"^",5)
+	..S OccurDate=$p(^DHCADVMASTER(RepID),"^",25)  //发生日期
+	..S:OccurDate="" OccurDate=0
+	..S OccurTime=$p(^DHCADVMASTER(RepID),"^",26)  //发生时间
+	..S:OccurTime="" OccurTime=0
+	..S RepOverTime=""
+	..S HolidayDate=##class(web.DHCADVCOMMONPART).CheckTimeEscapeHoliday(OccurDate,OccurTime,RepDate,RepTime)
+	..I (HolidayDate>24) S RepOverTimeflag="Y"   //如果报告填报超过24小时
+	..S:RepOverTimeflag="Y" FillTimenum=FillTimenum+1  //填写时限
+	..S:AutOverTimeflag="Y" AcceptTimenum=AcceptTimenum+1	 //受理时限
+	
+	;S NumList=RecListnum_"^"_Complenum_"^"_RepImpnum_"^"_Draftsnum_"^"_Filenum_"^"_PendAuditnum_"^"_Backnum_"^"_FillTimenum_"^"_AcceptTimenum_"^"_Auditnum_"^"_Pendnum  
+	;s count=count+1
+	;q:count<Start
+	;q:count>End
+	;w $case(count,Start:"",:",")
+	s tmpObj={}
+	s tmpObj.RecListnum=RecListnum
+	s tmpObj.Complenum=Complenum
+	s tmpObj.RepImpnum=RepImpnum
+	s tmpObj.Draftsnum=Draftsnum
+	s tmpObj.Filenum=Filenum
+	s tmpObj.PendAuditnum=PendAuditnum
+	s tmpObj.Backnum=Backnum
+	s tmpObj.FillTimenum=FillTimenum
+	s tmpObj.AcceptTimenum=AcceptTimenum
+	s tmpObj.Auditnum=Auditnum
+	s tmpObj.Pendnum=Pendnum
+	;w tmpObj.%ToJSON()
+	;w "]"
+	;q ""
+	q tmpObj
+]]></Implementation>
+</Method>
+
+<Method name="QueryInputDataInfo">
+<Description>
+Description: 获取 数据保存值（input、combobox、textarea 类型（患者ID,就诊形式,事件发生部门）） 
+Creator:     CongYue
+CreateDate:  2017-10-13
+Input:  	 record : 表单填写记录表ID, title:所需元素保存值的元素描述（患者ID,就诊形式,事件发生部门,叙述事件经过及详细信息）
+Table:       FormRecordItm,FormDic
+Return: 	 Data  数据保存值
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryInputDataInfo(33,"叙述事件经过及详细信息")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>record:%String,title:%String</FormalSpec>
+<Implementation><![CDATA[
+	n (record,title)
+	s ItmID="",Data=""
+	f  s ItmID=$o(^User.DHCAdvFormRecordItmI("IndexFormRecord",record,ItmID)) q:ItmID=""  d
+	.s data=^User.DHCAdvFormRecordItmD(ItmID)
+	.s FormdicID="",RepSubTypedr=""
+	.f  s FormdicID=$o(^User.DHCAdvFormDicI("IndexTitle"," "_title,FormdicID)) q:FormdicID=""  d
+	..s Formdicdata=^User.DHCAdvFormDicD(FormdicID)
+	..s style=$LIST(Formdicdata,3)
+	..q:(style'="")&&((style'="input")&&(style'="textarea")&&(style'="easyui-combobox"))
+	..S:FormdicID=$LIST(data,3) Data=$LIST(data,4)
+	..Q:Data'=""
+	
+	q Data
+]]></Implementation>
+</Method>
+
+<Method name="QueryCheckDataInfo">
+<Description>
+Description: 获取 数据保存值（单选框 复选框类型（事件发生地点,应给药物剂量）） 
+Creator:     CongYue
+CreateDate:  2017-10-13
+Input:  	 record : 表单填写记录表ID, title:所需元素保存值的元素描述（事件发生地点,应给药物剂量）
+Table:       FormRecordItm,FormDic
+Return: 	 Data  数据保存值 用","分割(英文逗号)
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryCheckDataInfo(33,"事件发生地点")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>record:%String,title:%String</FormalSpec>
+<Implementation><![CDATA[
+	n (record,title)
+	s ItmID="",Data=""
+	f  s ItmID=$o(^User.DHCAdvFormRecordItmI("IndexFormRecord",record,ItmID)) q:ItmID=""  d
+	.s data=^User.DHCAdvFormRecordItmD(ItmID)
+	.s FormdicID="",RepSubTypedr=""
+	.f  s FormdicID=$o(^User.DHCAdvFormDicI("IndexTitle"," "_title,FormdicID)) q:FormdicID=""  d
+	..s Formdicdata=^User.DHCAdvFormDicD(FormdicID)
+	..s style=$LIST(Formdicdata,3)
+	..q:(style'="")&&(style'="radio")&&(style'="label")&&(style'="checkbox")&&(style'="radio-input") 
+	..s parrefdicID="",parrefdictitle=""
+	..f  s parrefdicID=$o(^User.DHCAdvFormDicI("IndexParef"," "_FormdicID,parrefdicID)) q:parrefdicID=""  d
+	...s parrefdicdata=^User.DHCAdvFormDicD(parrefdicID)
+	...s parrefdictitle=$LIST(parrefdicdata,4)
+	...S:parrefdicID=$LIST(data,3) Data=parrefdictitle_","_Data
+	...;Q:Data'=""
+	q Data
+]]></Implementation>
+</Method>
+
+<Method name="StaticPreAlert">
+<Description>
+Description: 不良反应报告按病区统计
+Creator:     CongYue
+CreateDate:  2017-10-17  
+Input:  	 开始日期^结束日期"12","1","2016-02-02^2016-02-02"
+Output:   	 不良事件个数^不良反应报告总数
+Others:		 d ##class(web.DHCADVCOMMONPART).StaticPreAlert("12","1","2017-09-15^2017-10-17")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rows:%String,page:%String,params:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (rows,page,params)
+	S End = page*rows
+	S Start = (page-1)*rows+1
+	;S ^TMP("CYStaticPreAlert")=params
+	S pid=##class(web.DHCADVCOMMON).NewPid()
+	S StDate=$p(params,"^",1)       //开始日期
+	S EndDate=$p(params,"^",2)      //结束日期
+	S StDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(StDate) //$zdh(StDate,3)
+	S EndDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(EndDate) //$zdh(EndDate,3)
+	S Repnum=0
+	S Num=1
+	S ID=""
+	F date=StDate:1:EndDate D
+	.s RepID=""
+	.f  s RepID=$o(^DHCADVMASTER(0,"RepDate",date,RepID)) q:RepID=""  d
+	..S RepTypeCode="",RepType="",RepStaus="",RepUser="",RepLoc="",RepLocType=""
+	..S recordID=$p(^DHCADVMASTER(RepID),"^",1)
+	..Q:recordID=""
+	..S RepTypeDr=$p(^DHCADVMASTER(RepID),"^",2)
+	..S:RepTypeDr'="" RepTypeCode=$p(^DHCMEDADREVT(RepTypeDr),"^",1)
+	..S:RepTypeDr'="" RepType=$p(^DHCMEDADREVT(RepTypeDr),"^",2)
+	..S RepStausDr=$p(^DHCADVMASTER(RepID),"^",3)
+	..;Q:RepStausDr=""  ;2018-01-11  统计所有填写的报告 
+	..S RepCancelflag=""
+	..S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	..S:MedadrID'="" RepCancelflag=$p(^DHCMEDREPADT(MedadrID),"^",11) ;作废标识
+	..Q:RepCancelflag="Y"
+	..S RepLocDr=$p(^DHCADVMASTER(RepID),"^",7)
+	..S:RepLocDr'="" RepLocType=$p(^CTLOC(RepLocDr),"^",13)  ;为W 属于病区
+	..;Q:RepLocType'="W"
+	..S RepLoc=$p(^CTLOC(RepLocDr),"^",2)
+	..S:RepLoc["-" RepLoc=$p(RepLoc,"-",2)
+	..I $d(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,RepLoc,RepTypeCode)) D
+	...S $p(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,RepLoc,RepTypeCode),"^",3)=$p(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,RepLoc,RepTypeCode),"^",3)+Num
+	..E  S ^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,RepLoc,RepTypeCode)=RepLoc_"^"_"报告数量"_"^"_Num_"^"_RepType_"^"_RepTypeDr
+	
+	S typecode=""
+	S ward=""
+	S Numalls=0
+	S h=0
+	
+	F  S ward=$o(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,ward)) Q:ward=""  D
+	.F  S typecode=$o(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,ward,typecode)) Q:typecode=""  D
+	..S Numall=$p(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,ward,typecode),"^",3)
+	..S ListData=$g(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,ward,typecode))
+	..S h=h+1
+	..S ^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,+Numall,ward,typecode,h)=ListData
+	.
+	
+	I h=0 W ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(h) //输出json结尾符
+	Q:h=0 ""
+	S ListTitle="name^group^value^reptype"
+	W ##class(web.DHCADVJSONCOMMON).getJsonStartSign(h) //输出json前缀串
+	S Num=0
+	S count=""
+	S ward=""
+	S typecode=""
+	S index=""
+	F  S count=$o(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,count),-1) Q:count=""  D
+	.F  S ward=$o(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,count,ward)) Q:ward=""  D
+	..F  S typecode=$o(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,count,ward,typecode)) Q:typecode=""  D
+	...F  S index=$o(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,count,ward,typecode,index)) Q:index=""  D
+	....S ListData=$g(^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid,count,ward,typecode,index))
+	....Q:ListData=""
+	....S Num=Num+1
+	....Q:(Num<Start)||(Num>End)
+	....I Num=Start D
+	.....W ##class(web.DHCADVJSONCOMMON).getJsonData(ListTitle,ListData)
+	....E  D
+	.....W ","_##class(web.DHCADVJSONCOMMON).getJsonData(ListTitle,ListData)
+	....
+	...
+	..
+	.
+	W ##class(web.DHCADVJSONCOMMON).getJsonEndSign() //输出json结尾符
+	K ^TMP("DHCADV","web.DHCADVCOMMONPART","StaticPreAlert",pid)
+	Q ""
+]]></Implementation>
+</Method>
+
+<Method name="UntreatedList">
+<Description>
+Description: 不良反应报告待办统计
+Creator:     CongYue
+CreateDate:  2017-10-17  
+Input:  	 开始日期^结束日期"12","1","2016-02-02^2016-02-02"
+Output:   	 不良事件个数^不良反应报告总数
+Others:		 d ##class(web.DHCADVPREALERT).UntreatedList("12","1","2017-01-01^2017-10-17^235^4^1223")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rows:%String,page:%String,param:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	
+	n (rows,page,param)
+	s End = page*rows
+    s Start = (page-1)*rows+1
+    S pid=##class(web.DHCADVCOMMON).NewPid()  //调用计数器类并给其赋值
+	K ^TMP("DHCADV","web.DHCADVCOMMONPART","UntreatedList") //k掉临时global
+    s StDate=$p(param,"^",1)    //开始日期
+	s EndDate=$p(param,"^",2)   //结束日期 
+	S GroupId=$p(param,"^",3)   //安全组ID
+    S LocId=$p(param,"^",4)     //科室ID
+    S UserId=$p(param,"^",5)    //用户ID
+    S list=UserId_"^"_LocId_"^"_GroupId
+	s StDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(StDate) //$zdh(StDate,3)
+	s EndDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(EndDate) //$zdh(EndDate,3)
+	s h=0,count=0
+	S Numalls=0   //合计初始化
+    s Num=1       //审核状态类型数量统计初始化
+	S ID=""
+	F date=StDate:1:EndDate D
+	.s RepID=""
+	.f  s RepID=$o(^DHCADVMASTER(0,"RepDate",date,RepID)) q:RepID=""  d
+	..S RepTypeCode="",RepType="",RepStaus="",RepUser="",RepLoc="",RepSubType="",RepImpFlag="",Medadrreceive="",Medadrreceivedr="",StatusNext=""
+	..S recordID=$p(^DHCADVMASTER(RepID),"^",1)
+	..Q:recordID=""
+	..S RepTypeDr=$p(^DHCADVMASTER(RepID),"^",2)
+	..S:RepTypeDr'="" RepTypeCode=$p(^DHCMEDADREVT(RepTypeDr),"^",1)
+	..S:RepTypeDr'="" RepType=$p(^DHCMEDADREVT(RepTypeDr),"^",2)
+	..S RepStausDr=$p(^DHCADVMASTER(RepID),"^",3)
+	..Q:RepStausDr=""
+	..S RepStaus=$p(^DHCADREVTWFI(+RepStausDr,"ADREWI",$p(RepStausDr,"||",2)),"^",2)
+	..S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	..S:MedadrID'="" Medadrreceivedr=$p(^DHCMEDREPADT(MedadrID),"^",9) 
+	..S params=RepID_"^"_RepTypeCode_"^"_UserId_"^"_LocId 
+	..S SubUserflag=##class(web.DHCADVSEARCHREPORT).SearchAuditIUser(MedadrID,params) 
+	..S Listt=RepID_"^"_RepTypeDr_"^"_list_"^"_RepStausDr
+	..S matalist=##class(web.DHCADVCOMMON).InsStatusDr(Listt) 
+	..S StatusNextID=$p(matalist,"^",2)  //下一状态
+	..Q:StatusNextID=""
+	..q:Medadrreceivedr="2" //判断是否驳回
+	..S adrwfgID=""
+	..F  S adrwfgID=$o(^DHCADREVTWFGR(0,"ItmDr",StatusNextID,adrwfgID)) Q:adrwfgID=""  d
+	...S adrwfgType=$p(^DHCADREVTWFGR(adrwfgID),"^",3)
+	...S adrwfgLocID=$p(^DHCADREVTWFGR(adrwfgID),"^",4)
+	...Q:(LocId'="")&(LocId'=adrwfgLocID)
+	...Q:adrwfgType'=2  //判断权限是否为科室
+	...S Numalls=Numalls+1
+	...I $d(^TMP("DHCADV","web.DHCADVCOMMONPART","UntreatedList",pid,RepType))  d
+	....S $p(^TMP("DHCADV","web.DHCADVCOMMONPART","UntreatedList",pid,RepType),"^",2)=$p(^TMP("DHCADV","web.DHCADVCOMMONPART","UntreatedList",pid,RepType),"^",2)+Num
+	...E  d
+	....S h=h+1  
+	....S ^TMP("DHCADV","web.DHCADVCOMMONPART","UntreatedList",pid,RepType)=RepType_"^"_Num
+	..
+
+	I h=0 W ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(h) //输出json结尾符
+	Q:h=0 ""
+	S ^TMP("DHCADV","web.DHCADVCOMMONPART","UntreatedList",pid,h)="合计:"_"^"_Numalls
+	
+	///转换数据为Json格式
+	S Title="name^value"
+	
+	w ##class(web.DHCADVJSONCOMMON).getJsonStartSign(h+1) //输出json前缀串  qunianpeng  2016-07-13
+	s index=""
+	f  s index=$o(^TMP("DHCADV","web.DHCADVCOMMONPART","UntreatedList",pid,index),-1) q:index=""  d
+	.s mdate=$g(^TMP("DHCADV","web.DHCADVCOMMONPART","UntreatedList",pid,index))
+	.s count = count+1
+	.q:(count<Start)||(count>End)
+	.I count=Start d
+	..w ##class(web.DHCADVJSONCOMMON).getJsonData(Title,mdate)
+	.e  d
+	..w ","_##class(web.DHCADVJSONCOMMON).getJsonData(Title,mdate)
+	w ##class(web.DHCADVJSONCOMMON).getJsonEndSign() //输出json结尾符
+	K ^TMP("DHCADV","web.DHCADVCOMMONPART","UntreatedList") //k掉临时global
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="GetAllLocNewVersion">
+<Description>
+Description: 获取科室描述，用于查询条件的下拉框中(标准版新版 科室取消了拼音码-科室的形式)
+Creator:     yangyongtao
+CreateDate:  2017-11-17	 
+Input:       查询内容(汉字或者拼音码)
+Output:  	 id^科室描述 （串）
+Table:		 CT_LOC
+Others:	w ##class(web.DHCSTPHCMCOMMON).GetAllLocNewVersion("fs",2)	</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>input:%String,hospID:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (input,hospID)
+	s input=$ZCVT(input,"U")
+	s result = ##class(%Library.ResultSet).%New()
+	s sqlStr="SELECT CTLOC_ROWID as locDr,CTLOC_DESC as locDesc FROM CT_LOC"
+	i input'=""  d
+	.s sqlStr=sqlStr_" WHERE CTLOC_ContactName LIKE """_"%"_""_input_""_"%"_""" OR CTLOC_Desc LIKE """_"%"_""_input_""_"%"_""_""" "
+	.//旧版(拼音码和描述为分开) s sqlStr=sqlStr_" WHERE CTLOC_ContactName LIKE """_""_input_""_"%"_""" OR CTLOC_Code LIKE """_""_input_""_"%"_""_""" "
+	
+    d result.Prepare(sqlStr)
+	d result.Execute()
+	s count = 0
+	w "["
+	While(result.Next())
+	{	
+		s locDr = result.Data("locDr")
+		s locDesc = result.Data("locDesc")
+		continue:(hospID'="")&(hospID'=$p(^CTLOC(locDr),"^",22))
+		continue:(locDesc["停")||(locDesc["工作量")
+		continue:$d(^PAC("ADMLOC",0,"AdmType","I",locDr))
+  		continue:$d(^PAC("ADMLOC",0,"AdmType","O",locDr))
+  		continue:$d(^PAC("ADMLOC",0,"AdmType","E",locDr))
+  		continue:$d(^PAC("ADMLOC",0,"AdmType","H",locDr))
+  		continue:($p(^CTLOC(locDr),"^",25)'="")&&($p(^CTLOC(locDr),"^",25)<+$h)
+		;s:locDesc["-" locDesc=$p(locDesc,"-",2)
+		s tmp=locDr_"^"_locDesc
+		s count = count+1
+		I count=1 d
+		.w ##class(web.DHCADVJSONCOMMON).getJsonData("val^text",tmp)
+		e  d
+		.w ","_##class(web.DHCADVJSONCOMMON).getJsonData("val^text",tmp)
+	}
+	w "]"
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="SelEventbyNew">
+<Description>
+Description: 事件类型
+Creator:     CongYue
+CreateDate:  2017-11-28  
+Table:		 DHC_MedAdrRepEvent
+Output:  	 事件类型描述（下拉框显示）  
+Others:		 w ##class(web.DHCADVCOMMONPART).SelEventbyNew()</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	S count=0
+	W "["
+	S EventDr=""
+	F  S EventDr=$o(^DHCMEDADREVT(EventDr)) Q:EventDr=""  D
+	.Q:+EventDr=0
+	.S EventCode=$p(^DHCMEDADREVT(EventDr),"^",1)
+	.S EventDesc=$p(^DHCMEDADREVT(EventDr),"^",2)
+	.Q:(EventCode'="")&(EventCode'["adv")
+	.S Active=$p(^DHCMEDADREVT(EventDr),"^",3) //是否可用
+	.Q:Active="N"
+	.S tmp=EventDr_"^"_EventDesc
+	.S count = count+1
+	.I count=1 D
+	..W ##class(web.DHCADVJSONCOMMON).getJsonData("value^text","^全部")
+	..W ","_##class(web.DHCADVJSONCOMMON).getJsonData("value^text",tmp)
+	.E  D
+	..W ","_##class(web.DHCADVJSONCOMMON).getJsonData("value^text",tmp)
+	W "]"
+	Q ""
+]]></Implementation>
+</Method>
+
+<Method name="SelEvtStatusbyNew">
+<Description>
+Description: 报告状态
+Creator:     CongYue
+CreateDate:  2017-11-28  
+Table:		 DHC_AdrEvtWorkFlow ,DHC_AdrEvtWorkFlowItm
+Input:   	 类型id
+Output:  	 事件状态描述（下拉框显示）  
+Others:		 w ##class(web.DHCADVCOMMONPART).SelEvtStatusbyNew("1")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>EventDr</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (EventDr)
+	S count=0
+	W "["	
+	S EvtWorkflowID=$o(^DHCADREVTWF(0,"Event",EventDr,""))
+	Q:EvtWorkflowID=""
+	S Active=$p(^DHCADREVTWF(EvtWorkflowID),"^",4) //是否可用
+	Q:Active="N"
+	S CH=""
+	F  S CH=$o(^DHCADREVTWFI(EvtWorkflowID,"ADREWI",CH)) Q:CH=""  D
+	.q:+CH=0
+	.S Desc=$p(^DHCADREVTWFI(EvtWorkflowID,"ADREWI",CH),"^",2) //描述
+	.;s tmps=AdrEwiID_"^"_"全部"
+	.S ID=EvtWorkflowID_"||"_CH
+	.S tmp=ID_"^"_Desc
+	.s count = count+1
+	.I count=1 d
+	..W ##class(web.DHCADVJSONCOMMON).getJsonData("value^text","^全部")
+	..W ","_##class(web.DHCADVJSONCOMMON).getJsonData("value^text",tmp)
+	.e  d
+	..W ","_##class(web.DHCADVJSONCOMMON).getJsonData("value^text",tmp) //value^text
+	w "]"
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="GetSaveInfo">
+<Description>
+Description: 通过对照表Code获取 对应元素的value值
+Creator:     CongYue
+CreateDate:  2017-12-19  
+Table:		 DHC_AdvFormField ,DHC_AdvFormDicContrast ,
+Input:   	 需保存的数据对应的code，元素所在formid
+Output:  	 元素value值 
+Others:		 w ##class(web.DHCADVCOMMONPART).GetSaveInfo("PatName","991","8")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>code,formid,recordid</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (code,formid,recordid)
+	Q:(code="")||(formid="")||(recordid="")
+	S FieldID="",ContrastID="",FormDicID="",RecordItmID="",RecordItmvalue=""
+	S FieldID=$o(^DHCADVFF(0,"Code",$$ALPHAUP^SSUTIL4(code),""))
+	S:FieldID'="" ContrastID=$o(^DHCADVFDC(0,"FieldCode",FieldID,formid,""))
+	S:ContrastID'="" FormDicID=$p(^DHCADVFDC(ContrastID),"^",2)
+	Q:formid'=$lg(^User.DHCAdvFormRecordD(recordid),2) ""
+	Q:FormDicID="" ""
+	F  S RecordItmID=$o(^User.DHCAdvFormRecordItmI("IndexFormRecord",recordid,RecordItmID)) Q:RecordItmID=""  D
+	.Q:(FormDicID'="")&&(FormDicID'=$lg(^User.DHCAdvFormRecordItmD(RecordItmID),3))
+	.S RecordItmvalue=$lg(^User.DHCAdvFormRecordItmD(RecordItmID),4)
+	.Q:RecordItmvalue'=""
+	q RecordItmvalue
+]]></Implementation>
+</Method>
+
+<Method name="GetFormNameID">
+<Description>
+Description: 根据报告类型ID获取对应表单nameID
+Creator:     CongYue
+CreateDate:  2017-12-23  
+Table:		 DHC_AdvFormName ,DHC_AdvFormDicContrast ,
+Input:   	 需保存的数据对应的code，元素所在formid
+Output:  	 元素value值 
+Others:		 w ##class(web.DHCADVCOMMONPART).GetFormNameID("")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>AdrEvtDr</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (AdrEvtDr)
+	s ReportTypeCode = $P($g(^DHCMEDADREVT(AdrEvtDr)),"^",1)
+	s FormNameDr = $o(^User.DHCAdvFormNameI("IndexCode",$$ALPHAUP^SSUTIL4(ReportTypeCode),""))
+	q FormNameDr
+]]></Implementation>
+</Method>
+
+<Method name="QueryRepManageList">
+<Description>
+Description: 不良事件查询 
+Creator:     CongYue
+CreateDate:  2018-01-09
+Input:  	 StrParam : 以字符"^"分割,格式为:开始时间^结束时间
+Table:       FormRecord,FormRecordItm,FormRecordItmSub
+Return: 	 事件上报 护士长审核 科护士长 护理部审核 案例归档 警示事件  23 
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryRepManageList("10","1","23^193^4805")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>rows=10,page=1,StrParam:%String</FormalSpec>
+<Implementation><![CDATA[
+  
+	N (rows,page,StrParam)
+	;w $h
+	q:StrParam="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(0) //输出json结尾符
+	S Repnum="", HeadNurAuditnum="", LocNurAuditnum="", NurDepartAuditnum="",Filenum="",Warningnum=""  ,RepOverTimenum="",AutOverTimenum=""
+	S End = page*rows
+	S Start=(page-1)*rows+1
+	S EndPage=page*rows  //结束行
+	S StPage=((page-1)*rows)+1     //开始行
+	
+	S StDate="2018-01-01"    //开始日期
+	S:StDate'="" StDate=$zdh(StDate,3)
+	S EndDate=+$h   //结束日期
+	S GroupId=$p(StrParam,"^",1)   //安全组ID
+    S LocId=$p(StrParam,"^",2)     //科室ID
+    S UserId=$p(StrParam,"^",3)    //用户ID
+	S list=UserId_"^"_LocId_"^"_GroupId
+	
+	;S:StDate'="" StDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(StDate) //hxy 2018-03-21 不走日期配置时报错
+	;S:EndDate'="" EndDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(EndDate) //hxy 2018-03-21
+	q:StDate="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(0) //输出json结尾符
+	s count=0
+	f date=StDate:1:EndDate d
+	.s RepID=""
+	.f  s RepID=$o(^DHCADVMASTER(0,"RepDate",date,RepID)) q:RepID=""  d
+	..S RepTypeCode="",RepType="",RepStaus="",RepUser="",RepLoc="",RepSubType="",RepImpFlag="",MedadrReceive="",RepOverTimeflag="",AutOverTimeflag="",RepCancelflag=""
+	..S recordID=$p(^DHCADVMASTER(RepID),"^",1)
+	..Q:recordID=""
+	..S RepTypeDr=$p(^DHCADVMASTER(RepID),"^",2)
+	..Q:RepTypeDr=""
+	..S:RepTypeDr'="" RepTypeCode=$p(^DHCMEDADREVT(RepTypeDr),"^",1)
+	..S RepStausDr=$p(^DHCADVMASTER(RepID),"^",3)
+	..S RepUserDr=$p(^DHCADVMASTER(RepID),"^",6)
+	..S:RepUserDr'="" RepUser=$p(^SSU("SSUSR",RepUserDr),"^",2)
+	..S RepLocDr=$p(^DHCADVMASTER(RepID),"^",7)
+	..S:RepLocDr'="" RepLoc=$p(^CTLOC(RepLocDr),"^",2)
+	..S RepList=RepTypeDr_"^"_RepLocDr_"^"_RepUserDr_"^"_RepID 
+	..S flag=##class(web.DHCADVSEARCHREPORT).CheckQuerySec(RepList,list)
+	..S Secuflag=..GetSecuGroupWard(UserId, RepLocDr) ;判断登录人是否属于大科安全组 是否有查看权限
+	..S SecuLocflag=..GetSecuGroupLoc(UserId, RepLocDr) ;判断登录人是否属于大科安全组 是否有查看权限
+	..S SecuUserdlag=..GetSecuUser(UserId, RepLocDr) ;判断登录人是否属于大科护士长 是否有查看权限
+	..S GroupDesc=$p(^SSU("SSGRP",GroupId),"^",1)
+	..S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	..S:MedadrID'="" RepCancelflag=$p(^DHCMEDREPADT(MedadrID),"^",11) ;作废标识
+	..Q:RepCancelflag="Y"
+	..Q:(flag'=1)||(((GroupDesc["护士长"))&&((Secuflag'=1)&&(SecuLocflag'=1)))
+	..S FILERowID=$o(^DHCADVFILE(0,"RepDrType",RepID,RepTypeDr,""))
+	..S File="",FileFlag=""
+	..S:FILERowID'="" FileFlag=$p(^DHCADVFILE(FILERowID),"^",3)
+	..;S FileFlag=$S(File="":"未归档",File="N":"撤销归档",File="Y":"已归档",1:"")
+	..S:FileFlag="Y" Filenum=Filenum+1
+	..S:((RepLocDr=LocId)||((GroupDesc["护理部"))||(SecuUserdlag=1))&&(FileFlag'="Y") Repnum=Repnum+1
+	..I RepStausDr'=""  D
+	...S RepStaus=$p(^DHCADREVTWFI(+RepStausDr,"ADREWI",$p(RepStausDr,"||",2)),"^",2)
+	...S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	...S MedadrUserID=$p(^DHCMEDREPADT(MedadrID),"^",4)
+	...S:MedadrID'="" MedadrReceivedr=$p(^DHCMEDREPADT(MedadrID),"^",9)
+	...S:(MedadrID'="")&(RepStaus="护士长审核") AutOverTimeflag=$p(^DHCMEDREPADT(MedadrID),"^",15) ;护士长审核超时标志
+	
+	...S Listt=RepID_"^"_RepTypeDr_"^"_list_"^"_RepStausDr	
+	...S matalist=##class(web.DHCADVCOMMON).InsStatusDr(Listt) 
+	...S StatusNextID=$p(matalist,"^",2)  //下一状态
+	...S StatusNext=""
+	...I StatusNextID'=""  D
+	....S AdrewRowIDn=$p(StatusNextID,"||",1)
+	....S AdrewChildSubn=$p(StatusNextID,"||",2)
+	....S StatusNext=$p(^DHCADREVTWFI(AdrewRowIDn,"ADREWI",AdrewChildSubn),"^",2)
+	....S:(StatusNext="护士长审核")&&(FileFlag'="Y") HeadNurAuditnum=HeadNurAuditnum+1
+	....S:(StatusNext="科护士长审核")&&(FileFlag'="Y") LocNurAuditnum=LocNurAuditnum+1
+	....S:(StatusNext="护理部审核")&&(FileFlag'="Y") NurDepartAuditnum=NurDepartAuditnum+1
+	..S RepImpFlag=$p(^DHCADVMASTER(RepID),"^",9)
+	..S:RepImpFlag="Y" Warningnum=Warningnum+1
+	..S RepDate=$p(^DHCADVMASTER(RepID),"^",4)
+	..S RepTime=$p(^DHCADVMASTER(RepID),"^",5)
+	..S OccurDate=$p(^DHCADVMASTER(RepID),"^",25)  ///发生日期
+	..S:OccurDate="" OccurDate=0
+	..S OccurTime=$p(^DHCADVMASTER(RepID),"^",26)  ///发生时间
+	..S:OccurTime="" OccurTime=0
+	..S RepOverTime=""
+	..S HolidayDate=##class(web.DHCADVCOMMONPART).CheckTimeEscapeHoliday(OccurDate,OccurTime,RepDate,RepTime)
+	..I (HolidayDate>24) S RepOverTimeflag="Y"   //如果报告填报超过24小时
+	..S:RepOverTimeflag="Y" RepOverTimenum=RepOverTimenum+1
+	..S:AutOverTimeflag="Y" AutOverTimenum=AutOverTimenum+1	
+	s tmpObj={}
+	s tmpObj.Repnum=Repnum
+	s tmpObj.HeadNurAuditnum=HeadNurAuditnum
+	s tmpObj.LocNurAuditnum=LocNurAuditnum
+	s tmpObj.NurDepartAuditnum=NurDepartAuditnum
+	s tmpObj.Filenum=Filenum
+	s tmpObj.Warningnum=Warningnum
+	s tmpObj.RepOverTimenum=RepOverTimenum
+	s tmpObj.AutOverTimenum=AutOverTimenum
+	;w !,$h
+	q tmpObj
+]]></Implementation>
+</Method>
+
+<Method name="GetSecuGroupWard">
+<Description>
+Description: 判断登录人是否有查看大科安全组下病区的相关报告权限
+Creator:     CongYue
+CreateDate:  2018-01-10  
+Table:		 DHC_AdvSecuGroupUserWard
+Input:   	 登录人id，报告填报科室
+Output:  	 flag 0 无权限  1 有权限 
+Others:		 w ##class(web.DHCADVCOMMONPART).GetSecuGroupWard("12751","101")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>UserId,RepLoc</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (UserId,RepLoc)
+	s flag=0
+	s WardId=$o(^PAWARD(0,"WARD_LocationDR",RepLoc,""))
+	q:WardId="" flag
+	s SecuId=""
+	f  s SecuId=$o(^DHCADVSECUGUW(SecuId)) q:SecuId=""  d
+	.q:+SecuId=0
+	.;s SecuGrpDr=$p(^DHCADVSECUGUW(SecuId),"^",1)
+	.s SecuUser=$p(^DHCADVSECUGUW(SecuId),"^",2)
+	.s SecuWard=$p(^DHCADVSECUGUW(SecuId),"^",3)
+	.q:SecuUser'=UserId
+	.s:SecuWard=WardId flag=1
+	q flag
+]]></Implementation>
+</Method>
+
+<Method name="GetSecuGroupDesc">
+<Description>
+Description: 根据科室获取所属大科安全组
+Creator:     CongYue
+CreateDate:  2018-01-11  
+Table:		 DHC_AdvSecuGroupUserWard
+Input:   	 报告填报科室id
+Output:  	 大科描述 
+Others:		 w ##class(web.DHCADVCOMMONPART).GetSecuGroupDesc("101")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RepLoc</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (RepLoc)
+	s SecuDesc=""
+	q:RepLoc="" SecuDesc
+	s SecuLId=""
+	f  s SecuLId=$o(^DHCADVSECUGUL(SecuLId)) q:SecuLId=""  d
+	.q:+SecuLId=0
+	.s SecuLGrpDr=$p(^DHCADVSECUGUL(SecuLId),"^",1)
+	.s SecuLoc=$p(^DHCADVSECUGUL(SecuLId),"^",3)
+	.q:SecuLoc'=RepLoc
+	.s:(SecuLGrpDr'="")&&(SecuLoc=RepLoc) SecuDesc=$p(^DHCADVSECUG(SecuLGrpDr),"^",2)
+	q:SecuDesc'="" SecuDesc
+	
+	s WardId=$o(^PAWARD(0,"WARD_LocationDR",RepLoc,""))
+	q:WardId="" SecuDesc
+	s SecuId=""
+	f  s SecuId=$o(^DHCADVSECUGUW(SecuId)) q:SecuId=""  d
+	.q:+SecuId=0
+	.s SecuGrpDr=$p(^DHCADVSECUGUW(SecuId),"^",1)
+	.s SecuWard=$p(^DHCADVSECUGUW(SecuId),"^",3)
+	.q:SecuWard'=WardId
+	.s:(SecuGrpDr'="")&&(SecuWard=WardId) SecuDesc=$p(^DHCADVSECUG(SecuGrpDr),"^",2)
+	q SecuDesc
+]]></Implementation>
+</Method>
+
+<Method name="GetSecuGroupLoc">
+<Description>
+Description: 判断登录人是否有查看大科安全组下科室的相关报告权限
+Creator:     CongYue
+CreateDate:  2018-01-10  
+Table:		 DHC_AdvSecuGroupUserLoc
+Input:   	 登录人id，报告填报科室
+Output:  	 flag 0 无权限  1 有权限 
+Others:		 w ##class(web.DHCADVCOMMONPART).GetSecuGroupLoc("12713","2")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>UserId,RepLoc</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (UserId,RepLoc)
+	s flag=0
+	q:RepLoc="" flag
+	s SecuId=""
+	f  s SecuId=$o(^DHCADVSECUGUL(SecuId)) q:SecuId=""  d
+	.q:+SecuId=0
+	.s SecuUser=$p(^DHCADVSECUGUL(SecuId),"^",2)
+	.s SecuLoc=$p(^DHCADVSECUGUL(SecuId),"^",3)
+	.q:SecuUser'=UserId
+	.s:SecuLoc=RepLoc flag=1
+	q flag
+]]></Implementation>
+</Method>
+
+<Method name="GetAutLocCombox">
+<Description>
+Description: 查询[科室维护] 下拉框
+Creator:     CongYue
+CreateDate:  2018-01-15
+Table: 		 DHC_AdvAutLoc
+Input:  	 params：订单信息，以字符"^"分割,格式为：代码^描述,
+Output:  	 DHC_AdvMedUseLink表中的数据信息   
+Others:		 w ##class(web.DHCADVCOMMONPART).GetAutLocCombox("")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>q:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (q)
+	S q=$$ALPHAUP^SSUTIL4(q)
+	s jsonObj=##class(web.DHCAPPJsonObject).%New()
+	s listObj=##class(%ListOfObjects).%New()
+	s ID="",Desc=""
+	F  S ID=$o(^DHCADVAUTLOC(ID)) Q:ID=""  D
+	.Q:+ID=0
+	.S Code=$p(^DHCADVAUTLOC(ID),"^",1) //代码
+	.S Desc=$p(^DHCADVAUTLOC(ID),"^",2) //描述
+	.S Parent=$p(^DHCADVAUTLOC(ID),"^",3) //描述
+	.S Active=$p(^DHCADVAUTLOC(ID),"^",4) //描述
+	.Q:Active="N"
+	.Q:((q'="")&(Code'[q))||((q'="")&(Desc'[q))
+	.Q:(Parent'="")
+	.d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value",Desc).Put("text",Desc))
+	w jsonObj.ListToJson(listObj)
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="GetAutLocItmCombox">
+<Description>
+Description: 查询[科室维护项目]
+Creator:     CongYue
+CreateDate:  2018-01-12
+Table: 		 DHC_AdvAutLoc
+Input:  	 主表的id
+Output:  	 DHC_AdvMedUseLinkItm表中的数据信息   
+Others:		 w ##class(web.DHCADVCOMMONPART).GetAutLocItmCombox("内科","")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>AutLParentDesc,q:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (AutLParentDesc,q)
+	S q=$$ALPHAUP^SSUTIL4(q)
+	;S ^tmp("ds")=AutLParentDesc
+	S AutLParentID=$o(^DHCADVAUTLOC(0,"Code",AutLParentDesc,""))
+	Q:AutLParentID="" "[]"
+	s jsonObj=##class(web.DHCAPPJsonObject).%New()
+	s listObj=##class(%ListOfObjects).%New()
+	s ID="",Desc=""
+	F  S ID=$o(^DHCADVAUTLOC(0,"ParentDr",AutLParentID,ID)) Q:ID=""  D
+	.Q:+ID=0
+	.S Code=$p(^DHCADVAUTLOC(ID),"^",1) //代码
+	.S Desc=$p(^DHCADVAUTLOC(ID),"^",2) //描述
+	.S Parent=$p(^DHCADVAUTLOC(ID),"^",3) //描述
+	.S Active=$p(^DHCADVAUTLOC(ID),"^",4) //描述
+	.Q:Active="N"
+	.Q:((q'="")&(Code'[q))||((q'="")&(Desc'[q))
+	.Q:(Parent="")
+	.d listObj.Insert(##class(web.DHCAPPJsonObject).%New().Put("value",Desc).Put("text",Desc))
+	w jsonObj.ListToJson(listObj)
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="CancelAuditReport">
+<Description>
+Description: 不良反应报告审批（撤销审批）  2018-01-17
+Creator:     yangyongtao
+CreateDate:  2016-09-19
+Input:  	 params :以字符"^"分割,格式为:不良反应报告ID^审核状态^用户ID^科室ID^安全组ID^科室指向^建议^接收状态^报告类型代码
+Return: 	
+Others:		 w ##class(web.DHCADVCOMMONPART).CancelAuditReport("1^3||1^600^63^126^2^aaaaa^Y^blood")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>params:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (params)
+	S ListData = ..CancelAudit(params)
+	S ListTitle="ErrCode^ErrMsg"
+	W ##class(web.DHCADVJSONCOMMON).getJsonData(ListTitle,ListData)
+	Q ""
+]]></Implementation>
+</Method>
+
+<Method name="CancelAudit">
+<Description>
+Description: 不良反应报告审批（撤销审批）
+Creator:     yangyongtao
+CreateDate:  2016-09-19
+Input:  	 params :以字符"^"分割,格式为:不良反应报告ID^审核状态^用户ID^科室ID^安全组ID^科室指向^建议^接收状态^报告类型代码
+Return: 	 
+Others:		 w ##class(web.DHCADVCOMMONPART).CancelAudit("3^17||1^3^101^25^^^2^advPipeOff")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>params:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (params)
+	S ID=+$p(params,"^",1)       //不良反应报告ID
+	S medadrStatusDR=$p(params,"^",2)  //审核状态
+	S UserID=+$p(params,"^",3)     //用户ID
+	S LgCtLocID=+$p(params,"^",4)     //科室ID
+	S LgGroupID=+$p(params,"^",5)     //安全组ID
+	S medadrLastLocDR=$p(params,"^",6)
+	S medadrLocAdvice=$p(params,"^",7)
+	S medadrReceive=3
+	S medadrAuditDate=+$h
+	S medadrAuditTime=$p($h,",",2)
+	S typecode=$p(params,"^",9) // 报告类型代码
+	S eventDr=$o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(typecode),"")) //报告类型id
+	S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",eventDr,ID,""),-1)
+	S medadrAuditUserDR=""
+	S:MedadrID'="" medadrAuditUserDR=$p(^DHCMEDREPADT(MedadrID),"^",4) ;最后操作人
+	S NextLocDR=$p(^DHCMEDREPADT(MedadrID),"^",7) ;指向科室（被指向的审批科室）
+	Q:(NextLocDR'="")&&(LgCtLocID'=NextLocDR) "-8^当前登录科室无审批权限，不能审核"
+	S flag=##class(web.DHCADVSEARCHREPORT).SearchAuditIMess(MedadrID)
+	Q:(flag'="2")&&(flag'="0") "-7^报告已转抄，不能撤销审核"
+	
+	S list=UserID_"^"_LgCtLocID_"^"_LgGroupID
+	
+	;S StsusGrantflag=##class(web.DHCADVCOMMON).CheckWorkItmGrant(medadrStatusDR,list)
+	Q:medadrAuditUserDR'=UserID "-11^无撤销审核权限"
+	
+	S medadrRetReason="",RevStatus="",TimeOutFlag="",RepCancelFlag=""
+	
+	TS
+	S Err=0
+
+	S Err=..InsAdvMasterStart(ID,medadrStatusDR)
+	I Err'=0 tro
+	Q:Err'=0 "-05"
+
+	S matadrRepAuditList=medadrStatusDR_"^"_list_"^"_medadrLastLocDR_"^"_medadrLocAdvice_"^"_medadrReceive_"^"_eventDr_"^"_medadrRetReason_"^"_RevStatus_"^"_TimeOutFlag_"^"_RepCancelFlag
+	S retVal=##class(web.DHCADVCOMMON).InsRepAudit(ID,matadrRepAuditList)
+	I retVal'=0 tro
+	Q:retVal'=0 retVal
+	
+	
+	TC
+	Q 0
+]]></Implementation>
+</Method>
+
+<Method name="GetRevStatusCombox">
+<Description>
+Description: 报告状态
+Creator:     CongYue
+CreateDate:  2017-11-28  
+Table:		 DHC_AdrEvtWorkFlow ,DHC_AdrEvtWorkFlowItm
+Input:   	 类型id
+Output:  	 事件状态描述（下拉框显示）  
+Others:		 w ##class(web.DHCADVCOMMONPART).GetRevStatusCombox("1")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>EvenCode</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (EvenCode)
+	Q:EvenCode="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(0) //输出空的json串
+	S EventDr=$o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(EvenCode),""))
+	S count=0
+	W "["	
+	S EvtWorkflowID=$o(^DHCADREVTWF(0,"Event",EventDr,""))
+	Q:EvtWorkflowID=""
+	S Active=$p(^DHCADREVTWF(EvtWorkflowID),"^",4) //是否可用
+	Q:Active="N"
+	S CH=""
+	F  S CH=$o(^DHCADREVTWFI(EvtWorkflowID,"ADREWI",CH)) Q:CH=""  D
+	.q:+CH=0
+	.S Desc=$p(^DHCADREVTWFI(EvtWorkflowID,"ADREWI",CH),"^",2) //描述
+	.;s tmps=AdrEwiID_"^"_"全部"
+	.S ID=EvtWorkflowID_"||"_CH
+	.S tmp=ID_"^"_Desc
+	.s count = count+1
+	.I count=1 d
+	..;W ##class(web.DHCADVJSONCOMMON).getJsonData("value^text","^全部")
+	..W ##class(web.DHCADVJSONCOMMON).getJsonData("val^text",tmp)
+	.e  d
+	..W ","_##class(web.DHCADVJSONCOMMON).getJsonData("val^text",tmp) //value^text
+	w "]"
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="GetSecuUser">
+<Description>
+Description: 判断登录人是否 是大科安全组组长  是否可以查看大科报告权限
+Creator:     CongYue
+CreateDate:  2018-01-18  
+Table:		 DHC_AdvSecuGroupUserLoc
+Input:   	 登录人id，报告填报科室
+Output:  	 flag 0 无权限  1 有权限 
+Others:		 w ##class(web.DHCADVCOMMONPART).GetSecuUser("12713","2")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>UserId,RepLoc</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (UserId,RepLoc)
+	s flag=0
+	q:RepLoc="" flag
+	;^DHCADVSECUGU({SECUGU_RowId})
+	;^DHCADVSECUGU(0,"GroupUser",{SECU_Grp_Dr},{SECU_User_Dr},{SECUGU_RowId})
+	s SecuId=""
+	f  s SecuId=$o(^DHCADVSECUGU(SecuId)) q:SecuId=""  d
+	.q:+SecuId=0
+	.s SecuUser=$p(^DHCADVSECUGU(SecuId),"^",2)
+	.s SecuLeadFlag=$p(^DHCADVSECUGU(SecuId),"^",3)
+	.q:SecuUser'=UserId
+	.Q:SecuLeadFlag'="Y"
+	.S Secuflag=..GetSecuGroupWard(UserId, RepLoc) ;判断登录人是否属于大科安全组 是否有查看权限
+	.S SecuLocflag=..GetSecuGroupLoc(UserId, RepLoc) ;判断登录人是否属于大科安全组 是否有查看权限
+	.S:(Secuflag=1)||(SecuLocflag=1) flag=1
+	q flag
+]]></Implementation>
+</Method>
+
+<Method name="GetSecuUserLeader">
+<Description>
+Description: 判断登录人是否 是大科安全组组长 
+Creator:     CongYue
+CreateDate:  2018-01-18  
+Table:		 DHC_AdvSecuGroupUserLoc
+Input:   	 登录人id，报告填报科室
+Output:  	 flag 0 无权限  1 有权限 
+Others:		 w ##class(web.DHCADVCOMMONPART).GetSecuUserLeader("12713")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>UserId</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (UserId)
+	s flag=0
+	q:UserId="" flag
+	s SecuId=""
+	f  s SecuId=$o(^DHCADVSECUGU(SecuId)) q:SecuId=""  d
+	.q:+SecuId=0
+	.s SecuUser=$p(^DHCADVSECUGU(SecuId),"^",2)
+	.s SecuLeadFlag=$p(^DHCADVSECUGU(SecuId),"^",3)
+	.q:SecuUser'=UserId
+	.Q:SecuLeadFlag'="Y"
+	.S:(SecuLeadFlag="Y") flag=1
+	q flag
+]]></Implementation>
+</Method>
+
+<Method name="ReportBack">
+<Description>
+Description: 不良反应报告驳回
+Creator:     CongYue
+CreateDate:  2018-01-19
+Input:  	 params :以字符"^"分割,格式为:不良反应报告ID^用户ID^科室ID^安全组ID^科室指向^建议^接收状态^报告类型代码
+Return: 	 0  驳回成功
+Others:		 w ##class(web.DHCADVCOMMONPART).ReportBack("12^600^63^126^^^N^blood")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>params:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (params)
+	S ListData = ..BackRep(params)
+	S ListTitle="ErrCode^ErrMsg"
+	W ##class(web.DHCADVJSONCOMMON).getJsonData(ListTitle,ListData)
+	Q ""
+]]></Implementation>
+</Method>
+
+<Method name="BackRep">
+<Description>
+Description: 不良反应报告驳回
+Creator:     CongYue
+CreateDate:  2018-01-19
+Input:  	 params :以字符"^"分割,格式为:不良反应报告ID^用户ID^科室ID^安全组ID^科室指向^建议^接收状态^报告类型代码^报告状态
+Return: 	 0  驳回成功
+Others:		 w ##class(web.DHCADVCOMMONPART).BackRep("20^600^63^126^^^N^blood^3||1")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>params:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	
+	N (params)
+	S ID=+$p(params,"^",1)       //不良反应报告ID
+	S medadrAuditUserDR=+$p(params,"^",2)     //用户ID
+	S LgCtLocID=+$p(params,"^",3)     //科室ID
+	S LgGroupID=+$p(params,"^",4)     //安全组ID
+	S list=medadrAuditUserDR_"^"_LgCtLocID_"^"_LgGroupID
+	S medadrNextLocDR=$p(params,"^",5)
+	S medadrLocAdvice=$p(params,"^",6)
+	S medadRetReason=$p(params,"^",10) //驳回原因
+	S RevStatus=$p(params,"^",11) //驳回指向
+	S medadrAuditDate=+$h
+	S medadrAuditTime=$p($h,",",2)
+	
+	S typecode=$p(params,"^",8) // 报告类型代码
+	S medadrType=$o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(typecode),"")) //报告类型id
+	S StatusID=$p(params,"^",9) // 报告当前状态
+	
+	S medadrReceivedr=$p(params,"^",7)
+	Q:medadrReceivedr="2" "-1^已驳回"
+	S medadrReceivedr="2"
+	
+	//判断该报告是否有驳回权限
+	S Listt=ID_"^"_medadrType_"^"_list
+	S StatusNextID=##class(web.DHCADVCOMMON).GetRepNextStatusDr(Listt)
+	Q:StatusNextID="-1" "-2^无权限"
+	Q:StatusNextID="-2" "-3^已是最后一个权限"
+
+	S TimeOutFlag="",RepCancelFlag=""
+	TS
+	S Err=..InsAdvMasterStart(ID,RevStatus)
+	I Err'=0 tro
+	Q:Err'=0 "-05"
+	
+	S matadrRepAuditList=StatusID_"^"_list_"^"_medadrNextLocDR_"^"_medadrLocAdvice_"^"_medadrReceivedr_"^"_medadrType_"^"_medadRetReason_"^"_RevStatus_"^"_TimeOutFlag_"^"_RepCancelFlag
+	
+	S retVal=##class(web.DHCADVCOMMON).InsRepAudit(ID,matadrRepAuditList)
+	I retVal'=0 tro
+	Q:retVal'=0 retVal
+	TC
+	
+	Q 0
+]]></Implementation>
+</Method>
+
+<Method name="CheckTimeEscapeHoliday">
+<Description>
+检查日期和当前日期差多少小时,节假日不算，国庆，春节等   64645^37758
+w ##class(web.DHCADVCOMMONPART).CheckTimeEscapeHoliday(0,0,64671,0)</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>date,time,today,todayTime</FormalSpec>
+<Implementation><![CDATA[
+	n (date,time,today,todayTime)
+	;w !,date_"**"_time_"**"_today_"**"_todayTime
+	q:(date=0)||(date="") 0
+	;s HolidaysStr=##class(web.DHCADVCOMMONPART).GetHolidaysStr()
+	;s today=+$h
+	;s todayTime=$p($h,",",2)
+	s hours=0
+	f d=date:1:today d
+	.//节假日
+	.q:(d'=date)&&(d'=today)&&(##class(web.DHCBL.CT.BDPHoliday).IsHolidayDate(d,"","")'=0)   //节假日判断接口调用  节日2/假日1/非节假日0 /错误 -1
+	.//工作日
+	.i d=today d
+	..//当天
+	..s:date=today hours=(todayTime-time)/3600+hours
+	..s:date'=today hours=(todayTime)/3600+hours
+	.e  d
+	..//不是同一天的情况
+	..i d=date d
+	...s hours=(86400-time)/3600+hours
+	..e  i d=today d
+	...s hours=hours+todayTime/3600
+	..e  d
+	...s hours=hours+24
+	;w !,$h
+	q hours
+]]></Implementation>
+</Method>
+
+<Method name="GetHolidaysStr">
+<Description>
+Description: 得到节假日串
+Creator:     CongYue
+CreateDate:  2018-01-19
+Table:        DHC_OPRegFestivalSet
+Input:  	 
+Return: 	 节假日信息串
+Others:</Description>
+<ClassMethod>1</ClassMethod>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	;w ##class(web.DHCADVCOMMONPART).GetHolidaysStr()
+	s HolidaysStr=""
+	s FestivalRowid=0
+	for {
+		s FestivalRowid=$o(^DHCADVHOLIDAY(FestivalRowid))
+		q:FestivalRowid=""
+		s Festival=$p(^DHCADVHOLIDAY(FestivalRowid),"^",1)
+		s FestivalFlag=$p(^DHCADVHOLIDAY(FestivalRowid),"^",2)
+		Q:FestivalFlag="工作日"
+		i HolidaysStr="" s HolidaysStr="!"_Festival_"!"
+		e  s HolidaysStr=HolidaysStr_"^"_"!"_Festival_"!"
+	} 
+	Q HolidaysStr
+]]></Implementation>
+</Method>
+
+<Method name="CheckHoliday">
+<Description>
+判断节假日</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>date,HolidaysStr</FormalSpec>
+<Implementation><![CDATA[
+	n (date,HolidaysStr)
+	
+	
+	Q:(HolidaysStr'="")&&(HolidaysStr[date) 1
+	// 	周日
+	q:$SYSTEM.SQL.DAYOFWEEK(date)=1 1
+	//  周六
+	q:$SYSTEM.SQL.DAYOFWEEK(date)=7 1
+	
+	q 0
+]]></Implementation>
+</Method>
+
+<Method name="FileMataReport">
+<Description>
+Description: 不良反应报告归档
+Creator:     CongYue
+CreateDate:  2018-01-22
+Input:  	 params :以字符"^"分割,格式为:不良反应报告ID^审核状态^用户ID^科室ID^安全组ID^科室指向^建议^接收状态^报告类型代码
+Return: 	 0 归档成功
+Others:		 w ##class(web.DHCADVCOMMONPART).AuditMataReport("66^34||2^1223^4^235^^人太少隔热率^^advMedical")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>auditparams:%String,fileparams:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (auditparams,fileparams)
+	S RepID=$p(auditparams,"^",1)
+	S RepTypeCode=$p(auditparams,"^",9)
+	S RepTypeDr=$o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(RepTypeCode),""))
+	TS
+	S Err=0
+
+	S matadrRepAuditList=$p(auditparams,"^",2,8)_"^"_RepTypeDr
+	S retVal=##class(web.DHCADVCOMMON).InsRepAudit(RepID,matadrRepAuditList)
+	I retVal'=0 tro
+	Q:retVal'=0 retVal
+	
+	S retVal=##class(web.DHCADVREPFILE).SaveRepFile(RepID,RepTypeDr,fileparams)
+	I retVal'=0 tro
+	Q:retVal'=0 retVal
+	
+	TC
+	Q 0
+]]></Implementation>
+</Method>
+
+<Method name="MataRepCancel">
+<Description>
+Description: 不良反应报告作废
+Creator:     CongYue
+CreateDate:  2018-01-23
+Input:  	 params :以字符"^"分割,格式为:不良反应报告ID^审核状态^用户ID^科室ID^安全组ID^科室指向^建议^接收状态^报告类型代码
+Return: 	 0 作废成功
+Others:		 w ##class(web.DHCADVCOMMONPART).MataRepCancel("82^5738^402^69^^^未接收^advskinUlcer^10||1^Y")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>params:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (params)
+	S ListData = ..RepCancel(params)
+	S ListTitle="ErrCode^ErrMsg"
+	W ##class(web.DHCADVJSONCOMMON).getJsonData(ListTitle,ListData)
+	Q ""
+]]></Implementation>
+</Method>
+
+<Method name="RepCancel">
+<Description>
+Description: 不良反应报告作废
+Creator:     CongYue
+CreateDate:  2018-01-23
+Input:  	 params :以字符"^"分割,格式为:不良反应报告ID^审核状态^用户ID^科室ID^安全组ID^科室指向^建议^接收状态^报告类型代码
+Return: 	 0 作废成功
+Others:		 w ##class(web.DHCADVCOMMONPART).RepCancel("138^5||2^600^63^126^2^wqdewq^未接收^med")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>params:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	
+	N (params)
+	S ID=+$p(params,"^",1)       //不良反应报告ID
+	S medadrAuditUserDR=+$p(params,"^",2)     //用户ID
+	S LgCtLocID=+$p(params,"^",3)     //科室ID
+	S LgGroupID=+$p(params,"^",4)     //安全组ID
+	S list=medadrAuditUserDR_"^"_LgCtLocID_"^"_LgGroupID
+	S medadrNextLocDR=$p(params,"^",5)
+	S medadrLocAdvice=$p(params,"^",6)
+	
+	S medadrAuditDate=+$h
+	S medadrAuditTime=$p($h,",",2)
+	
+	S typecode=$p(params,"^",8) // 报告类型代码
+	S medadrType=$o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(typecode),"")) //报告类型id
+	S StatusID=$p(params,"^",9) // 当前状态
+	
+	S medadrReceivedr=$p(params,"^",7)
+	S RepCancelFlag=$p(params,"^",10) ;作废
+	
+	S medadrRetReason="",RevStatus="",TimeOutFlag=""
+	
+	TS
+	S matadrRepAuditList=StatusID_"^"_list_"^"_medadrNextLocDR_"^"_medadrLocAdvice_"^"_medadrReceivedr_"^"_medadrType_"^"_medadrRetReason_"^"_RevStatus_"^"_TimeOutFlag_"^"_RepCancelFlag
+	b ;12
+	S retVal=##class(web.DHCADVCOMMON).InsRepAudit(ID,matadrRepAuditList)
+	I retVal'=0 tro
+	Q:retVal'=0 retVal
+	
+	TC
+	Q 0
+]]></Implementation>
+</Method>
+
+<Method name="QueryRepHomeList">
+<Description>
+Description: 不良事件查询 
+Creator:     CongYue
+CreateDate:  2018-01-25
+Input:  	 StrParam : 以字符"^"分割,格式为:开始时间^结束时间
+Table:       FormRecord,FormRecordItm,FormRecordItmSub
+Return: 	 不良事件 信息
+Others:		 w ##class(web.DHCADVCOMMONPART).QueryRepHomeList("64649^64687^193^^23^193^4805^^^^^^^^^")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>StrParam:%String</FormalSpec>
+<Implementation><![CDATA[
+  
+	N (StrParam)
+	;w $h
+	q:StrParam="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(0) //输出json结尾符
+	S StDate=$p(StrParam,"^",1)    //开始日期
+	S EndDate=$p(StrParam,"^",2)   //结束日期
+	S DeptID=$p(StrParam,"^",3)    //科室
+	S patNo=$p(StrParam,"^",4)     //登记号
+	S GroupId=$p(StrParam,"^",5)   //安全组ID
+    S LocId=$p(StrParam,"^",6)     //科室ID
+    S UserId=$p(StrParam,"^",7)    //用户ID
+	
+	S list=UserId_"^"_LocId_"^"_GroupId
+    S h=0  //yangyongtao  2017-11-22 
+	;S:StDate'="" StDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(StDate)
+	;S:EndDate'="" EndDate=##class(web.DHCADVCOMMON).DateHtmlToLogical(EndDate)
+	q:StDate="" ##class(web.DHCADVJSONCOMMON).getJsonEmptySign(h) //输出json结尾符
+	s count=0
+	S RetArr=[]
+	f date=EndDate:-1:StDate d
+	.s RepID=""
+	.f  s RepID=$o(^DHCADVMASTER(0,"RepDate",date,RepID)) q:RepID=""  d
+	..S RepTypeCode="",RepType="",RepStaus="",RepUser="",RepLoc="",RepSubType="",RepImpFlag="",Medadrreceive="",Medadrreceivedr="",FileFlag="",RepOverTimeflag="",AutOverTimeflag="",RepOverTime="",AutOverTime="",RepCancelflag=""
+	..S recordID=$p(^DHCADVMASTER(RepID),"^",1)
+	..Q:recordID=""
+	..S RepTypeDr=$p(^DHCADVMASTER(RepID),"^",2)
+	..S:RepTypeDr'="" RepTypeCode=$p(^DHCMEDADREVT(RepTypeDr),"^",1)
+	..S:RepTypeDr'="" RepType=$p(^DHCMEDADREVT(RepTypeDr),"^",2)
+	..S FILERowID=$o(^DHCADVFILE(0,"RepDrType",RepID,RepTypeDr,""))
+	..S File="",FileFlag=""
+	..S:FILERowID'="" File=$p(^DHCADVFILE(FILERowID),"^",3)
+	..S FileFlag=$S(File="":"未归档",File="N":"撤销归档",File="Y":"已归档",1:"")
+	..S RepDate=$p(^DHCADVMASTER(RepID),"^",4)
+	..S RepTime=$p(^DHCADVMASTER(RepID),"^",5)
+	..S OccurDate=$p(^DHCADVMASTER(RepID),"^",25)  ///发生日期
+	..S OccurTime=$p(^DHCADVMASTER(RepID),"^",26)  ///发生时间
+	..S:OccurTime="" OccurTime=0
+	..S RepStausDr=$p(^DHCADVMASTER(RepID),"^",3)
+	..I RepStausDr=""  D
+	...S RepStaus="未提交"
+	...S status="N"
+	..E  D 
+	...S status="Y"
+	...S RepStaus=$p(^DHCADREVTWFI(+RepStausDr,"ADREWI",$p(RepStausDr,"||",2)),"^",2)
+	..S MedadrID=$o(^DHCMEDREPADT(0,"Pointer",RepTypeDr,RepID,""),-1)
+	..I MedadrID'=""  D
+	...S:RepStaus="护士长审核" AutOverTimeflag=$p(^DHCMEDREPADT(MedadrID),"^",15) ;护士长审核超时标志
+	...S Medadrreceivedr=$p(^DHCMEDREPADT(MedadrID),"^",9)
+	..S:MedadrID'="" RepCancelflag=$p(^DHCMEDREPADT(MedadrID),"^",11) ;作废标识
+	..Q:RepCancelflag="Y"
+	..;S RepDate=$p(^DHCADVMASTER(RepID),"^",4)
+	..S:RepDate'="" RepDate=##class(web.DHCADVCOMMON).DateLogicalToHtml(RepDate)
+	..;S RepTime=$p(^DHCADVMASTER(RepID),"^",5)
+	..S RepUserDr=$p(^DHCADVMASTER(RepID),"^",6)
+	..S:RepUserDr'="" RepUser=$p(^SSU("SSUSR",RepUserDr),"^",2)
+	..S RepLocDr=$p(^DHCADVMASTER(RepID),"^",7)
+	..S:RepLocDr'="" RepLoc=$p(^CTLOC(RepLocDr),"^",2)
+	..S:RepLoc["-" RepLoc=$p(RepLoc,"-",2)
+	..S PatName=$p(^DHCADVMASTER(RepID),"^",17)  
+	..S AdmNo=$p(^DHCADVMASTER(RepID),"^",20)  ///病案号
+	..S OccurLoc=$p(^DHCADVMASTER(RepID),"^",27)  ///发生科室
+	..S:OccurLoc'="" OccurLoc=$p(^CTLOC(OccurLoc),"^",2)
+	..S:OccurLoc["-" OccurLoc=$p(OccurLoc,"-",2)
+	..;S OccurDate=$p(^DHCADVMASTER(RepID),"^",25)  ///发生日期
+	..S:OccurDate="0" OccurDate=""
+	..S:(OccurDate'="")&&(OccurDate'="0") OccurDate=##class(web.DHCADVCOMMON).DateLogicalToHtml(OccurDate)
+	..s PatID="" 
+	..S RepList=RepTypeDr_"^"_RepLocDr_"^"_RepUserDr_"^"_RepID 
+	..S flag=##class(web.DHCADVSEARCHREPORT).CheckQuerySec(RepList,list)
+	..S Secuflag=..GetSecuGroupWard(UserId, RepLocDr) ;判断登录人是否属于大科安全组 是否有查看权限
+	..S SecuLocflag=..GetSecuGroupLoc(UserId, RepLocDr) ;判断登录人是否属于大科安全组 是否有查看权限
+	..S GroupDesc=$p(^SSU("SSGRP",GroupId),"^",1)
+	..S LocDep=""
+	..S CaseShareflag=""
+	..S CaseShareDr=$o(^DHCADVCASHARE(0,"RepDrType",RepID,RepTypeDr,LocId,""))
+	..S:CaseShareDr'="" CaseShareflag=$p(^DHCADVCASHARE(CaseShareDr),"^",4)	
+	..Q:(DeptID'="")&(DeptID'=RepLocDr)
+	..Q:FileFlag="已归档"
+	..Q:(flag'=1)||(((GroupDesc["护士长"))&&((Secuflag'=1)&&(SecuLocflag'=1)))&(CaseShareflag'="Y")
+	..;Q:(flag'=1)||(((GroupDesc["护士长")||(GroupDesc["护理部"))&&((Secuflag'=1)&&(SecuLocflag'=1)))
+	..s count=count+1
+	..s tmpObj={}
+	..s tmpObj.RepID=RepID
+	..s tmpObj.RepType=RepType ;
+	..s tmpObj.RepStaus=RepStaus ;
+	..s tmpObj.RepDate=RepDate  ;
+	..s tmpObj.RepUser=RepUser
+	..s tmpObj.RepLoc=RepLoc 
+	..s tmpObj.PatID=PatID
+	..s tmpObj.PatName=PatName ;
+	..s tmpObj.AdmNo=AdmNo ;
+	..s tmpObj.OccurLoc=OccurLoc
+	..s tmpObj.OccurDate=OccurDate ;
+	..s tmpObj.FileFlag=FileFlag ;
+	..D RetArr.%Push(tmpObj)
+	;w !,$h
+	q RetArr
+]]></Implementation>
+</Method>
+
+<Method name="GetSecuGroupCombox">
+<Description>
+Description: 大科科室下拉数据 
+Creator:     CongYue
+CreateDate:  2018-01-25  
+Table:		 DHC_AdvSecuGroupUserLoc,DHC_AdvSecuGroupUserWard
+Input:   	 登录人id
+Output:  	 科室下拉数据  12245 14865 14865
+Others:		 w ##class(web.DHCADVCOMMONPART).GetSecuGroupCombox("11","274","127","")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>UserId,GroupId,LocId,q</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	n (UserId,GroupId,LocId,q)
+	S ^UII("DD")=UserId_"&"_GroupId_"&"_LocId
+	S count=0
+	S:q'="" q=$zcvt(q,"U") 
+	S GroupDesc=$p(^SSU("SSGRP",GroupId),"^",1)
+	S LocDesc=$p(^CTLOC(LocId),"^",2)
+	W "["	
+	W:(GroupDesc'="护理部")&&(GroupDesc'="住院护士长") ##class(web.DHCADVJSONCOMMON).getJsonData("val^text",LocId_"^"_LocDesc)
+	s:(GroupDesc'="护理部")&&(GroupDesc'="住院护士长") count = count+1
+	w $case(count,1:"",:",")
+	
+	s SecuId=""
+	f  s SecuId=$o(^DHCADVSECUGUW(SecuId)) q:SecuId=""  d
+	.q:+SecuId=0
+	.s SecuGrpDr=$p(^DHCADVSECUGUW(SecuId),"^",1)
+	.s SecuUser=$p(^DHCADVSECUGUW(SecuId),"^",2)
+	.s SecuWard=$p(^DHCADVSECUGUW(SecuId),"^",3)
+	.s useruId=$o(^DHCADVSECUGU(0,"GroupUser",SecuGrpDr,SecuUser,""))
+	.s useruflag=""
+	.s:useruId'="" useruflag=$p(^DHCADVSECUGU(useruId),"^",3)
+	.q:(SecuUser'=UserId)&(UserId'="")&(GroupDesc'="护理部")
+	.q:(useruflag'="Y")&(UserId="")
+	.s LocationDR=$p(^PAWARD(SecuWard),"^",5)
+	.q:LocationDR=""
+	.S LocationDesc=$p(^CTLOC(LocationDR),"^",2)
+	.S ContactName=$p(^CTLOC(LocationDR),"^",43) // 科室编码   
+	.q:(q'="")&(LocationDesc'[q)&&(ContactName'[q)
+	.S tmp=LocationDR_"^"_LocationDesc
+	.s count = count+1
+	.w $case(count,1:"",:",")
+	.W ##class(web.DHCADVJSONCOMMON).getJsonData("val^text",tmp)
+	s SecuId=""
+	f  s SecuId=$o(^DHCADVSECUGUL(SecuId)) q:SecuId=""  d
+	.q:+SecuId=0
+	.s SecuGrpDr=$p(^DHCADVSECUGUL(SecuId),"^",1)
+	.s SecuUser=$p(^DHCADVSECUGUL(SecuId),"^",2)
+	.s SecuLoc=$p(^DHCADVSECUGUL(SecuId),"^",3)
+	.q:'$d(^CTLOC(SecuLoc))
+	.S SecuLocDesc=$p(^CTLOC(SecuLoc),"^",2)
+	.S ContactName=$p(^CTLOC(SecuLoc),"^",43) // 科室编码 
+	.s useruId=$o(^DHCADVSECUGU(0,"GroupUser",SecuGrpDr,SecuUser,""))
+	.s useruflag=""
+	.s:useruId'="" useruflag=$p(^DHCADVSECUGU(useruId),"^",3)
+	.q:(SecuUser'=UserId)&(UserId'="")&(GroupDesc'="护理部")
+	.q:(useruflag'="Y")&(UserId="")
+	.q:(q'="")&(LocationDesc'[q)&&(ContactName'[q)
+	.S tmp=SecuLoc_"^"_SecuLocDesc
+	.s count = count+1
+	.I count=1 d
+	..W ##class(web.DHCADVJSONCOMMON).getJsonData("val^text",tmp)
+	.e  d
+	..W ","_##class(web.DHCADVJSONCOMMON).getJsonData("val^text",tmp) //value^text
+	w "]"
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="DelRepData">
+<Description>
+Description: 删除 [护理不良事件报告]
+Creator:     CongYue
+CreateDate:  2018-01-26
+Table:		 DHC_MedAdrRepEvent
+Input:  	 数据id
+Return: 	 删除成功 0,删除失败 非0
+Others:		 w ##class(web.DHCADVCOMMONPART).DelAdrEvent("")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RepID:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (RepID)
+	&SQL(Delete From DHC_AdvMaster Where ADV_RowID=:RepID)
+	Q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="GetCaseLocList">
+<Description>
+Description: 获取共享科室列
+Creator:     CongYue
+CreateDate:  2018-01-26
+Table:		 DHC_AdvCaseShare
+Input:  	 报告id ，报告类型id，
+Return: 	 共享科室串
+Others:		 w ##class(web.DHCADVCOMMONPART).GetCaseLocList("")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RepDr:%String,RepTypeDr:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (RepDr,RepTypeDr)
+	S LocList="",CaseShareLocDr=""
+	F  S CaseShareLocDr=$o(^DHCADVCASHARE(0,"RepDrType",RepDr,RepTypeDr,CaseShareLocDr)) Q:CaseShareLocDr=""  D
+	.S ID=""
+	.F  S ID=$o(^DHCADVCASHARE(0,"RepDrType",RepDr,RepTypeDr,CaseShareLocDr,ID)) Q:ID=""  D
+	..Q:+ID=0
+	..S CaseShareLocDr=$p(^DHCADVCASHARE(ID),"^",3) ///共享科室指向
+	..S ShareLoc=""
+	..q:'$d(^CTLOC(CaseShareLocDr)) 
+	..S:CaseShareLocDr'="" ShareLoc=$p(^CTLOC(CaseShareLocDr),"^",2)
+	..S CASHAREIfShare=$p(^DHCADVCASHARE(ID),"^",4) ///共享标识
+	..Q:CASHAREIfShare'="Y"
+	..S:ShareLoc'="" LocList=ShareLoc_","_LocList
+	.
+	
+	q LocList
+]]></Implementation>
+</Method>
+
+<Method name="GetDate">
+<Description>
+Description: 判断字符串是否是日期
+Creator:     CongYue
+CreateDate:  2018-03-20
+Table:		 
+Input:  	  (4:"DMY" DD/MM/YYYY 3:"YMD" YYYY-MM-DD  1:"MDY" MM/DD/YYYY)，字符串   
+Return: 	 字符串为日期则返回（2018-01-01格式的日期），若不是日期则返回原串
+Others:		 w ##class(web.DHCADVCOMMONPART).GetDate("02/30/2018")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>List:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (List)
+	S DateFormat = ##class(websys.Conversions).DateFormat()
+	S DataList=""
+	S len=$L(List)
+	I DateFormat="1"  D
+	.S Month=$p(List,"/",1)
+	.Q:($L(Month)'="2")&&(Month<0)&&(Month>12)
+	.S Day=$p(List,"/",2)
+	.Q:($L(Day)'="2")&&(Day<0)&&(Day>31)
+	.S Year=$p(List,"/",3)
+	.Q:($L(Year)'="4")
+	.;1.3.5.7.8.10.12
+	.Q:(Month<"07")&&((Month/"02")=(Month\"02"))&&(Month'="02")&&(Day>30)
+	.Q:(Month>"07")&&((Month/"02")'=(Month\"02"))&&(Month'="02")&&(Day>30)
+	.Q:(Month="02")&&((Year/"4")=(Year\"4"))&&(Day>29)
+	.Q:(Month="02")&&((Year/"4")'=(Year\"4"))&&(Day>28)
+	.S DataList=$zdh(List,1)
+	.S:DataList'="" DataList=$zd(DataList,3)
+	I DateFormat="4"  D
+	.S Day=$p(List,"/",1)
+	.Q:($L(Day)'="2")&&(Day<0)&&(Day>31)
+	.S Month=$p(List,"/",2)
+	.Q:($L(Month)'="2")&&(Month<0)&&(Month>12)
+	.S Year=$p(List,"/",3)
+	.Q:($L(Year)'="4")
+	.Q:(Month<"07")&&((Month/"02")=(Month\"02"))&&(Month'="02")&&(Day>30)
+	.Q:(Month>"07")&&((Month/"02")'=(Month\"02"))&&(Month'="02")&&(Day>30)
+	.Q:(Month="02")&&((Year/"4")=(Year\"4"))&&(Day>29)
+	.Q:(Month="02")&&((Year/"4")'=(Year\"4"))&&(Day>28)
+	.S DataList=$zdh(List,4)
+	.S:DataList'="" DataList=$zd(DataList,3)
+	S:DataList="" DataList=List
+	Q DataList
+]]></Implementation>
+</Method>
+
+<Method name="GetDateToHtml">
+<Description>
+Description: 将日期转为当前系统格式日期
+Creator:     CongYue
+CreateDate:  2018-03-20
+Table:		 
+Input:  	 2018-01-01 格式日期
+Return: 	 字符串为日期则返回（系统格式的日期），若不是日期则返回原串
+Others:		 w ##class(web.DHCADVCOMMONPART).GetDateToHtml("2018-02-29")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>List:%String</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (List)
+	S DataList=""
+	S len=$L(List)
+	S Year=$p(List,"-",1)
+	Q:($L(Year)'="4") List 
+	S Month=$p(List,"-",2)
+	Q:($L(Month)'="2")&&(Month<0)&&(Month>12) List
+	S Day=$p(List,"-",3) 
+	Q:($L(Day)'="2")&&(Day<0)&&(Day>31) List
+	Q:(Month<"07")&&((Month/"02")=(Month\"02"))&&(Month'="02")&&(Day>30) List
+	Q:(Month>"07")&&((Month/"02")'=(Month\"02"))&&(Month'="02")&&(Day>30) List
+	Q:(Month="02")&&((Year/"4")=(Year\"4"))&&(Day>29) List
+	Q:(Month="02")&&((Year/"4")'=(Year\"4"))&&(Day>28) List
+	S DataList=$zdh(List,3)
+	S:DataList'="" DataList=##class(web.DHCADVCOMMON).DateLogicalToHtml(DataList)
+	S:DataList="" DataList=List
+	Q DataList
+]]></Implementation>
+</Method>
+
+<UDLText name="T">
+<Content><![CDATA[
+// w ##class(web.DHCADVCOMMONPART).WarnMataReport("86^advAccidentFill^Y")
+
+]]></Content>
+</UDLText>
+
+<Method name="WarnMataReport">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>auditparams</FormalSpec>
+<Implementation><![CDATA[
+	n (auditparams)
+	S RepID=$p(auditparams,"^",1)
+	S RepTypeCode=$p(auditparams,"^",2)
+	s flag=$p(auditparams,"^",3)
+	
+	S RepTypeDr=$o(^DHCMEDADREVT(0,"Code",$$ALPHAUP^SSUTIL4(RepTypeCode),""))
+	TS
+	S Err=0
+	
+	S retVal=..SaveWarnFile(RepID,RepTypeDr,flag)
+	I retVal'=0 tro
+	Q:retVal'=0 retVal
+	
+	TC
+	Q 0
+]]></Implementation>
+</Method>
+
+<Method name="SaveWarnFile">
+<Description>
+Description: 报告预警
+Creator:     CongYue
+CreateDate:  2018-01-22  
+Table:	     DHC_AdvRepFile 
+Input:  	
+return: 	 保存成功 0，保存失败 非0
+Others:		 w ##class(web.DHCADVREPFILE).SaveRepFile("2^2018-01-16^归档")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RepID,RepTypeDr,flag</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (RepID,RepTypeDr,flag)
+	S FILERowID=$o(^DHCADVFILE(0,"RepDrType",RepID,RepTypeDr,""))
+	
+	I FILERowID'="" D
+	.S Err=..UpdRepFile(FILERowID,RepID,RepTypeDr,flag)
+	E  D
+	.S Err=..InsRepFile(RepID,RepTypeDr,flag)
+	Q Err
+]]></Implementation>
+</Method>
+
+<Method name="InsRepFile">
+<Description>
+Description: 增加[归档数据维护] 
+Creator:     CongYue
+CreateDate:  2018-01-22  
+Table:	     DHC_AdvRepFile 
+Input:  	 DataList:以字符"^"分割,格式为: id^日期^标志
+return: 	 保存成功 0，保存失败 非0
+Others:		 w ##class(web.DHCADVREPFILE).InsRepFile("")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>RepID,RepTypeDr,flag</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (RepID,RepTypeDr,flag)
+ 	&SQL(INSERT INTO DHC_AdvRepFile(FILE_RepDr,FILE_RepType,FILE_Warn) 
+ 		VALUES(:RepID,:RepTypeDr,:flag))
+ 	Q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="UpdRepFile">
+<Description>
+Description: 修改[归档数据维护] 
+Creator:     CongYue
+CreateDate:  2018-01-22  
+Table:	     DHC_AdvRepFile 
+Input:  	 DataList: 以字符"^"分割,格式为: id^日期^标志
+return: 	 保存成功 0，保存失败 非0
+Others:		 w ##class(web.DHCADVREPFILE).UpdRepFile("2^2018-01-16^归档")</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>FILERowID,RepID,RepTypeDr,flag</FormalSpec>
+<ReturnType>%String</ReturnType>
+<Implementation><![CDATA[
+	N (FILERowID,RepID,RepTypeDr,flag)
+	
+	&SQL(Update DHC_AdvRepFile Set FILE_Warn=:flag WHERE FILE_RowID=:FILERowID)
+
+ 	Q SQLCODE
+]]></Implementation>
+</Method>
+
+<Method name="sendMessageToLocLeader">
+<Description>
+Description: 京东方消息任务
+Creator:     yuliping
+CreateDate:  2018-08-01
+Input:  	 
+Return: 	 
+Others:		 w ##class(web.DHCADVCOMMONPART).sendMessageToLocLeader()</Description>
+<ClassMethod>1</ClassMethod>
+<Implementation><![CDATA[
+	n
+	
+	s pid=##class(web.DHCADVCOMMON).NewPid()
+	
+	d ..getReportSatus(pid)
+	d ..sendMsgToLocLeader(pid)
+	
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="getReportSatus">
+<Description>
+Others:		 w ##class(web.DHCADVCOMMONPART).getReportSatus()</Description>
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pid</FormalSpec>
+<Implementation><![CDATA[
+
+	n (pid)
+	
+	k ^TMP("web.DHCADVCOMMONPART","getReportSatus",pid)
+	s rowid=0,mataId=0,bloodId=0,medId=0,drugId=0
+	
+	//新不良事件
+	f  s rowid =$o(^DHCADVMASTER(rowid))  q:rowid=""  d
+	.q:$p($p(^DHCADVMASTER(rowid),"^",3),"||",2)'=2	 	//当前状态是2的，下一状态就是科室主任审核
+	.s LocID=$p(^DHCADVMASTER(rowid),"^",7)
+	.q:LocID=""
+	.i '$d(^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,LocID))  d
+	..s ^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,LocID)=1
+	
+	//器械
+	f  s mataId=$o(^DHCMATADRR(mataId))  q:mataId=""  d
+	.q:$p($p(^DHCMATADRR(mataId),"^",41),"||",2)'=2		//当前状态是2的，下一状态就是科室主任审核
+	.s LocID=""
+	.S LocCode=$p(^DHCMATADRR(mataId),"^",36)     //科室代码
+	.S LocDesc=""
+	.I LocCode'="" D
+	..S LocID=$o(^CTLOC(0,"Code",$$ALPHAUP^SSUTIL4(LocCode),"")) 
+	.q:LocID=""
+	.i '$d(^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,LocID))  d
+	..s ^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,LocID)=1
+	
+	//输血
+	f  s bloodId=$o(^DHCBLDADVRPT(bloodId)) q:bloodId=""  d
+	.q:$p($p(^DHCBLDADVRPT(bloodId),"^",46),"||",2)'=2  		//当前状态是2的，下一状态就是科室主任审核
+	.S LocCode=$p(^DHCBLDADVRPT(bloodId),"^",1)    				 //科室代码
+	.S LocDesc=""
+	.I LocCode'="" D
+	..S LocID=$o(^CTLOC(0,"Code",$$ALPHAUP^SSUTIL4(LocCode),"")) 
+	.q:LocID=""
+	.i '$d(^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,LocID))  d
+	..s ^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,LocID)=1
+
+	//医疗
+	f  s medId=$o(^DHCMEDADRR(medId))  q:medId=""  d
+	.q:$p($p(^DHCMEDADRR(medId),"^",27),"",2)'=2 	//当前状态是2的，下一状态就是科室主任审核
+ 	.S LocCode=$p(^DHCMEDADRR(medId),"^",20)     //科室代码
+	.S LocDesc=""
+	.I LocCode'="" D
+	..S LocID=$o(^CTLOC(0,"Code",$$ALPHAUP^SSUTIL4(LocCode),"")) 
+	.q:LocID=""
+	.i '$d(^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,LocID))  d
+	..s ^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,LocID)=1
+	
+	//药品
+	f  s drugId=$o(^DHCADVDRUGREP(drugId))  q:drugId=""  d
+	.q:$p($p(^DHCADVDRUGREP(drugId),"^",48),"||",2)'=2   	//当前状态是2的，下一状态就是科室主任审核
+	.S LocCode=$p(^DHCADVDRUGREP(drugId),"^",42)     //科室代码
+	.S LocDesc=""
+	.I LocCode'="" D
+	..S LocID=$o(^CTLOC(0,"Code",$$ALPHAUP^SSUTIL4(LocCode),"")) 
+	.q:LocID=""
+	.i '$d(^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,LocID))  d
+	..s ^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,LocID)=1
+	
+	q ""
+]]></Implementation>
+</Method>
+
+<Method name="sendMsgToLocLeader">
+<ClassMethod>1</ClassMethod>
+<FormalSpec>pid</FormalSpec>
+<Implementation><![CDATA[
+	
+	n (pid)
+	s locId=""
+	f  s locId=$o(^TMP("web.DHCADVCOMMONPART","getReportSatus",pid,locId)) q:locId=""  d
+	.q:locId=""
+	.s userId=7054
+	.S carid=$p(^SSU("SSUSR",userId),"^",14)
+	.s mobilphnoe=$p(^CTPCP(carid,3),"^",6)
+	.s msg=mobilphnoe_"^您有未审核的不良事件报告！"
+	.d ##class(web.DHCENS.STBLL.SendMSG).sendMsg(msg)
+	
+	q ""
+]]></Implementation>
+</Method>
+</Class>
+</Export>

@@ -7,7 +7,7 @@ SELECT MEDADR_CurStatus_DR,MEDADR_ReportType, * FROM DHC_MedAdrReport WHERE MEDA
 
 ///医疗不良事件报告事件审批表
 ///MEDADR_Receive:接收状态：1接收、2驳回、3直接提交
-SELECT MEDADR_Status_DR, MEDADR_Receive, * FROM DHC_MedAdrRepAudit WHERE  MEDADR_AuditDate="2019-7-18"
+SELECT MEDADR_Status_DR, MEDADR_Receive, * FROM DHC_MedAdrRepAudit WHERE  MEDADR_AuditDate="2019-8-2"
 
 ///转抄表
 select * from DHC_MedAdrRepAuditItm
@@ -16,7 +16,7 @@ select * from DHC_MedAdrRepAuditItm
 ////药品不良事件
 ///ADVDR_ReportType:报告类型
 ///ADVDR_CurStatus_DR:当前状态
-SELECT ADVDR_ReportType,ADVDR_CurStatus_DR, * from DHC_AdvDrugReport WHERE ADVDR_RepDate='2019-5-18'
+SELECT ADVDR_RepType, ADVDR_ReportType,ADVDR_CurStatus_DR, * from DHC_AdvDrugReport WHERE ADVDR_RepDate='2019-5-18'
 
 //状态
 select * from DHC_AdrEvtWorkFlowItm
@@ -31,8 +31,6 @@ SELECT * FROM DHC_MedAdrRepAudit
 //护理不良事件表
 SELECT TOP 100 ADV_RepStaus_Dr, * FROM DHC_AdvMaster WHERE ADV_RepDate="2019-3-11"
 
-///报告类型
-SELECT * FROM DHC_MedAdrRepEvent
 
 SELECT ADVDR_CurStatus_DR, * FROM DHC_AdvDrugReport
 
@@ -44,9 +42,11 @@ SELECT * FROM SS_User WHERE SSUSR_RowId=7618
 
 
 
+///报告类型
+SELECT * FROM DHC_MedAdrRepEvent
 
 //不良事件工作流定义
-select * from DHC_AdrEvtWorkFlow WHERE ADREW_RowID=20
+select * from DHC_AdrEvtWorkFlow --WHERE ADREW_RowID=20
 
 //工作流项目
 select * from DHC_AdrEvtWorkFlowItm

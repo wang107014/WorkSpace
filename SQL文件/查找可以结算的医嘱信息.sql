@@ -26,9 +26,9 @@ SELECT * FROM DHC_TarItem
 SELECT * FROM DHC_TarItemPrice
 
 
-SELECT * FROM OE_Order WHERE OEORD_Adm_DR=41291
+SELECT * FROM OE_Order WHERE OEORD_Adm_DR=47606
 SELECT OEORI_Date, OEORI_TimeOrd,OEORI_ItmMast_DR->ARCIM_Desc,* FROM OE_OrdItem 
-WHERE OEORI_OEORD_ParRef=35222 
+WHERE OEORI_OEORD_ParRef=42275
 --  AND OEORI_OrdDept_DR=48 
 --AND OEORI_RowId IN ("28735||140","28735||149","28735||155","28735||145")
 
@@ -71,7 +71,7 @@ AND yzzb.OEORI_OEORD_ParRef=yzb.OEORD_RowId1   --医嘱主表和医嘱子表关联
 AND yzzb.OEORI_Priority_DR=yzlxb.OECPR_RowId   --医嘱子表和医嘱类型表关联
 AND yzzb.OEORI_ItemStat_DR=yzzt.OSTAT_RowId    --医嘱子表和医嘱状态表关联
 AND yzzb.OEORI_ItmMast_DR=aim.ARCIM_RowId
-AND OEORD_Adm_DR='41545'
+AND OEORD_Adm_DR='36373'
 
 //////////////根据就诊id查询医嘱价格///////////////////////
 
@@ -84,7 +84,7 @@ AND a.TP_ChildSub IN (select max(TP_ChildSub) from DHC_TarItemPrice WHERE TP_TAR
 AND d.OEORI_OEORD_ParRef=e.OEORD_RowId1
 AND d.OEORI_ItmMast_DR=f.ARCIM_RowId
 AND c.OLT_ARCIM_DR=f.ARCIM_RowId
-AND e.OEORD_Adm_DR='41545'
+AND e.OEORD_Adm_DR='36373'
 
 /////根据登记号查询就诊id
 SELECT PAPMI_Name AS 姓名,PAPMI_No AS 登记号,PAPMI_RowId1 AS 病人id,PAADM_RowID AS 就诊id,PAADM_AdmDate AS 就诊时间

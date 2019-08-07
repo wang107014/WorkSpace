@@ -1,0 +1,709 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Export generator="Cache" version="25" zv="Cache for Windows (x86-64) 2016.2 (Build 736_0_16871U)" ts="2019-08-06 08:48:34">
+<CSP name="scripts/dhc.message.js" application="/dthealth/web/" default="1"><![CDATA[
+var nowDate = new Date();
+var pageCount=50;
+var nowYMD = nowDate.getFullYear()+"-"+(nowDate.getMonth()+1)+"-"+nowDate.getDate(); 
+var tomYMD = nowDate.getFullYear()+"-"+(nowDate.getMonth()+1)+"-"+(nowDate.getDate()-1);
+var showReadExecInfo=function(){
+	var top=$('.msg-noticetitle>a').offset().top-$('.adminfo,.noticeinfo').offset().top;
+	var left=$('.msg-noticetitle>a').offset().left-$('.adminfo,.noticeinfo').offset().left;
+	var hiddenW=$('.msg-hidden').width();
+	//console.log(left);console.log(top);
+	$('.msg-hidden').css({left:left-hiddenW+7,top:top+24}).show();
+}
+var hideReadExecInfo=function(){
+	$('.msg-hidden').hide();
+}
+///调整消息内容的高度
+var fitMsgTextHeight=function(){
+	//先计算总共给剩下了多少的高度
+	var linkOrAttaH=$('.msg-link').height()+$('.msg-atta').height();
+	if (linkOrAttaH>0) linkOrAttaH+=2;
+	//alert($('#messageinfo').height());alert($('.msg-text').offset().top-$('#messageinfo').offset().top);alert(linkOrAttaH);
+	var height=$('#messageinfo').height()-($('.msg-text').offset().top-$('#messageinfo').offset().top)-linkOrAttaH-18;
+	//alert(height);
+	var scrollH=$('.msg-text')[0].scrollHeight;
+	if(scrollH<100) {
+		$('.msg-text').css('height',100);
+	}else if(scrollH>height){
+		$('.msg-text').css('height',height);
+	}
+}
+var getAttachmentLink  = function(rowData){
+	var url = "", tmpobj = {};
+	if ((rowData["OtherJson"] && rowData["OtherJson"]!="")){
+		try{
+			eval("var tmp = \""+rowData.OtherJson+"\"")
+		}catch(e){
+			var tmp=""
+		}
+		try{
+			if (!!tmp ){
+				tmpobj = $.parseJSON(tmp);
+			}
+			if (Object.prototype.toString.call(tmpobj["attachmentUrl"]) === "[object String]"){
+				url = tmpobj["attachmentUrl"];
+			}
+			if(!!url){
+				return url
+				
+			}
+		}catch(e){
+			return "";
+		}
+	}
+	return url;
+} 
+var getExecLink  = function(rowData){
+	var url = "", tmpobj = {};
+	if ((rowData["OtherJson"] && rowData["OtherJson"]!="") || (rowData["TExecLink"]!="")){
+		try{
+			eval("var tmp = \""+rowData.OtherJson+"\"")
+		}catch(e){
+			var tmp=""
+		}
+		var width = 1000,height = 900;
+		try{
+			if (!!tmp ){
+				tmpobj = $.parseJSON(tmp);
+				width = tmpobj["dialogWidth"] || 1000;
+				height =  tmpobj["dialogHeight"] || 900;
+			}
+			if (Object.prototype.toString.call(tmpobj["link"]) === "[object String]"){
+				url = tmpobj["link"]+"&MsgDetailsId="+rowData["DetailsId"];
+			}else{
+				if (Object.prototype.toString.call(tmpobj["linkParam"]) === "[object String]"){
+					url = rowData["TExecLink"]+ "?"+tmpobj["linkParam"]+"&MsgDetailsId="+rowData["DetailsId"];
+				}
+			}
+			if(!!url){
+				return url
+				
+			}
+		}catch(e){
+		}
+	}
+	return url;
+}
+var getExecUrl = function(rowData){
+	var op="#", url = "", tmpobj = {};
+	if ((rowData["OtherJson"] && rowData["OtherJson"]!="") || (rowData["TExecLink"]!="")){
+		try{
+			eval("var tmp = \""+rowData.OtherJson+"\"")
+		}catch(e){
+			var tmp=""
+		}
+		var width = 1000,height = 900;
+		try{
+			if (!!tmp ){
+				tmpobj = $.parseJSON(tmp);
+				width = tmpobj["dialogWidth"] || 1000;
+				height =  tmpobj["dialogHeight"] || 900;
+			}
+			if (Object.prototype.toString.call(tmpobj["link"]) === "[object String]" && tmpobj["link"]!=""){
+				if (tmpobj["link"].indexOf("?")>-1) url = tmpobj["link"]+"&MsgDetailsId="+rowData["DetailsId"];
+				else url = tmpobj["link"]+"?MsgDetailsId="+rowData["DetailsId"];
+			}else{
+				if (Object.prototype.toString.call(rowData["TExecLink"]) === "[object String]" && rowData["TExecLink"]!=""){
+					url = rowData["TExecLink"]+ "?"+tmpobj["linkParam"]+"&MsgDetailsId="+rowData["DetailsId"];
+				}
+			}
+			if(!!url){
+				tmp = '{"link":"'+url+'","dialogWidth":"'+width+'","dialogHeight":"'+height+'"}';
+				op = "javascript:OtherJsonHandler("+rowData["DetailsId"]+","+tmp+");";
+			}
+		}catch(e){
+		}
+	}
+	return op;
+}
+//日期格式校验
+function checkDate(str){
+	if(str==""){return true;}
+	if(!dateformat) dateformat=3;
+	if(dateformat==4){
+		var RegStr=/^((((0[1-9]|[12][0-9]|3[01])\/(0[13578]|1[02]))|((0[1-9]|[12][0-9]|30)\/(0[469]|11))|((0[1-9]|[1][0-9]|2[0-8])\/02))\/([0-9]{3}[1-9]|[0-9]{2}[1-9][0-9]{1}|[0-9]{1}[1-9][0-9]{2}|[1-9][0-9]{3}))|(02\/29\/(([0-9]{2})(0[48]|[2468][048]|[13579][26])|((0[48]|[2468][048]|[3579][26])00)))$/;
+	}else if(dateformat==1){
+		var RegStr=/^((((0[13578]|1[02])\/(0[1-9]|[12][0-9]|3[01]))|((0[469]|11)\/(0[1-9]|[12][0-9]|30))|(02\/(0[1-9]|[1][0-9]|2[0-8])))\/([0-9]{3}[1-9]|[0-9]{2}[1-9][0-9]{1}|[0-9]{1}[1-9][0-9]{2}|[1-9][0-9]{3}))|(02\/29\/(([0-9]{2})(0[48]|[2468][048]|[13579][26])|((0[48]|[2468][048]|[3579][26])00)))$/;
+	}else{
+		var RegStr=/^(([0-9]{3}[1-9]|[0-9]{2}[1-9][0-9]{1}|[0-9]{1}[1-9][0-9]{2}|[1-9][0-9]{3})-(((0[13578]|1[02])-(0[1-9]|[12][0-9]|3[01]))|((0[469]|11)-(0[1-9]|[12][0-9]|30))|(02-(0[1-9]|[1][0-9]|2[0-8]))))|((([0-9]{2})(0[48]|[2468][048]|[13579][26])|((0[48]|[2468][048]|[3579][26])00))-02-29)$/;
+	}
+	if (str.match(RegStr)==null){
+		return false;
+	}else{
+		return true;
+	}
+}
+var findMessageList = function (){
+	
+	//var ReadFlag = "N";
+	//if ($("#selectReadedCb").attr("checked")=="checked"){
+	//		ReadFlag = "Y";
+	//}
+	var ReadFlag = "N";
+	if ($(".msg-status li.active").length>0) {
+		ReadFlag=$(".msg-status li.active").data("status");
+	}else{
+		$(".msg-status li:eq(0)").addClass("active");
+	}
+	
+	var LevelType = "";
+	$(".leveltype li.active").each(function(){
+		LevelType += $(this).data("level")+",";
+	});
+	/*if (top && top.DShowFlag){
+		 LevelType="D";
+		 top.DShowFlag = false;
+		 top.$("#MessageWin").window("options").closed =false;
+	}*/
+	var ActionTypeArg = "";
+	ActionTypeArg = $("#ActionTypeArg").combobox("getValue");
+	//load--reload 老版用reload读完消息返回当前page,新版用load
+	
+	
+	
+	//日期 格式错误置成空 继续查询 
+	var sdate=$('#sdate').datebox("getValue");
+	if(!checkDate(sdate)){
+		sdate="";
+		$('#sdate').datebox("setValue",sdate);
+	}
+	var edate=$('#edate').datebox("getValue");
+	if(!checkDate(edate)){
+		edate="";
+		$('#edate').datebox("setValue",edate);
+	}
+	
+	$('#messagelist').datagrid("load",{ 
+		ClassName:"websys.DHCMessageDetailsMgr",
+		QueryName:"FindInfo",
+		UserId:sessionUserId,
+		ReadFlag:ReadFlag,
+		SendDateStart:sdate,
+		SendDateEnd:edate,
+		ActionTypeArg:ActionTypeArg,
+		LevelType:LevelType
+	});
+}
+
+var findClick = function(){
+	findMessageList();
+}
+var selectReadedCbOnclick= function(){
+	findMessageList();
+}
+var ActionTypeArgOnChange = function(){
+	findMessageList();
+}
+var openWinHandler = function(){
+	if(top.LevelTypeFlag){
+		$(".leveltype li").removeClass("active").filter("[data-level='"+top.LevelTypeFlag+"']").addClass("active");
+	}
+	//将日期置成空 否则会显得怪怪的  比如紧急弹出了一条刚发的  但是日期段选的是之前的 就看到空了
+	$('#sdate').datebox("setValue","");
+	$('#edate').datebox("setValue","");
+	findMessageList();
+}
+//附加Json参数的处理
+var OtherJsonHandler = function(detailsId,OtherJson){
+	//console.log(OtherJson);
+	if(OtherJson["link"] && Object.prototype.toString.call(OtherJson["link"]) === "[object String]"){
+		var dialogWidth = OtherJson["dialogWidth"] || "1000px";
+		var dialogHeight = OtherJson["dialogHeight"] || "900px";
+		if (dialogWidth.indexOf("px")==-1){dialogWidth +="px";}
+		if (dialogHeight.indexOf("px")==-1){dialogHeight +="px";}
+		if (opener && opener.ShowExecMsgWin){
+			opener.ShowExecMsgWin(detailsId,OtherJson);
+		}else if (parent && parent.ShowExecMsgWin){
+			parent.ShowExecMsgWin(detailsId,OtherJson);
+		}
+		//window.showModalDialog(OtherJson["link"],{window:window},"dialogWidth="+dialogWidth+";dialogHeight="+dialogHeight);
+		//window.open(OtherJson["link"],"dialogWidth="+dialogWidth+";dialogHeight="+dialogHeight);
+		//findMessageList();
+	}else{
+		alert("没有相应的处理链接");
+	}
+}
+var refreshMessageCount = function(){
+	if (opener && opener.ForceShowDHCMessageCount){
+			opener.ForceShowDHCMessageCount(false);
+		}else if (parent && parent.ForceShowDHCMessageCount){
+			parent.ForceShowDHCMessageCount(false);
+		}
+}
+var SetReplyFlag = function(detailsId,rindex,rowData){
+	$.ajaxRunServerMethod({ClassName:"websys.DHCMessageDetailsMgr",MethodName:"SaveReplyInfo",Id:detailsId},function(){
+		refreshMessageCount();
+		// 未读回复数量清空
+		$.extend(rowData,{NewReplyCount:0});
+		$('#messagelist').datagrid("updateRow",{index:rindex, row:rowData}) ;
+	});
+}
+// 把该条消息置成已读,
+var SetReadedFlag = function(detailsId,rindex,rowData){
+	$.ajaxRunServerMethod({ClassName:"websys.DHCMessageDetailsMgr",MethodName:"SaveReadInfo",Id:detailsId},function(){
+		refreshMessageCount();
+		// 显示消息且变成非加粗字体
+		$.extend(rowData,{TExecFlag:rowData["TExecFlag"].replace("unread","read")});
+		$('#messagelist').datagrid("updateRow",{ index:rindex, row:rowData}) ;
+	});
+}
+var SetExecFlag = function (ContentId){
+	$.ajaxRunServerMethod({ClassName:"websys.DHCMessageInterface",MethodName:"ExecAllByContentIds",ContentIds:ContentId},function(){
+		refreshMessageCount();
+		$("#ToolsExecBtn").html("已处理").removeClass("i-btn").addClass("i-btn-execedMsg");
+	});
+}
+//CKEDITOR_BASEPATH = '../scripts_lib/ckeditor/';
+var zd = function(date,type){
+	if (arguments.length==1){
+		return date.getFullYear()+"-"+(date.getMonth()+1)+"-"+date.getDate();
+	}
+	if (type==5){
+		return date.getFullYear()+"年"+(date.getMonth()+1)+"月"+date.getDate()+"日";
+	}
+}
+var zt = function(date){
+	return date.getHours()+":"+date.getMinutes()+":"+date.getSeconds();
+}
+var fontStyleClick = function(cfg){
+	var _this = $(this);
+	_this.toggleClass("active");
+	if(cfg.value=='B'){
+		if (_this.hasClass("active")){
+			$("#replyContent").css("font-weight","bold");
+		}else{
+			$("#replyContent").css("font-weight","normal");
+		}
+	}
+	if (cfg.value=='I'){
+		if (_this.hasClass("active")){
+			$("#replyContent").css("font-style","italic");
+		}else{
+			$("#replyContent").css("font-style","normal");
+		}
+	}
+}
+var reply = function (typeFlag){
+	var replyContentJObj = $("#replyContent");
+	var replyContent = replyContentJObj.val();
+	if (!replyContent){return false;}
+	if (!currSelectedMsgJson){$.messager.alert("提示","请选中消息现回复!"); return false;}
+	if (!currSelectedMsgJson.ContentId){$.messager.alert("提示","请选中消息现回复!"); return false;}
+	var curUserName = session["LOGON.USERNAME"];
+	if (curUserName.length>=4){
+		curUserName = curUserName.slice(0,4);
+	}
+	var style="";
+	if (replyContentJObj.css("font-style")=="italic"){
+		style += "font-style:italic;";
+	}
+	if (replyContentJObj.css("font-weight")=="bold"){
+		style += "font-weight:bold;";
+	}
+	$.ajaxRunServerMethod({ClassName:"websys.DHCMessageReplyContentMgr",MethodName:"Reply",
+		Content:replyContent,ContentDr:currSelectedMsgJson.ContentId,ReplyUserDr:session["LOGON.USERID"],ReplyType:typeFlag,IsAttachment:0,FStyle:style
+	},function(replyRowId){
+		if (parseInt(replyRowId)>0){
+			$("#myselfReplyTpl").tmpl({
+				userName:curUserName,
+				replyContent:replyContent,
+				sendDate:zt(new Date()),
+				newReplyFlag:0,
+				fStyle:style
+			}).appendTo(".msg-content-c");
+			$("#replyContent").val("");
+			gotoBottomReply();
+		}else{
+			// reply fail
+		}
+	});
+	return false;
+}
+var replaceHtml=function(str){
+	 return str.replace(/(<[^>]+>)|(&nbsp;)/ig,""); 
+}
+var gotoBottomReply = function(){
+	var msgJObj = $(".msg-reply");
+	if(msgJObj.length>0) msgJObj[0].scrollTop = msgJObj[0].scrollHeight; 
+}
+//查看详情
+var viewMsgItemInfo = function(detailsId,rindex,rowData){
+	if (detailsId>0){
+		currSelectedMsgJson.replyLoading = true;
+		$.ajaxRunServerMethod({ClassName:"websys.DHCMessageDetailsMgr",MethodName:"GetDetailsInfo",DetailsId:detailsId},function(rtn){
+			//var tpl = "";
+			var tmprtn = $.parseJSON(rtn);
+			if (!tmprtn.ReadDate || tmprtn.ReadDate==""){
+				SetReadedFlag(detailsId,rindex,rowData); 		// 没有读时间 2017-08-28
+				tmprtn.ReadDate = zd(new Date(),5);
+				tmprtn.ReadTime = zt(new Date());
+				tmprtn.ReadUser = session["LOGON.USERNAME"];
+			}
+			currSelectedMsgJson = tmprtn;
+			// 判断是否还有回复
+			if (tmprtn && tmprtn.ReplyList && tmprtn.ReplyList.length>0){
+				var replyLength = tmprtn.ReplyList.length;
+				var hasNewReplyFlag = false;
+				for(var i=0;i<replyLength;i++){
+					if (tmprtn.ReplyList[i].newReplyFlag==1){ hasNewReplyFlag=true; }
+				}
+				if (hasNewReplyFlag) SetReplyFlag(detailsId,rindex,rowData);  // 有回复是新的
+				if (replyLength==pageCount){
+					currSelectedMsgJson.hasRemainReply = true;
+				}
+			}
+			/*if (typeof tmprtn.Name == "undefined" || tmprtn.Name==""){
+				tpl = "NoticeTpl";
+			}else{
+				tpl = "AdmTpl";
+			}*/
+			var btnHtml="";
+			var op = getExecUrl(rowData);
+			switch (tmprtn["TExecFlag"]){
+				case "unread":
+					// "未读";
+					if ((op!="#")&&(op!="")) {
+						if (op.indexOf("?")>-1){
+							btnHtml = "<a class='i-btn' href='#' onclick='"+op+";return false;'  style='display:inline-block;margin-right:5px;'><img src='../skin/default/images/message/exec.png' border='0'>查看</a>";
+						}
+					}
+					break;
+				case "unread-unexec":
+					if ((op!="#")&&(op!="")) {btnHtml = "<a class='i-btn' href='#' onclick='"+op+";return false;'  style='display:inline-block;margin-right:5px;' ><img src='../skin/default/images/message/exec.png' border='0'>须处理,点击</a>";} // "未读未处理";
+					break;
+				case "read":
+					//"已读";
+					if ((op!="#")&&(op!="")) {
+						if (op.indexOf("?")>-1){ 
+							btnHtml = "<a class='i-btn' href='#' onclick='"+op+";return false;'  style='display:inline-block;margin-right:5px;'><img src='../skin/default/images/message/exec.png' border='0'>查看</a>";
+						}
+					}
+					break;
+				case "read-exec":
+					if ((op!="#")&&(op!="")) {btnHtml = "<a class='i-btn-execedMsg' href='#' onclick='"+op+";return false;'>已处理</a>";} //"已读已处理";
+					break;
+				case "read-unexec":
+					if ((op!="#")&&(op!="")) {btnHtml = "<a class='i-btn' href='#' onclick='"+op+";return false;'  style='display:inline-block;margin-right:5px;'><img src='../skin/default/images/message/exec.png' border='0'>须处理,点击</a>";} // "已读未处理";
+					break;
+			}
+			tmprtn.ExecMsgBtn = "";
+			var tools = "";
+			if (tmprtn.ToolbarItems.indexOf("E")>-1 ){
+				if (tmprtn["TExecFlag"].indexOf("unexec")>-1){ 	// 默认处理按钮
+					tools = "<a class='i-btn' style='display:inline-block;margin-right:5px;' href='#' onclick='javascript:SetExecFlag("+tmprtn.ContentId+");return false;' id='ToolsExecBtn'><img src='../skin/default/images/message/exec.png' border='0'>须处理,点击</a>"
+				}else {
+					tools = "<a class='i-btn-execedMsg' style='display:inline-block;margin-right:5px;' href='#' id='ToolsExecBtn'>已处理</a>"
+				}
+			}else if (btnHtml!=""){
+				tmprtn.ExecMsgBtn = btnHtml;   //otherjson中的处理路径
+			}
+			if (tmprtn.ToolbarItems.indexOf("R")>-1){
+				tools += "<a class='i-btn' style='display:inline-block;margin-right:5px;' href='#' onclick='reply("+detailsId+");return false;'><img src='../skin/default/images/message/reply.png' border='0'>回复</a>"
+			}
+			tmprtn.ToolbarItems = tools;
+			tmprtn.attachmentA = "";    //先将其置成空，否则如果没附件 会显示undefined
+			tmprtn.attachmentLabel = "";
+			//解析附件成链接
+			var attLinks = getAttachmentLink(rowData);
+			var attachmentAArr =[];
+			if (typeof attLinks!="undefined" && attLinks!="undefined" && attLinks!=""){
+				tmprtn.attachmentA="";
+				var webapp="";
+				var attLinksArr = attLinks.split(",");
+				//多附件
+				for (var i=0; i<attLinksArr.length; i++){
+					var attLink = attLinksArr[i];
+					var attLinkArr = attLink.split("/");
+					var fileName = attLinkArr.splice(-1,1)[0];
+					var dirName = attLinkArr.join("/");
+					webapp = dirName.slice(0,dirName.indexOf("/web/"))
+					var ext=fileName.split(".").splice(-1,1)[0].toUpperCase();
+					if(ext=="BMP" || ext=="PNG" || ext=="GIF" || ext=="JPG" || ext=="JPEG"){
+						attachmentAArr.push("<a href='#' onclick='websys_lu(\""+attLink+"\",false,\"top=50,left=50,width=600,height=600\");return false;' target='_blank'>"+fileName+"</a>&nbsp;");
+					}else{
+						attachmentAArr.push("<a href='websys.file.utf8.csp?act=download&dirname="+dirName+"&filename="+encodeURI(fileName)+"' target='TRAK_hidden'>"+fileName+"</a>&nbsp;");
+					}
+				}
+				tmprtn.attachmentA = attachmentAArr.join(",");
+				tmprtn.attachmentLabel = "附件:";
+			}
+			$('#messageinfo').panel({fit:true,content:$('#AdmTpl').tmpl(tmprtn)}); //$.formatByJson(tpl,tmprtn)});
+			gotoBottomReply();
+			$(".msg-reply").scroll(function(){
+				var _t = $(this);
+				var scrollTop = _t.scrollTop();
+				if (scrollTop===0 && currSelectedMsgJson.hasRemainReply && !currSelectedMsgJson.replyLoading){
+					var oldHeight = $(".msg-content-c")[0].offsetHeight; 
+					currSelectedMsgJson.replyLoading = true;
+					// console.log("获取 第 "+currSelectedMsgJson.PageNo+" 页数据");
+					$.ajaxRunServerMethod({
+						ClassName:"websys.DHCMessageReplyContentMgr",MethodName:"GetReplyInfo",
+						AdmDao:"",DetailsId:currSelectedMsgJson.DetailsId,PageNo:currSelectedMsgJson.PageNo,PageCount:pageCount
+					},function(rtn){
+						currSelectedMsgJson.hasRemainReply=false; // 认为没有更多回复
+						currSelectedMsgJson.PageNo++;
+						currSelectedMsgJson.replyLoading = false;
+						var json = $.parseJSON(rtn);
+						if (json && json.ReplyList){
+							if (json.ReplyList.length==pageCount){
+								currSelectedMsgJson.hasRemainReply=true;
+							}else{
+								//$(".msg-reply").off("scroll");
+							}
+							// var html = 
+							$('#replyTpl').tmpl(json).prependTo(".msg-content-c");
+							//$(".msg-content-c").append(html);
+							//$(".msg-content-c").prepend(html); // add before reply
+							$(".msg-reply").get(0).scrollTop = $(".msg-reply").get(0).scrollHeight - oldHeight ;
+						}
+					});
+				}
+			});
+			currSelectedMsgJson.replyLoading = false;
+			//fitMsgTextHeight();   /////调整消息内容的高度 先注了
+		})		
+	} 
+}
+
+$(function(){
+	$(".leveltype li").click(function(){
+		var t = $(this);
+		$(".leveltype li").removeClass('active');
+		t.addClass('active');
+		top.LevelTypeFlag = t.data("level");
+		findMessageList();
+	});
+	$(".msg-status li").click(function(){
+		var t = $(this);
+		$(".msg-status li").removeClass('active');
+		t.addClass('active');
+		findMessageList();
+	});
+	$("body").on("click",".clickbtn",function(){
+		var t = $(this);
+		var options = t.data("options");
+		if (options!=""){
+			//try{
+				// console.log(options);
+				eval("var o={"+options+"}");
+				console.log(o);
+				if (o.click && typeof o.click == "function") o.click.call(t,o);
+			//}catch(e){console.log("click ---"+e)}
+		}
+	});
+	/*为了实现未读消息粗体显示*/
+	$.extend($.fn.datagrid.defaults.view,{
+		renderRow : function(_1d8,_1d9,_1da,_1db,_1dc){
+		var opts=$.data(_1d8,"datagrid").options;
+		var cc=[];
+		if(_1da&&opts.rownumbers){
+		var _1dd=_1db+1;
+		if(opts.pagination){
+		_1dd+=(opts.pageNumber-1)*opts.pageSize;
+		}
+		cc.push("<td class=\"datagrid-td-rownumber\"><div class=\"datagrid-cell-rownumber\">"+_1dd+"</div></td>");
+		}
+		for(var i=0;i<_1d9.length;i++){
+		var _1de=_1d9[i];
+		var col=$(_1d8).datagrid("getColumnOption",_1de);
+		if(col){
+		var _1df=_1dc[_1de];
+		var _1e0=col.styler?(col.styler(_1df,_1dc,_1db)||""):"";
+		var _1e1=col.hidden?"style=\"display:none;"+_1e0+"\"":(_1e0?"style=\""+_1e0+"\"":"");
+		var title=col.titler?(col.titler(_1df,_1dc,_1db)||""):"";
+		cc.push("<td field=\""+_1de+"\" "+_1e1+" title=\""+title+"\">");
+		if(col.checkbox){
+		var _1e1="";
+		}else{
+		var _1e1="";
+		if(col.align){
+		_1e1+="text-align:"+col.align+";";
+		}
+		if(!opts.nowrap){
+		_1e1+="white-space:normal;";   //height:auto;";
+		}else{
+		if(opts.autoRowHeight){
+		//_1e1+="height:auto;";
+		}
+		}
+		}
+		cc.push("<div style=\""+_1e1+"\" ");
+		if(col.checkbox){
+		cc.push("class=\"datagrid-cell-check ");
+		}else{
+		cc.push("class=\"i-datagrid-cell "+col.cellClass); //datagrid-cell
+		}
+		cc.push("\">");
+		if(col.checkbox){
+		cc.push("<input type=\"checkbox\" name=\""+_1de+"\" value=\""+(_1df!=undefined?_1df:"")+"\"/>");
+		}else{
+		if(col.formatter){
+		cc.push(col.formatter(_1df,_1dc,_1db));
+		}else{
+		cc.push(_1df);
+		}
+		}
+		cc.push("</div>");
+		cc.push("</td>");
+		}
+		}
+		return cc.join("");
+		}
+	});
+	$.fn.pagination.defaults.showPageList=false;
+	$.fn.pagination.defaults.showRefresh=false;
+	$.fn.pagination.defaults.beforePageText='第';//页数文本框前显示的汉字  
+    $.fn.pagination.defaults.afterPageText='页,共{pages}页';
+    $.fn.pagination.defaults.displayMsg = "共{total}记录";
+	top.$("#MessageWin").window("options").onOpen=function(){
+		openWinHandler();
+	};
+	if ( "undefined" == typeof window.JSON ) {
+		window.JSON = {};
+		window.JSON.parse = function (data){
+			if(data){ try{ eval("var obj = "+data); }catch(e){ return ""; } return obj;}else{ return ""; }
+		}
+	}
+	$('#messagelist').datagrid({
+		//rownumbers: true,
+		pagination: true,
+	    pageSize:12,
+	    pageList:[12],
+		striped:true,
+		singleSelect:true,
+		fit:true,
+		showHeader:false,
+		queryParams: { 
+			ClassName:"websys.DHCMessageDetailsMgr",
+			QueryName:"FindInfo",
+			UserId:sessionUserId,
+			ReadFlag:"N",
+			SendDateStart:"",
+			SendDateEnd:"",
+			ActionTypeArg:"",
+			LevelType:""
+		},
+		onClickRow:function(rindex,rowData){
+			viewMsgItemInfo(rowData.DetailsId,rindex,rowData);
+		},
+		onLoadSuccess:function(data){
+			//$('.pagination-info').hide();
+			$('#messageinfo').panel({fit:true,content:"<div style='font-size:16px;width:100%;height:100%;magin-left:20px;padding:10px;'><img src='../images/uiimages/moveleft.png' style='padding-right:5px;'/>请选中消息列表记录,以便显示详情。</div>"});
+			/*var row = "";
+			for(var i=0 ; i<data["rows"].length; i++){
+				row = data["rows"][i];
+				if ((row["ActionLevelType"]=="V")||(row["ActionLevelType"]=="D")){
+					var tmplink = getExecLink(row);			
+					if(tmplink!="#" && tmplink!="")	{
+						top.ShowExecMsgWin(row["DetailsId"],{"link":getExecLink(row)});
+						break;
+					}
+				}
+			}*/
+		},
+		onOpen : function(){
+			openWinHandler(); //messagewin只会在第一次打开时进入
+		},
+		url:'jquery.easyui.querydatatrans.csp',
+		columns:[[
+		{field:'DetailsId',title:'DetailsId',width:100,align:'left',hidden:true},
+		{field:'TExecFlagImg',title:'',width:20,align:'left',styler: function(value,row,index){
+				if (row["TExecFlag"]!=""){
+					return 'background:url(../skin/default/images/'+row["TExecFlag"]+'.png) no-repeat 5px 4px;cursor:pointer ;';
+				}
+		},titler:function(value,row,index){
+			switch (row["TExecFlag"]){
+				case "unread":
+					return "未读";
+					break;
+				case "unread-unexec":
+					return "未读未处理";
+					break;
+				case "read":
+					return "已读";
+					break;
+				case "read-exec":
+					return "已读已处理";
+					break;
+				case "read-unexec":
+					return "已读未处理";
+					break;
+			}
+		}},
+		{field:'ActionLevelTypeDesc',title:'级别',width:50,align:'left',hidden:true},
+		{field:'ActionDesc',title:'消息类型',width:63,align:'left',
+			styler:function(value,row,index){
+				var deflaultcss = "cursor:pointer ;";
+				if (row["TExecFlag"].indexOf("unread")>-1){
+					deflaultcss += ';font-weight: bold;';
+				}
+				return deflaultcss;
+			}
+		},
+		{field:'Content',title:'内容',width:110,align:'left',
+			styler:function(value,row,index){
+				var deflaultcss = "cursor:pointer ;";
+				if (row["TExecFlag"].indexOf("unread")>-1){
+					deflaultcss += ';font-weight: bold;';
+				}
+		
+				if ((row["ActionLevelType"]=="V")||(row["ActionLevelType"]=="D")){return deflaultcss+'color:red;'}
+				return deflaultcss;
+			},
+			formatter:function(value,row,index){
+				return replaceHtml(value);
+			}
+		},
+		{field:'SendDate',title:'发送日期',width:80,align:'left',
+			// formatter:function(value,row,index){
+				// if (value==nowYMD){
+					// return "今天";
+				// }
+				// if (value==tomYMD){
+					// return "昨天";
+				// }
+				// return value.split("-")[2]+"号";
+			// },
+			styler:function(value,row,index){
+				var deflaultcss = "cursor:pointer ;";
+				if (row["TExecFlag"].indexOf("unread")>-1){
+					deflaultcss += ';font-weight: bold;';
+				}
+				return deflaultcss;
+			}
+		},
+		{field:'SendTime',title:'发送时间',width:50,align:'left',
+			formatter:function(value,row,index){
+				if (parseInt(row["NewReplyCount"])>0){
+					return value+'<span class="badge" style="background-color:red;position:absolute;" title="未读回复数量">'+row["NewReplyCount"]+'</span>';
+				}else{
+					return value;
+				}
+			},
+			styler:function(value,row,index){
+				var deflaultcss = "cursor:pointer ;";
+				if (row["TExecFlag"].indexOf("unread")>-1){
+					deflaultcss += ';font-weight: bold;';
+				}
+				return deflaultcss;
+			}},
+		{field:'SendUserDesc',title:'发送人',width:80,align:'left',hidden:true},
+		{hidden:true,field:'operates',title:'操作',width:80,align:'left'},
+		{field:'TExecFlag',title:'处理状态',width:80,align:'left',hidden:true}
+		]]
+	}); //.datagrid('loadData',data);
+	$('#messagelist').datagrid('getPanel').removeClass('lines-both lines-no lines-right lines-bottom').addClass("lines-bottom");
+	/*var pager = $('#messagelist').datagrid('getPager')
+	pager.pagination({
+		showPageList:false,
+		beforePageText: '第',//页数文本框前显示的汉字  
+        afterPageText: '页,共{pages}页'
+        ,displayMsg: '' //'共{total}条数据'
+	});
+	*/
+	//$("#lo").layout("resize");
+})
+]]></CSP>
+</Export>

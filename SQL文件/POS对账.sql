@@ -14,12 +14,14 @@ SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_OutTradeNo IN ('113943235391','1
 //His交易明细表
 SELECT ETP_Papmi_Dr, * FROM DHC_BillExtTradePay WHERE ETP_PayMode=4 AND ETP_Papmi_Dr=11613
 
+SELECT ETP_Papmi_Dr, * FROM DHC_BillExtTradePay WHERE ETP_TradeDate="2019-7-28"  AND ETP_TradeType="DEP" 
+SELECT ETP_Papmi_Dr, * FROM DHC_BillExtTradePay WHERE ETP_ExtTradeNo='145449319197'
 SELECT ETC_HISPRT_DR, * from DHC_BillExtTradeConSub WHERE ETC_TradeType="DEP" AND ETC_HISPRT_DR IN ('15373','15247','15313')
 
 //第三方交易明细表
-SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_OutTradeNo IN ('232918250118','233154250119')
+SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_OutTradeNo IN ('145449319197')
 
-SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_TradeDate="2019-5-7"
+SELECT * FROM DHC_BillExtTradeBalance WHERE ETB_TradeDate="2019-7-28"--and ETB_TradeDate<"2019-7-27"
 
 SELECT * FROM PA_PatMas WHERE PAPMI_Name['陈传群'
 
