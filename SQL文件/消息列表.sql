@@ -1,16 +1,17 @@
-SELECT TOP 100 * FROM websys.DHCMessageDetails  WHERE DHCDetails_Content_Dr=16441 ORDER BY DHCDetails_RowId DESC --    --34849 
+SELECT TOP 100 * FROM websys.DHCMessageDetails  WHERE DHCDetails_Content_Dr IN (14832,14833) ORDER BY DHCDetails_RowId DESC --    --34849 
 
 SELECT TOP 100 * FROM websys.DHCMessageDetails WHERE DHCDetails_User_Dr="7363"
 
 SELECT TOP 100 * FROM websys.DHCMessageDetails WHERE DHCDetails_RowId='35603'
 
-SELECT TOP 100 * FROM websys.DHCMessageContent WHERE DHCContent_Action_Dr=92 ORDER BY DHCContent_RowId DESC --  --16376
+SELECT TOP 1000 * FROM websys.DHCMessageContent WHERE DHCContent_Action_Dr=62 ORDER BY DHCContent_RowId DESC --  --16376
 
 
 
-SELECT TOP 100 * FROM websys.DHCMessageContent WHERE DHCContent_RowId='16528'
+SELECT  * FROM websys.DHCMessageContent WHERE DHCContent_CreateDate="2019-6-19" AND DHCContent_RowId IN (14832,14833)
 
-select * from websys.DHCMessageActionType WHERE DHCAction_RowId IN (12,51,91,15,92)
+//消息动作类型维护
+select * from websys.DHCMessageActionType WHERE DHCAction_ReceiveType_Dr=8 --DHCAction_RowId IN (12,51,91,15,92)
 
 select * from websys.DHCMessageReceiveType
 

@@ -31,3 +31,11 @@
 ##CRM退费订单信息推送给HIS
 
 	w ##class(DHCBILL.Package.DataInteface.DHCPkgRefundBill).ReceivePkgRefundBillFromCRM("")
+
+
+
+
+##(BOE0151)接收并保存从CRM推送来的套餐信息
+
+	w ##class(DHCExternalService.DHCDocPackageInterface.Service.DHCDocPackageCommon).SaveCRMPackageInfo()	
+	w ##class(web.DHCDocPackageIntrefaceCom).SaveCRMPackageInfo()

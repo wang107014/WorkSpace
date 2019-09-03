@@ -25,6 +25,7 @@
 
 		1、点击结算
 			dhcbill/pkg/dhcbill.pkg.charge.main.js中的charge_Click方法中
+			dhcbill/pkg/dhcbill.pkg.charge.paym.js中的pkgBillCharge方法中
 			1.1、全额支付结算流程
 				w ##class(DHCBILL.Package.BusinessLogic.DHCPkgInvPrt).PkgBillCharge()
 				1.1.1、查找订单状态,非"待支付"状态(10)时不能结算并且非"定金支付"状态(15)时不能补差额 （-101）
