@@ -1,4 +1,19 @@
-SELECT TOP 100 * FROM DHCDoc_CRMPackageMain WHERE DocCRM_Name['测试套餐'
 
+///优惠价格
+SELECT TOP 100 DocCRM_PRDStrikePrice,DocCRM_Price,* FROM DHCDoc_CRMPackageMain WHERE DocCRM_Name['2019新站管委会领导及离退休个检套餐'
 
-SELECT TOP 100 * FROM ARC_OrdSets WHERE ARCOS_Desc['个人体检套餐D（女未婚）'
+SELECT TOP 1000 * FROM ARC_OrdSets WHERE ARCOS_Desc['688体检卡套餐（女已婚）'
+
+SELECT * FROM DHC_PE_PreGADM
+
+SELECT * FROM SS_User WHERE SSUSR_Name['胡海洋'
+
+//个人ADM表
+SELECT * FROM DHC_PE_PreIADM WHERE PIADM_RowId=22424
+	
+//个人项目套餐表 关联医嘱套
+SELECT TOP 200 PIOE_OrderSets_DR,* FROM DHC_PE_PreIOrdEnt WHERE PIOE_ParRef=22424
+	
+//套餐表
+SELECT * FROM ARC_OrdSets WHERE ARCOS_RowId1 IN ('25796','25044')
+	

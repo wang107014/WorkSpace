@@ -1,4 +1,4 @@
-///医疗不良事件上报表
+///医疗不良事件上报表 和其他不良事件
 ///MEDADR_CurStatus_DR 当前状态 
 ///MEDADR_ReportType  报告类型
 SELECT MEDADR_CurStatus_DR,MEDADR_ReportType, * FROM DHC_MedAdrReport WHERE MEDADR_CreateDate="2019-7-18"
@@ -11,6 +11,7 @@ SELECT MEDADR_Status_DR, MEDADR_Receive, * FROM DHC_MedAdrRepAudit WHERE  MEDADR
 
 ///转抄表
 select * from DHC_MedAdrRepAuditItm
+
 
 
 ////药品不良事件
@@ -64,3 +65,7 @@ SELECT * FROM SS_User WHERE SSUSR_Name['徐'
 
 SELECT * FROM CT_Loc WHERE CTLOC_RowID IN (44,127)
 SELECT * FROM SS_Group WHERE SSGRP_RowId IN (117,311)
+
+
+
+SELECT * FROM SS_User WHERE SSUSR_Initials['10071704'
