@@ -3,6 +3,10 @@ SELECT * FROM PA_PatMas WHERE PAPMI_No="020000023285"
 ///PAADM_AdmReason_DR:费别
 SELECT PAADM_AdmReason_DR, * FROM PA_Adm WHERE PAADM_PAPMI_DR=26143
 
+
+///患者费别类型
+SELECT * FROM PAC_AdmReason
+
 SELECT * FROM DHC_BillConINV WHERE DHCBCI_ADMDR=31905
 
 ////////////////////////发票表////////////////////////////////////

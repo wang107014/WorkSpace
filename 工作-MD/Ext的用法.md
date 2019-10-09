@@ -165,3 +165,26 @@
 
 
 
+
+##登记号补零
+
+	var getPatientNoStore = new Ext.data.JsonStore({
+		autoLoad: false,
+		url: '../web.eprajax.query.getPatientNo.cls',
+		root: 'data',
+		fields:['DicDesc'],
+		listeners: {
+			'beforeload': function() {
+				var txtValueText = Ext.getCmp("txtPatientNo").getRawValue();
+				getPatientNoStore.baseParams = { PAPMINo: txtValueText};
+			},
+		}
+	});
+	
+
+	getPatientNoStore.load({
+		callback:function(data){
+			Ext.getCmp('txtPatientNo').setValue(data[0].data.DicDesc);
+			patientNo=data[0].data.DicDesc;
+		}
+	})

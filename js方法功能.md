@@ -391,3 +391,27 @@ DHCWebTabCSS_InitTab();
 ##easyui的选择框
 
 	dhcipbillpatcostinquriy.js中的initRegNoCombo
+
+
+
+
+##设置query列表的每行信息
+
+	DHCPEItemImg.list.js 中的SetTblColumn
+
+	var tbl=document.getElementById('tDHCPEItemImg_list');	//取表格元素?名称
+	var row=tbl.rows.length;
+	for (var j=1;j<row;j++) {
+		//设置状态背景色
+		var StatusLable=document.getElementById('StatusDescz'+j);
+		if(StatusLable){}
+	}
+
+
+
+##在csp中调用公共方法
+
+	<HEAD>
+		<TRAK:HEAD>
+		</TRAK:HEAD>
+	</HEAD>

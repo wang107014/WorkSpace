@@ -22,10 +22,18 @@ SELECT TOP 100 INPAY_djlsh0, * FROM INSU_Divide
 
 //医保字典维护 
 ///INDID_DicDesc:医保名称(统筹区)
-SELECT TOP 100 * FROM INSU_DicData WHERE INDID_DicCode IN ('340121','340181','340122','340124','340199')
+SELECT TOP 1000 * FROM INSU_DicData WHERE INDID_DicCode IN ('340121','340181','340122','340124','340199')
+
+SELECT TOP 1000 * FROM INSU_DicData WHERE INDID_DicCode['AHAY'
+
+select * from INSU_DicData WHERE INDID_DicDesc['异地'
+
 
 //医保返回甲乙丙类
 SELECT TOP 100 * FROM INSU_DivideSub
+
+
+SELECT INADM_InsuType, * from INSU_AdmInfo WHERE INADM_InsuType['AHC'
 
 
 ///医保收费项分类分解表,本地算法专有

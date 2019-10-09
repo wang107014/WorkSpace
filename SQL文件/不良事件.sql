@@ -1,7 +1,7 @@
-///医疗不良事件上报表 和其他不良事件
+///医疗不良事件上报表、其他不良事件
 ///MEDADR_CurStatus_DR 当前状态 
 ///MEDADR_ReportType  报告类型
-SELECT MEDADR_CurStatus_DR,MEDADR_ReportType, * FROM DHC_MedAdrReport WHERE MEDADR_CreateDate="2019-7-18"
+SELECT MEDADR_CurStatus_DR,MEDADR_ReportType, * FROM DHC_MedAdrReport WHERE MEDADR_CreateDate>"2019-7-18"
 
 
 
@@ -13,11 +13,21 @@ SELECT MEDADR_Status_DR, MEDADR_Receive, * FROM DHC_MedAdrRepAudit WHERE  MEDADR
 select * from DHC_MedAdrRepAuditItm
 
 
+///器械
+select * from DHC_MatAdrReport
 
 ////药品不良事件
 ///ADVDR_ReportType:报告类型
 ///ADVDR_CurStatus_DR:当前状态
-SELECT ADVDR_RepType, ADVDR_ReportType,ADVDR_CurStatus_DR, * from DHC_AdvDrugReport WHERE ADVDR_RepDate='2019-5-18'
+SELECT ADVDR_RepType, ADVDR_ReportType,ADVDR_CurStatus_DR, * from DHC_AdvDrugReport WHERE ADVDR_RepDate>'2019-01-01'
+
+
+///用药差错
+select * from DHC_MedSafetyReport
+
+////输血
+select * from DHC_AdvBloodReport
+
 
 //状态
 select * from DHC_AdrEvtWorkFlowItm
@@ -30,23 +40,23 @@ SELECT * FROM DHC_MedAdrRepAudit
 
 
 //护理不良事件表
-SELECT TOP 100 ADV_RepStaus_Dr, * FROM DHC_AdvMaster WHERE ADV_RepDate="2019-3-11"
+SELECT TOP 100 ADV_RepStaus_Dr, * FROM DHC_AdvMaster WHERE ADV_RepDate>"2019-3-11"
 
 
 SELECT ADVDR_CurStatus_DR, * FROM DHC_AdvDrugReport
 
 
-//不良事件类型表select * from DHC_MedAdrRepEvent
+//不良事件类型表
+select * from DHC_MedAdrRepEvent
 
-SELECT * FROM SS_User WHERE SSUSR_RowId=7618
+SELECT * FROM SS_User WHERE SSUSR_Initials
 
 
-
-
-///报告类型
+///具体报告类型
 SELECT * FROM DHC_MedAdrRepEvent
 
-//不良事件工作流定义
+
+//不良事件工作流定义  //可用报告类型
 select * from DHC_AdrEvtWorkFlow --WHERE ADREW_RowID=20
 
 //工作流项目
@@ -61,11 +71,11 @@ SELECT * FROM DHC_AdrWorkFlowGrant WHERE ADRWFG_Itm_Dr="1||4"
 ///不良事件反应分类可查看权限
 select * from DHC_AdvQuerySec WHERE ADVQS_RepTyep_Dr=94
 
-SELECT * FROM SS_User WHERE SSUSR_Name['徐'
+SELECT * FROM SS_User WHERE SSUSR_Name['程威'
 
 SELECT * FROM CT_Loc WHERE CTLOC_RowID IN (44,127)
 SELECT * FROM SS_Group WHERE SSGRP_RowId IN (117,311)
 
 
 
-SELECT * FROM SS_User WHERE SSUSR_Initials['10071704'
+SELECT * FROM SS_User WHERE SSUSR_Name['徐淑华'
